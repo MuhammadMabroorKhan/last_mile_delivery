@@ -1,0 +1,102 @@
+package com.example.lastmiledelivery.data.remote.api
+
+import com.example.lastmiledelivery.data.models.customer.AddCartResponse
+import com.example.lastmiledelivery.data.models.customer.AddToCartRequest
+import com.example.lastmiledelivery.data.models.customer.AddressResponse
+import com.example.lastmiledelivery.data.models.customer.CartResponse
+import com.example.lastmiledelivery.data.models.customer.CategoryResponse
+import com.example.lastmiledelivery.data.models.customer.ClearCartRequest
+import com.example.lastmiledelivery.data.models.customer.ClearCartResponse
+import com.example.lastmiledelivery.data.models.customer.CustomerData
+import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenResponse
+import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
+import com.example.lastmiledelivery.data.models.customer.GenericResponse
+import com.example.lastmiledelivery.data.models.customer.MenuResponse
+import com.example.lastmiledelivery.data.models.customer.OrderRequest
+import com.example.lastmiledelivery.data.models.customer.OrderResponse
+import com.google.gson.JsonElement
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import retrofit2.Call
+import retrofit2.Response
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.Multipart
+import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Part
+import retrofit2.http.Path
+import retrofit2.http.Query
+
+interface CustomerApiService {
+    @Multipart
+    @POST("api/signup") // Ensure this matches your Laravel API endpoint
+    suspend fun customerSignup(
+        @Part("name") name: RequestBody,
+        @Part("email") email: RequestBody,
+        @Part("phone_no") phoneNo: RequestBody,
+        @Part("password") password: RequestBody,
+        @Part("cnic") cnic: RequestBody,
+        @Part("address_type") addressType: RequestBody,
+        @Part("street") street: RequestBody,
+        @Part("city") city: RequestBody,
+        @Part("zip_code") zipCode: RequestBody?,
+        @Part("country") country: RequestBody,
+        @Part("latitude") latitude: RequestBody?,
+        @Part("longitude") longitude: RequestBody?,
+        @Part profile_picture: MultipartBody.Part?
+    ): Response<CustomerSignupResponse>
+
+    @GET("api/customers/{id}")
+    suspend fun getCustomerData(
+        @Path("id") id: Int
+    ): Response<CustomerData>
+
+    @GET("api/customer/main-screen/{customerId}")
+    suspend fun getCustomerMainScreen(@Path("customerId") customerId: Int): Response<List<CustomerMainScreenResponse>>
+
+    @GET("api/vendor/{vendorId}/shop/{shopId}/branch/{branchId}/categories")
+    suspend fun getCategories(
+        @Path("vendorId") vendorId: Int,
+        @Path("shopId") shopId: Int,
+        @Path("branchId") branchId: Int
+    ): Response<List<CategoryResponse>>
+
+
+    @GET("api/vendor/{vendorId}/shop/{shopId}/branch/{branchId}/menu")
+    suspend fun getVendorMenu(
+        @Path("vendorId") vendorId: Int,
+        @Path("shopId") shopId: Int,
+        @Path("branchId") branchId: Int
+    ): Response<JsonElement>   // ✅ Change to `Any` to handle both cases dynamically
+
+
+    @Multipart
+    @POST("api/customers/{id}")
+    suspend fun updateCustomer(
+        @Path("id") customerId: Int,
+        @Part("name") name: RequestBody?,
+        @Part("email") email: RequestBody?,
+        @Part("phone_no") phoneNo: RequestBody?,
+        @Part("password") password: RequestBody?,
+        @Part("cnic") cnic: RequestBody?,
+        @Part profilePicture: MultipartBody.Part? // File Upload
+    ): Response<GenericResponse>
+
+
+    @GET("api/cart/details")
+    suspend fun getCartDetails(@Query("customer_id") customerId: Int): Response<CartResponse>
+
+
+    @POST("api/cart/add-item")
+    suspend fun addItemToCart(@Body request: AddToCartRequest): Response<AddCartResponse>
+
+    @POST("api/customer/place-order")
+    suspend fun placeOrder(@Body orderRequest: OrderRequest): Response<OrderResponse>
+
+    @GET("api/customers/{customerId}/addresses")
+    suspend fun getCustomerAddresses(@Path("customerId") customerId: Int): Response<AddressResponse>
+
+    @POST("api/cart/clear")
+    suspend fun clearCart(@Body request: ClearCartRequest): Response<ClearCartResponse>
+}
