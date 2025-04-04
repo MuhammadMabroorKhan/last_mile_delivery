@@ -40,7 +40,7 @@ fun RoleSelectionScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        val roles = listOf("Customer", "Vendor", "Delivery Boy")
+        val roles = listOf("Customer", "Vendor", "Organization")
 
         roles.forEach { role ->
             Row(
@@ -66,7 +66,7 @@ fun RoleSelectionScreen(navController: NavController) {
                     when (role) {
                         "Customer" -> navController.navigate("customer_signup")
                         "Vendor" -> navController.navigate("vendor_signup")
-                        "Delivery Boy" -> navController.navigate("deliveryboy_signup")
+                        "Organization" -> navController.navigate("Organization_signup")
                     }
                 }
             },

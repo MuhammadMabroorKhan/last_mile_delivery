@@ -117,7 +117,7 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 
     // Jetpack Compose Testing
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+//    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 
     // Debugging Dependencies
     debugImplementation("androidx.compose.ui:ui-tooling")

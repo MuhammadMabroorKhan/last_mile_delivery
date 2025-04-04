@@ -31,7 +31,8 @@ import com.example.lastmiledelivery.ui.customer.EditPersonalInfoScreen
 import com.example.lastmiledelivery.ui.customer.OrderConfirmationScreen
 import com.example.lastmiledelivery.ui.customer.ShopDetailsScreen
 import com.example.lastmiledelivery.ui.deliveryboy.DeliveryBoyMainScreen
-import com.example.lastmiledelivery.ui.deliveryboy.DeliveryBoySignup
+import com.example.lastmiledelivery.ui.organization.OrganizationMainScreen
+import com.example.lastmiledelivery.ui.organization.OrganizationSignup
 import com.example.lastmiledelivery.ui.vendor.API_Vendor.API_VendorItemsScreen
 import com.example.lastmiledelivery.ui.vendor.IN_APP.IN_APP_VendorItemsScreen
 import com.example.lastmiledelivery.ui.vendor.VendorBranchesScreen
@@ -69,11 +70,13 @@ fun AppNavigation() {
         composable("customer") { CustomerMainScreen(navController) }
         composable("deliveryboy") { DeliveryBoyMainScreen() }
         composable("vendor") { VendorMainScreenWrapper(navController) }
+        composable("Organization") { OrganizationMainScreen(navController) }
 
         //SignUP Routes
         composable("role_selection") { RoleSelectionScreen(navController) }
         composable("vendor_signup") { VendorSignupScreen(navController = navController) }
-        composable("deliveryboy_signup") { DeliveryBoySignup() }
+        composable("Organization_signup") { OrganizationSignup(navController = navController) }
+
         composable("customer_signup") { CustomerSignupScreen(navController = navController) }
         //Map Picker for Signup
         composable("map_picker") {
