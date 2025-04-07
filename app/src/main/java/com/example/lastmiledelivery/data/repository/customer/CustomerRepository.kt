@@ -11,10 +11,12 @@ import com.example.lastmiledelivery.data.models.customer.ClearCartRequest
 import com.example.lastmiledelivery.data.models.customer.ClearCartResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerData
 import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenResponse
+import com.example.lastmiledelivery.data.models.customer.CustomerOrdersResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
 import com.example.lastmiledelivery.data.models.customer.GenericResponse
 import com.example.lastmiledelivery.data.models.customer.MenuItem
 import com.example.lastmiledelivery.data.models.customer.MenuResponse
+import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
 import com.example.lastmiledelivery.data.models.customer.OrderResponse
 import com.example.lastmiledelivery.data.remote.api.CustomerApiService
@@ -244,6 +246,39 @@ suspend fun getCartDetails(customerId: Int): Result<CartResponse?> {
             }
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    suspend fun getCustomerOrders(customerId: Int): Response<CustomerOrdersResponse> {
+        return api.getCustomerOrders(customerId)
+    }
+
+    suspend fun getOrderDetails(orderId: Int): OrderDetailsResponse? {
+        try {
+            val response = api.getOrderDetails(orderId) // Retrofit call to your API
+            if (response.isSuccessful) {
+                return response.body() // Return the response body if successful
+            } else {
+                // Handle the error case, return default values for missing data
+                return OrderDetailsResponse(
+                    message = "Order not found or no details available",
+                    order_id = null, // or provide a default value if you want
+                    order_date = null, // or provide a default value if you want
+                    order_status = null, // or provide a default value if you want
+                    order_total_amount = null, // or provide a default value if you want
+                    suborders = emptyList() // or null, based on your design
+                )
+            }
+        } catch (e: Exception) {
+            // Handle any network or conversion errors and return default values
+            return OrderDetailsResponse(
+                message = "An error occurred: ${e.message}",
+                order_id = null,
+                order_date = null,
+                order_status = null,
+                order_total_amount = null,
+                suborders = emptyList()
+            )
         }
     }
 }

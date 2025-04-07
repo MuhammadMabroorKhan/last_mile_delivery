@@ -5,6 +5,9 @@ import android.app.Application
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.State
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -24,6 +27,8 @@ import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenRespo
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
 import com.example.lastmiledelivery.data.models.customer.GenericResponse
 import com.example.lastmiledelivery.data.models.customer.MenuResponse
+import com.example.lastmiledelivery.data.models.customer.Order
+import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
 import com.example.lastmiledelivery.data.repository.customer.CustomerRepository
 import com.example.lastmiledelivery.ui.common.uriToFile
@@ -380,7 +385,43 @@ fun updateCustomer(
         }
     }
 
+    var orderState by mutableStateOf<OrderUiState>(OrderUiState.Loading)
+        private set
 
+    fun fetchCustomerOrders(customerId: Int) {
+        viewModelScope.launch {
+            try {
+                val response = repository.getCustomerOrders(customerId)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val orders = response.body()?.data ?: emptyList()
+                    orderState = OrderUiState.Success(orders)
+                } else {
+                    orderState = OrderUiState.Error("No orders found or failed to fetch orders")
+                }
+
+            } catch (e: Exception) {
+                orderState = OrderUiState.Error(e.localizedMessage ?: "Unknown error")
+            }
+        }
+    }
+
+    private val _orderDetails = mutableStateOf<OrderDetailsResponse?>(null)
+    val orderDetails: State<OrderDetailsResponse?> = _orderDetails
+
+    // Function to fetch order details
+    fun fetchOrderDetails(orderId: Int) {
+        viewModelScope.launch {
+            // Call the repository to get order details
+            _orderDetails.value = repository.getOrderDetails(orderId)
+        }
+    }
+
+}
+
+sealed class OrderUiState {
+    object Loading : OrderUiState()
+    data class Success(val orders: List<Order>) : OrderUiState()
+    data class Error(val message: String) : OrderUiState()
 }
 
 sealed class CartState {

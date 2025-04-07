@@ -31,7 +31,9 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -456,6 +458,15 @@ fun DrawerContent(
             icon = Icons.Filled.Home,
             navController = navController,
             route = "customer",
+            drawerState = drawerState,
+            scope = scope
+        )
+
+        DrawerItem(
+            text = "Orders",
+            icon = Icons.Filled.ReceiptLong,
+            navController = navController,
+            route = "customerOrders",
             drawerState = drawerState,
             scope = scope
         )

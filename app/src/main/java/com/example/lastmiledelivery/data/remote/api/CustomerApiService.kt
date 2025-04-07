@@ -9,9 +9,11 @@ import com.example.lastmiledelivery.data.models.customer.ClearCartRequest
 import com.example.lastmiledelivery.data.models.customer.ClearCartResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerData
 import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenResponse
+import com.example.lastmiledelivery.data.models.customer.CustomerOrdersResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
 import com.example.lastmiledelivery.data.models.customer.GenericResponse
 import com.example.lastmiledelivery.data.models.customer.MenuResponse
+import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
 import com.example.lastmiledelivery.data.models.customer.OrderResponse
 import com.google.gson.JsonElement
@@ -99,4 +101,14 @@ interface CustomerApiService {
 
     @POST("api/cart/clear")
     suspend fun clearCart(@Body request: ClearCartRequest): Response<ClearCartResponse>
+
+        @GET("api/customers/{id}/orders")
+        suspend fun getCustomerOrders(@Path("id") customerId: Int): Response<CustomerOrdersResponse>
+
+    @GET("api/orders/{orderId}/details")
+    suspend fun getOrderDetails(
+        @Path("orderId") orderId: Int
+    ): Response<OrderDetailsResponse>  // Return type wrapped in Retrofit's Response
+
+
 }

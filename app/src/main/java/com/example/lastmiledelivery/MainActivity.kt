@@ -25,10 +25,12 @@ import com.example.lastmiledelivery.ui.common.RoleSelectionScreen
 import com.example.lastmiledelivery.ui.common.SplashScreen
 import com.example.lastmiledelivery.ui.customer.CartScreen
 import com.example.lastmiledelivery.ui.customer.CustomerMainScreen
+import com.example.lastmiledelivery.ui.customer.CustomerOrders
 import com.example.lastmiledelivery.ui.customer.CustomerProfileScreen
 import com.example.lastmiledelivery.ui.customer.CustomerSignupScreen
 import com.example.lastmiledelivery.ui.customer.EditPersonalInfoScreen
 import com.example.lastmiledelivery.ui.customer.OrderConfirmationScreen
+import com.example.lastmiledelivery.ui.customer.OrderDetailScreen
 import com.example.lastmiledelivery.ui.customer.ShopDetailsScreen
 import com.example.lastmiledelivery.ui.deliveryboy.DeliveryBoyMainScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationMainScreen
@@ -235,6 +237,25 @@ fun AppNavigation() {
 
             OrderConfirmationScreen(navController,userId, customerId, cartJson, customerJson)
         }
+
+
+        composable("customerOrders") { CustomerOrders(navController) }
+        composable(
+            route = "orderDetail/{orderId}/{customerId}/{addressId}",
+            arguments = listOf(
+                navArgument("orderId") { type = NavType.IntType },
+                navArgument("customerId") { type = NavType.IntType },
+                navArgument("addressId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getInt("orderId") ?: -1
+            val customerId = backStackEntry.arguments?.getInt("customerId") ?: -1
+            val addressId = backStackEntry.arguments?.getInt("addressId") ?: -1
+            if (orderId != -1 && customerId != -1 && addressId != -1) {
+                OrderDetailScreen(navController=navController,orderId = orderId, customerId = customerId, addressId = addressId)
+            }
+        }
+
 
 //DeliveryBoy  Functionality ROUTES
 
