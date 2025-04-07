@@ -32,6 +32,7 @@ import com.example.lastmiledelivery.ui.customer.EditPersonalInfoScreen
 import com.example.lastmiledelivery.ui.customer.OrderConfirmationScreen
 import com.example.lastmiledelivery.ui.customer.OrderDetailScreen
 import com.example.lastmiledelivery.ui.customer.ShopDetailsScreen
+import com.example.lastmiledelivery.ui.customer.TrackOrderScreen
 import com.example.lastmiledelivery.ui.deliveryboy.DeliveryBoyMainScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationMainScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationSignup
@@ -254,6 +255,25 @@ fun AppNavigation() {
             if (orderId != -1 && customerId != -1 && addressId != -1) {
                 OrderDetailScreen(navController=navController,orderId = orderId, customerId = customerId, addressId = addressId)
             }
+        }
+
+        composable(
+            "track_order/{suborderId}/{customerId}/{addressId}",
+            arguments = listOf(
+                navArgument("suborderId") { type = NavType.IntType },
+                navArgument("customerId") { type = NavType.IntType },
+                navArgument("addressId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val suborderId = backStackEntry.arguments?.getInt("suborderId") ?: 0
+            val customerId = backStackEntry.arguments?.getInt("customerId") ?: 0
+            val addressId = backStackEntry.arguments?.getInt("addressId") ?: 0
+            TrackOrderScreen(
+                suborderId = suborderId,
+                customerId = customerId,
+                addressId = addressId,
+                navController = navController
+            )
         }
 
 
