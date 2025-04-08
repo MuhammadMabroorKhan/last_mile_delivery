@@ -1,5 +1,6 @@
 package com.example.lastmiledelivery.data.remote.api
 
+import com.example.lastmiledelivery.data.models.StatusesResponse
 import com.example.lastmiledelivery.data.models.customer.AddCartResponse
 import com.example.lastmiledelivery.data.models.customer.AddToCartRequest
 import com.example.lastmiledelivery.data.models.customer.AddressResponse
@@ -16,6 +17,7 @@ import com.example.lastmiledelivery.data.models.customer.MenuResponse
 import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
 import com.example.lastmiledelivery.data.models.customer.OrderResponse
+import com.example.lastmiledelivery.data.models.customer.RouteInfoResponse
 import com.google.gson.JsonElement
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -110,5 +112,9 @@ interface CustomerApiService {
         @Path("orderId") orderId: Int
     ): Response<OrderDetailsResponse>  // Return type wrapped in Retrofit's Response
 
+    @GET("api/suborders/{id}/route-info")
+    suspend fun getRouteInfo(@Path("id") suborderId: Int): Response<RouteInfoResponse>
 
+    @GET("api/statuses")
+    suspend fun getStatuses(): StatusesResponse
 }

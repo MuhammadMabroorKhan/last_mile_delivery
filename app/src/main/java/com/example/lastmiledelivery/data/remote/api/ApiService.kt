@@ -14,5 +14,7 @@ interface ApiService {
 
         @GET("api/shopcategories")
         suspend fun getShopCategories(): Response<List<ShopCategoryResponse>>
+
+
 }
 

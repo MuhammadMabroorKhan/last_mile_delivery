@@ -10,6 +10,7 @@ import com.example.lastmiledelivery.data.repository.AuthRepository
 import com.example.lastmiledelivery.data.repository.admin.VendorApprovalRepository
 import com.example.lastmiledelivery.data.repository.common.CitiesRepository
 import com.example.lastmiledelivery.data.repository.common.ShopCategoryRepository
+import com.example.lastmiledelivery.data.repository.common.StatusRepository
 import com.example.lastmiledelivery.data.repository.vendor.In_APPVendor.IN_APPVENDORItemRepository
 import com.example.lastmiledelivery.data.repository.vendor.VendorRepository
 import com.example.lastmiledelivery.data.repository.vendor.VendorRepositoryShops
@@ -160,6 +161,11 @@ object AppModule {
 
 
 
+    @Provides
+    @Singleton
+    fun provideStatusRepository(apiService: CustomerApiService): StatusRepository {
+        return StatusRepository(apiService)
+    }
 
 
 }

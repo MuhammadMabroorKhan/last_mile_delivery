@@ -4,8 +4,11 @@ package com.example.lastmiledelivery.data.repository.vendor
 import android.util.Log
 import com.example.lastmiledelivery.data.models.customer.ApiException
 import com.example.lastmiledelivery.data.models.vendor.Branch
+import com.example.lastmiledelivery.data.models.vendor.VendorOrdersResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorSignupResponse
+import com.example.lastmiledelivery.data.models.vendor.VendorSuborderDetailInfo
+import com.example.lastmiledelivery.data.models.vendor.VendorSuborderDetailResponse
 import com.example.lastmiledelivery.data.remote.api.VendorApiService
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -92,7 +95,35 @@ class VendorRepository @Inject constructor(private val vendorApiService: VendorA
     }
 
 
+//get orders
+    suspend fun getVendorOrders(vendorId: Int): VendorOrdersResponse? {
+        return try {
+            val response = vendorApiService.getVendorOrders(vendorId)
+            if (response.isSuccessful) response.body() else null
+        } catch (e: Exception) {
+            null
+        }
+    }
 
+//get SUborder detail with item detail
+// Assuming you're using a ViewModel or repository for API calls
+suspend fun getSuborderDetails(
+    vendorId: Int,
+    shopId: Int,
+    branchId: Int,
+    suborderId: Int
+): VendorSuborderDetailResponse? {
+    // Call the API
+    val response = vendorApiService.getSuborderDetails(vendorId, shopId, branchId, suborderId)
+
+    if (response.isSuccessful) {
+        // Return the entire response body, which is of type VendorSuborderDetailResponse
+        return response.body()
+    } else {
+        // Handle the error case (e.g., logging, showing error message)
+        return null
+    }
+}
 
 
 

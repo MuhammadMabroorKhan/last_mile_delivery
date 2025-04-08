@@ -38,9 +38,11 @@ import com.example.lastmiledelivery.ui.organization.OrganizationMainScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationSignup
 import com.example.lastmiledelivery.ui.vendor.API_Vendor.API_VendorItemsScreen
 import com.example.lastmiledelivery.ui.vendor.IN_APP.IN_APP_VendorItemsScreen
+import com.example.lastmiledelivery.ui.vendor.SuborderDetailsScreen
 import com.example.lastmiledelivery.ui.vendor.VendorBranchesScreen
 //import com.example.lastmiledelivery.ui.vendor.VendorMainScreen
 import com.example.lastmiledelivery.ui.vendor.VendorMainScreenWrapper
+import com.example.lastmiledelivery.ui.vendor.VendorOrdersScreen
 import com.example.lastmiledelivery.ui.vendor.VendorShopsScreen
 import com.example.lastmiledelivery.ui.vendor.VendorSignupScreen
 import com.example.lastmiledelivery.viewmodels.AuthViewModel
@@ -146,7 +148,28 @@ fun AppNavigation() {
             )
         }
 
-
+        composable(
+            "vendororderscreen/{vendorId}",
+            arguments = listOf(navArgument("vendorId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val vendorId = backStackEntry.arguments?.getInt("vendorId") ?: 0
+            VendorOrdersScreen(vendorId, navController = navController)
+        }
+        composable(
+            "vendor_suborder_details/{vendorId}/{shopId}/{branchId}/{suborderId}",
+            arguments = listOf(
+                navArgument("vendorId") { type = NavType.IntType },
+                navArgument("shopId") { type = NavType.IntType },
+                navArgument("branchId") { type = NavType.IntType },
+                navArgument("suborderId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val vendorId = backStackEntry.arguments?.getInt("vendorId") ?: 0
+            val shopId = backStackEntry.arguments?.getInt("shopId") ?: 0
+            val branchId = backStackEntry.arguments?.getInt("branchId") ?: 0
+            val suborderId = backStackEntry.arguments?.getInt("suborderId") ?: 0
+            SuborderDetailsScreen(vendorId, shopId, branchId, suborderId,navController=navController)
+        }
         //API Vendor
         composable(
             "API_VendorItemsScreen/{shopcategory_name}/{shopcategory_ID}/{vendorId}/{branchId}/{shopId}/{approvalStatus}",
@@ -203,6 +226,9 @@ fun AppNavigation() {
                 approvalStatus,
                 onBackPressed = { navController.popBackStack() })
         }
+
+
+
 
 
 //Customer  Functionality ROUTES

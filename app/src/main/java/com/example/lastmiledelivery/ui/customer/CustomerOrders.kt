@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -41,6 +42,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,7 +72,25 @@ import com.example.lastmiledelivery.data.models.customer.SubOrders
 import com.example.lastmiledelivery.viewmodels.AuthViewModel
 import com.example.lastmiledelivery.viewmodels.customer.CustomerViewModel
 import com.example.lastmiledelivery.viewmodels.customer.OrderUiState
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.Polyline
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.example.lastmiledelivery.viewmodels.common.StatusViewModel
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.GET
+import retrofit2.http.Path
+import retrofit2.http.Query
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -101,8 +121,6 @@ fun CustomerOrders(
     }
     // Observe customer data and error messages
     val customer = customerViewModel.customerState
-
-
 
 
 
@@ -387,7 +405,6 @@ fun ItemCard(item: Item) {
 }
 
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackOrderScreen(
@@ -397,12 +414,21 @@ fun TrackOrderScreen(
     navController: NavHostController,
     viewModel: CustomerViewModel = hiltViewModel()
 ) {
-    // Fetch track order details using suborderId, customerId, and addressId
-//    LaunchedEffect(suborderId) {
-//        viewModel.fetchTrackOrderDetails(suborderId, customerId, addressId)
-//    }
-//
-//    val trackOrderDetailsState = viewModel.trackOrderDetails.value
+    LaunchedEffect(Unit) {
+        viewModel.getRouteInfo(suborderId)
+    }
+
+    val routeInfo by remember { derivedStateOf { viewModel.routeInfo } }
+    val isLoading by remember { derivedStateOf { viewModel.isLoading } }
+
+    val statusViewModel: StatusViewModel = hiltViewModel()
+
+    LaunchedEffect(Unit) {
+        statusViewModel.loadStatuses()
+    }
+
+    val statuses = statusViewModel.statuses.value
+    val loading = statusViewModel.isLoading.value
 
     Scaffold(
         topBar = {
@@ -423,30 +449,120 @@ fun TrackOrderScreen(
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.padding(padding)) {
-//            // Show loading or data
-//            if (trackOrderDetailsState == null) {
-//                // Loading state
-//                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-//            } else {
-//                Column(
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .padding(16.dp)
-//                ) {
-//                    Text("Track Order Details", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-//
-//                    // Display the track order details if available
-//                    trackOrderDetailsState?.let { details ->
-//                        Text("SubOrder ID: ${details.suborder_id}")
-//                        Text("Status: ${details.status}")
-//                        Text("Estimated Delivery Time: ${details.estimated_delivery_time}")
-//                        Text("Current Location: ${details.current_location}")
-//                        // You can add more details here based on your requirements
-//                    }
-//                }
-//            }
-            Text("Order Tracking ")
+
+        Box(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
+            when {
+                isLoading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+
+                routeInfo != null -> {
+                    val pickup = routeInfo!!.data?.pickup_location
+                    val drop = routeInfo!!.data?.drop_location
+
+                    if (pickup != null && drop != null) {
+                        val pickupLatLng = LatLng(pickup.latitude, pickup.longitude)
+                        val dropLatLng = LatLng(drop.latitude, drop.longitude)
+
+                        val cameraPositionState = rememberCameraPositionState {
+                            position = CameraPosition.fromLatLngZoom(pickupLatLng, 18f)
+                        }
+
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            GoogleMap(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(300.dp),
+                                cameraPositionState = cameraPositionState
+                            ) {
+                                Marker(
+                                    state = MarkerState(position = pickupLatLng),
+                                    title = "Pickup Location"
+                                )
+                                Marker(
+                                    state = MarkerState(position = dropLatLng),
+                                    title = "Drop Location"
+                                )
+                                Polyline(
+                                    points = listOf(pickupLatLng, dropLatLng),
+                                    color = Color.Blue,
+                                    width = 5f
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+//                            Column(modifier = Modifier.padding(16.dp)) {
+//                                Text("Pickup: ${pickup.latitude}, ${pickup.longitude}")
+//                                Text("Drop: ${drop.latitude}, ${drop.longitude}")
+//                                Text("Order Date: ${routeInfo!!.data?.order_date}")
+//                                Text("Estimated Delivery Time: ${routeInfo!!.data?.estimated_delivery_time}")
+//                                Text("Delivery Time: ${routeInfo!!.data?.delivery_time}")
+//                            }
+                        }
+                    } else {
+                        Text("Location data not available", modifier = Modifier.align(Alignment.Center))
+                    }
+                }
+
+                else -> {
+                    Text("No tracking info available", modifier = Modifier.align(Alignment.Center))
+                }
+            }
+
+            if (statuses != null) {
+                val currentStatus = "picked_up" // You can dynamically set this later
+                val statusList = statuses.suborderStatuses.values.toList()
+                val currentIndex = statusList.indexOf(currentStatus)
+
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Suborder Statuses:",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    statusList.forEachIndexed { index, status ->
+                        val color = when {
+                            index < currentIndex -> Color.Gray              // Past
+                            index == currentIndex -> Color.Blue             // Current
+                            else -> Color(0xFF81C784)                       // Upcoming
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .clip(CircleShape)
+                                    .background(color)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = status.replace("_", " ").replaceFirstChar { it.uppercase() },
+                                color = color,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
+                }
+            }
+
         }
     }
 }
+

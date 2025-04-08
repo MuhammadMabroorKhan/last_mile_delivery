@@ -1,6 +1,7 @@
 package com.example.lastmiledelivery.data.repository.customer
 
 import android.util.Log
+import com.example.lastmiledelivery.data.models.StatusesResponse
 import com.example.lastmiledelivery.data.models.customer.AddCartResponse
 import com.example.lastmiledelivery.data.models.customer.AddToCartRequest
 import com.example.lastmiledelivery.data.models.customer.Address
@@ -19,6 +20,7 @@ import com.example.lastmiledelivery.data.models.customer.MenuResponse
 import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
 import com.example.lastmiledelivery.data.models.customer.OrderResponse
+import com.example.lastmiledelivery.data.models.customer.RouteInfoResponse
 import com.example.lastmiledelivery.data.remote.api.CustomerApiService
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -281,6 +283,18 @@ suspend fun getCartDetails(customerId: Int): Result<CartResponse?> {
             )
         }
     }
+
+
+    suspend fun fetchRouteInfo(suborderId: Int): RouteInfoResponse? {
+        return try {
+            val response = api.getRouteInfo(suborderId)
+            if (response.isSuccessful) response.body() else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+
 }
 
 

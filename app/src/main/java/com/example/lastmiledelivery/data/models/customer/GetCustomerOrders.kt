@@ -73,3 +73,26 @@ data class Item(
 //    val key: String?,
 //    val value: String?
 //)
+
+
+
+// ROUTES INFORMATION
+data class RouteInfoResponse(
+    val message: String,
+    val data: RouteData?
+)
+
+data class RouteData(
+    val pickup_location: LocationData,
+    val drop_location: LocationData,
+    val order_date: String?,
+    val estimated_delivery_time: String?,
+    val delivery_time: String?
+)
+
+data class LocationData(
+    val latitude: Double,
+    val longitude: Double
+)
+
+

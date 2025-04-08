@@ -13,8 +13,10 @@ import com.example.lastmiledelivery.data.models.vendor.ShopResponse
 import com.example.lastmiledelivery.data.models.vendor.ToggleBranchResponse
 import com.example.lastmiledelivery.data.models.vendor.UpdateBranchResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorItemResponse
+import com.example.lastmiledelivery.data.models.vendor.VendorOrdersResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorSignupResponse
+import com.example.lastmiledelivery.data.models.vendor.VendorSuborderDetailResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -143,4 +145,18 @@ interface VendorApiService {
 
     @PUT("api/Vendor/branches/{branchId}/togglestatus")
     suspend fun toggleBranchStatus(@Path("branchId") branchId: Int): Response<ToggleBranchResponse>
+
+    //get orders
+    @GET("api/vendor/{vendorId}/suborders")
+    suspend fun getVendorOrders(
+        @Path("vendorId") vendorId: Int
+    ): Response<VendorOrdersResponse>
+
+    @GET("api/vendor/ordered-items/{vendorId}/{shopId}/{branchId}/{suborderId}")
+    suspend fun getSuborderDetails(
+        @Path("vendorId") vendorId: Int,
+        @Path("shopId") shopId: Int,
+        @Path("branchId") branchId: Int,
+        @Path("suborderId") suborderId: Int
+    ): Response<VendorSuborderDetailResponse>
 }

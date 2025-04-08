@@ -30,6 +30,7 @@ import com.example.lastmiledelivery.data.models.customer.MenuResponse
 import com.example.lastmiledelivery.data.models.customer.Order
 import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
+import com.example.lastmiledelivery.data.models.customer.RouteInfoResponse
 import com.example.lastmiledelivery.data.repository.customer.CustomerRepository
 import com.example.lastmiledelivery.ui.common.uriToFile
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -415,6 +416,24 @@ fun updateCustomer(
             _orderDetails.value = repository.getOrderDetails(orderId)
         }
     }
+
+
+    var routeInfo by mutableStateOf<RouteInfoResponse?>(null)
+        private set
+
+    var isLoading by mutableStateOf(false)
+        private set
+
+    fun getRouteInfo(suborderId: Int) {
+        viewModelScope.launch {
+            isLoading = true
+            routeInfo = repository.fetchRouteInfo(suborderId)
+            isLoading = false
+        }
+    }
+
+
+
 
 }
 

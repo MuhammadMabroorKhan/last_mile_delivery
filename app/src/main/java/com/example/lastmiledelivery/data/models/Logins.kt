@@ -32,3 +32,14 @@ data class Cities(
     val id:Int,
     val name:String
 )
+
+
+
+//Order and suborders Statusses
+
+data class StatusesResponse(
+    val orderStatuses: Map<String, String>,
+    val suborderStatuses: Map<String, String>,
+    val orderPaymentStatuses: Map<String, String>,
+    val suborderPaymentStatuses: Map<String, String>
+)

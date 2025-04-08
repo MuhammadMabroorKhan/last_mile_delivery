@@ -1,4 +1,5 @@
 package com.example.lastmiledelivery.ui.vendor
+
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -152,86 +154,7 @@ fun VendorMainScreenWrapper(navController: NavHostController) {
     }
 }
 
-//@Composable
-//fun DrawerContent(navController: NavHostController, drawerState: DrawerState, scope: CoroutineScope, authViewModel: AuthViewModel = hiltViewModel(),vendorViewModel: VendorViewModel= hiltViewModel()) {
-////    val viewModel: VendorViewModel = hiltViewModel()
-//    val vendorId by vendorViewModel.vendorId.observeAsState()
-//
-//    Column(
-//        modifier = Modifier
-//            .fillMaxHeight()
-//            .width(250.dp)
-//            .background(Color.White)
-//            .padding(16.dp)
-//    ) {
-//        // Header
-//        Text(
-//            text = "Menu",
-//            style = MaterialTheme.typography.headlineMedium,
-//            modifier = Modifier.padding(bottom = 16.dp)
-//        )
-//
-//        // Navigation Items
-//        DrawerItem(
-//            text = "Home",
-//            icon = Icons.Filled.Home,
-//            navController = navController,
-//            route = "vendor",
-//            drawerState = drawerState,
-//            scope = scope
-//        )
-//
-//        DrawerItem(
-//            text = "Shops",
-//            icon = Icons.Filled.ShoppingCart,
-//            navController = navController,
-//            route = "shopscreen/${vendorId}", // Pass vendorId dynamically
-//            drawerState = drawerState,
-//            scope = scope
-//        )
-//
-//        Spacer(modifier = Modifier.height(16.dp))
-//
-//        // ✅ Separate Logout Button
-//        Button(
-//            onClick = {
-//                authViewModel.logout() // Clear session
-//                navController.navigate("login") {
-//                    popUpTo("vendor") { inclusive = true }
-//                }
-//                scope.launch { drawerState.close() }
-//            },
-//            modifier = Modifier.fillMaxWidth()
-//        ) {
-//            Text("Logout")
-//        }
-//    }
-//}
-//
-//@Composable
-//fun DrawerItem(
-//    text: String,
-//    icon: ImageVector,
-//    navController: NavHostController,
-//    route: String,
-//    drawerState: DrawerState,
-//    scope: CoroutineScope
-//) {
-//    Row(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .clickable {
-//                navController.navigate(route)
-//                scope.launch { drawerState.close() }
-//            }
-//            .padding(12.dp),
-//        verticalAlignment = Alignment.CenterVertically
-//    ) {
-//        Icon(imageVector = icon, contentDescription = text, modifier = Modifier.size(24.dp))
-//        Spacer(modifier = Modifier.width(12.dp))
-//        Text(text = text, style = MaterialTheme.typography.bodyLarge)
-//    }
-//}
+
 
 @Composable
 fun DrawerContent(
@@ -278,6 +201,15 @@ fun DrawerContent(
             icon = Icons.Filled.ShoppingCart,
             navController = navController,
             route = "shopscreen/${vendorId}", // Dynamic vendor ID
+            drawerState = drawerState,
+            scope = scope
+        )
+
+        DrawerItem(
+            text = "Orders",
+            icon = Icons.Filled.ReceiptLong,
+            navController = navController,
+            route = "vendororderscreen/${vendorId}", // Dynamic vendor ID
             drawerState = drawerState,
             scope = scope
         )
