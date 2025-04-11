@@ -1,5 +1,6 @@
 package com.example.lastmiledelivery.data.models.organization
 
+import com.google.gson.annotations.SerializedName
 import okhttp3.MultipartBody
 
 data class DeliveryBoySignupResponse(
@@ -27,4 +28,33 @@ data class DeliveryBoySignupRequest(
     val latitude: Double?,
     val longitude: Double?,
     val organization_id: Int?
+)
+
+
+//GET DELIVERY BOYS
+data class DeliveryBoyResponse(
+    @SerializedName("delivery_boys")
+    val deliveryBoys: List<DeliveryBoy>
+)
+
+data class DeliveryBoy(
+    @SerializedName("delivery_boy_id") val id: Int,
+    val name: String,
+    val email: String,
+    val phone_no: String,
+    val cnic: String,
+    val profile_picture: String?,
+    val license_no: String,
+    val license_expiration_date: String,
+    val license_front: String?,
+    val license_back: String?,
+    val status: String,
+    val approval_status: String,
+    val address_type: String?,
+    val street: String?,
+    val city: String?,
+    val zip_code: String?,
+    val country: String?,
+    val latitude: Double?,
+    val longitude: Double?
 )

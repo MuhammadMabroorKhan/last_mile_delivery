@@ -79,20 +79,34 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.text.input.TextFieldValue
 import android.app.DatePickerDialog
 import android.widget.DatePicker
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.window.Dialog
+import coil.compose.AsyncImage
+import com.example.lastmiledelivery.data.models.organization.DeliveryBoy
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrganizationDeliveryBoySignupScreen(
     navController: NavHostController,
@@ -142,168 +156,224 @@ fun OrganizationDeliveryBoySignupScreen(
             }
     }
 
-    Column(modifier = Modifier
-        .padding(16.dp)
-        .verticalScroll(rememberScrollState())) {
-        Text("Delivery Boy Signup", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-   Text("Organization ID${organizationId}" , fontSize = 24.sp, fontWeight = FontWeight.Bold)
-
-        Spacer(Modifier.height(8.dp))
-//        ProfilePicturePicker(profilePictureUri) { profilePictureUri = it }
-//        PicturePicker(licenseFrontUri) { licenseFrontUri = it }
-//        PicturePicker(licenseBackUri) { licenseBackUri = it }
-        // Scrollable container
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(150.dp)
-                .padding(16.dp)
-                .horizontalScroll(rememberScrollState()) // Enable horizontal scroll
-        ) {
-            // Profile Picture Picker with label
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(end = 16.dp) // Padding between items
-            ) {
-                Text(text = "Profile Picture", style = MaterialTheme.typography.bodySmall)
-                ProfilePicturePicker(profilePictureUri) { profilePictureUri = it }
-            }
-
-            // License Front Picker with label
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(end = 16.dp) // Padding between items
-            ) {
-                Text(text = "License Front", style = MaterialTheme.typography.bodySmall)
-                PicturePicker(licenseFrontUri) { licenseFrontUri = it }
-            }
-
-            // License Back Picker with label
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(end = 16.dp) // Padding between items
-            ) {
-                Text(text = "License Back", style = MaterialTheme.typography.bodySmall)
-                PicturePicker(licenseBackUri) { licenseBackUri = it }
-            }
-        }
-
-        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
-        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") })
-        OutlinedTextField(value = phoneNo, onValueChange = { phoneNo = it }, label = { Text("Phone") })
-        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, visualTransformation = PasswordVisualTransformation())
-        OutlinedTextField(value = cnic, onValueChange = { cnic = it }, label = { Text("CNIC") })
-        OutlinedTextField(value = licenseNo, onValueChange = { licenseNo = it }, label = { Text("License No") })
-//        OutlinedTextField(value = licenseExpDate, onValueChange = { licenseExpDate = it }, label = { Text("License Expiry Date") })
-        val calendar = Calendar.getInstance()
-
-        val datePickerDialog = DatePickerDialog(
-            context,
-            { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
-                val selectedDate = Calendar.getInstance()
-                selectedDate.set(year, month, dayOfMonth)
-                val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                licenseExpDate = formatter.format(selectedDate.time)
-            },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
-        )
-
-        OutlinedTextField(
-            value = licenseExpDate,
-            onValueChange = { licenseExpDate = it },
-            label = { Text("License Expiry Date") },
-            trailingIcon = {
-                IconButton(onClick = { datePickerDialog.show() }) {
-                    Icon(
-                        imageVector = Icons.Default.DateRange, // Use default icon
-                        contentDescription = "Select Date"
-                    )
-                }
-            },
-            readOnly = true,
-            modifier = Modifier.fillMaxWidth()
-        )
-        AddressTypeDropdown(addressType) { addressType = it }
-
-        OutlinedTextField(
-            value = street,
-            onValueChange = {},
-            label = { Text("Street Address") },
-            readOnly = true,
-            trailingIcon = {
-                IconButton(onClick = { navController.navigate("map_picker") }) {
-                    Icon(Icons.Default.LocationOn, contentDescription = "Pick Location")
-                }
-            }
-        )
-
-        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            OutlinedTextField(value = city, onValueChange = {}, label = { Text("City") }, readOnly = true, modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.width(8.dp))
-            OutlinedTextField(value = zipCode, onValueChange = {}, label = { Text("Zip Code") }, readOnly = true, modifier = Modifier.weight(1f))
-        }
-
-      val profilePicturePart = profilePictureUri?.let { uri ->
-            val file = uriToFile(uri, context) // Convert URI to File
-            file?.let {
-                val requestFile = it.asRequestBody("image/*".toMediaTypeOrNull())
-                MultipartBody.Part.createFormData("profile_picture", it.name, requestFile)
-            }
-        }
-        val licenseBackPart = licenseBackUri?.let { uri ->
-            val file = uriToFile(uri, context) // Convert URI to File
-            file?.let {
-                val requestFile = it.asRequestBody("image/*".toMediaTypeOrNull())
-                MultipartBody.Part.createFormData("license_back", it.name, requestFile)
-            }
-        }
-        val licenseFrontPart = licenseFrontUri?.let { uri ->
-            val file = uriToFile(uri, context) // Convert URI to File
-            file?.let {
-                val requestFile = it.asRequestBody("image/*".toMediaTypeOrNull())
-                MultipartBody.Part.createFormData("license_front", it.name, requestFile)
-            }
-        }
-        Spacer(Modifier.height(10.dp))
-        Button(onClick = {
-            deliveryBoyViewModel.deliveryBoySignup(
-                name.toRequestBody(),
-                email.toRequestBody(),
-                phoneNo.toRequestBody(),
-                password.toRequestBody(),
-                cnic.toRequestBody(),
-                profilePicturePart!!,
-                licenseNo.toRequestBody(),
-                licenseExpDate.toRequestBody(),
-                licenseFrontPart!!,
-                licenseBackPart!!,
-                addressType.toRequestBody(),
-                street.toRequestBody(),
-                city.toRequestBody(),
-                zipCode.toRequestBody(),
-                "Pakistan".toRequestBody(),
-                latitude?.toString()?.toRequestBody(),
-                longitude?.toString()?.toRequestBody(),
-                organizationId.toRequestBody()
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Delivery Boy Register", color = Color.White) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = colorResource(id = R.color.pink)
+                )
             )
-        },
-            colors=ButtonDefaults.buttonColors(colorResource(id = R.color.pink))
-        ) {
-            Text("Register", color = Color.White)
         }
+    )
+    { paddingValues ->
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+        ) {
+//            Text("Delivery Boy Signup", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+//            Text("Organization ID${organizationId}", fontSize = 24.sp, fontWeight = FontWeight.Bold)
 
-        signupState?.let { result ->
-            when {
-                result.isSuccess -> {
-                    Toast.makeText(context, "Signup successful", Toast.LENGTH_SHORT).show()
-//                    navController.popBackStack()
-                    deliveryBoyViewModel.clearDeliveryBoySignupState()
+            Spacer(Modifier.height(8.dp))
+            // Scrollable container
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
+                    .padding(16.dp)
+                    .horizontalScroll(rememberScrollState()) // Enable horizontal scroll
+            ) {
+                // Profile Picture Picker with label
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(end = 16.dp) // Padding between items
+                ) {
+                    Text(text = "Profile Picture", style = MaterialTheme.typography.bodySmall)
+                    ProfilePicturePicker(profilePictureUri) { profilePictureUri = it }
                 }
-                result.isFailure -> {
-                    Toast.makeText(context, "Signup failed: ${result.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
-                    deliveryBoyViewModel.clearDeliveryBoySignupState()
+
+                // License Front Picker with label
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(end = 16.dp) // Padding between items
+                ) {
+                    Text(text = "License Front", style = MaterialTheme.typography.bodySmall)
+                    PicturePicker(licenseFrontUri) { licenseFrontUri = it }
+                }
+
+                // License Back Picker with label
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(end = 16.dp) // Padding between items
+                ) {
+                    Text(text = "License Back", style = MaterialTheme.typography.bodySmall)
+                    PicturePicker(licenseBackUri) { licenseBackUri = it }
+                }
+            }
+
+            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") })
+            OutlinedTextField(
+                value = phoneNo,
+                onValueChange = { phoneNo = it },
+                label = { Text("Phone") })
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                visualTransformation = PasswordVisualTransformation()
+            )
+            OutlinedTextField(value = cnic, onValueChange = { cnic = it }, label = { Text("CNIC") })
+            OutlinedTextField(
+                value = licenseNo,
+                onValueChange = { licenseNo = it },
+                label = { Text("License No") })
+//        OutlinedTextField(value = licenseExpDate, onValueChange = { licenseExpDate = it }, label = { Text("License Expiry Date") })
+            val calendar = Calendar.getInstance()
+
+            val datePickerDialog = DatePickerDialog(
+                context,
+                { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
+                    val selectedDate = Calendar.getInstance()
+                    selectedDate.set(year, month, dayOfMonth)
+                    val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                    licenseExpDate = formatter.format(selectedDate.time)
+                },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+            )
+
+            OutlinedTextField(
+                value = licenseExpDate,
+                onValueChange = { licenseExpDate = it },
+                label = { Text("License Expiry Date") },
+                trailingIcon = {
+                    IconButton(onClick = { datePickerDialog.show() }) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange, // Use default icon
+                            contentDescription = "Select Date"
+                        )
+                    }
+                },
+                readOnly = true
+            )
+            AddressTypeDropdown(addressType) { addressType = it }
+
+            OutlinedTextField(
+                value = street,
+                onValueChange = {},
+                label = { Text("Street Address") },
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(onClick = { navController.navigate("map_picker") }) {
+                        Icon(Icons.Default.LocationOn, contentDescription = "Pick Location")
+                    }
+                }
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = city,
+                    onValueChange = {},
+                    label = { Text("City") },
+                    readOnly = true,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                OutlinedTextField(
+                    value = zipCode,
+                    onValueChange = {},
+                    label = { Text("Zip Code") },
+                    readOnly = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            val profilePicturePart = profilePictureUri?.let { uri ->
+                val file = uriToFile(uri, context) // Convert URI to File
+                file?.let {
+                    val requestFile = it.asRequestBody("image/*".toMediaTypeOrNull())
+                    MultipartBody.Part.createFormData("profile_picture", it.name, requestFile)
+                }
+            }
+            val licenseBackPart = licenseBackUri?.let { uri ->
+                val file = uriToFile(uri, context) // Convert URI to File
+                file?.let {
+                    val requestFile = it.asRequestBody("image/*".toMediaTypeOrNull())
+                    MultipartBody.Part.createFormData("license_back", it.name, requestFile)
+                }
+            }
+            val licenseFrontPart = licenseFrontUri?.let { uri ->
+                val file = uriToFile(uri, context) // Convert URI to File
+                file?.let {
+                    val requestFile = it.asRequestBody("image/*".toMediaTypeOrNull())
+                    MultipartBody.Part.createFormData("license_front", it.name, requestFile)
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    deliveryBoyViewModel.deliveryBoySignup(
+                        name.toRequestBody(),
+                        email.toRequestBody(),
+                        phoneNo.toRequestBody(),
+                        password.toRequestBody(),
+                        cnic.toRequestBody(),
+                        profilePicturePart!!,
+                        licenseNo.toRequestBody(),
+                        licenseExpDate.toRequestBody(),
+                        licenseFrontPart!!,
+                        licenseBackPart!!,
+                        addressType.toRequestBody(),
+                        street.toRequestBody(),
+                        city.toRequestBody(),
+                        zipCode.toRequestBody(),
+                        "Pakistan".toRequestBody(),
+                        latitude?.toString()?.toRequestBody(),
+                        longitude?.toString()?.toRequestBody(),
+                        organizationId.toRequestBody()
+                    )
+                },
+                colors = ButtonDefaults.buttonColors(colorResource(id = R.color.pink))
+            ) {
+                Text("Register", color = Color.White)
+            }
+
+            signupState?.let { result ->
+                when {
+                    result.isSuccess -> {
+                        Toast.makeText(context, "Signup successful", Toast.LENGTH_SHORT).show()
+                        navController.popBackStack()
+                        deliveryBoyViewModel.clearDeliveryBoySignupState()
+                    }
+
+                    result.isFailure -> {
+                        Toast.makeText(
+                            context,
+                            "Signup failed: ${result.exceptionOrNull()?.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        deliveryBoyViewModel.clearDeliveryBoySignupState()
+                    }
                 }
             }
         }
@@ -311,6 +381,259 @@ fun OrganizationDeliveryBoySignupScreen(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DeliveryBoyListScreen(
+    orgId: Int,
+    navController: NavHostController,
+    viewModel: OrganizationViewModel = hiltViewModel() // or pass manually if not using Hilt
+) {
+    val deliveryBoys = viewModel.deliveryBoyList
+    val isLoading = viewModel.isLoading
+    val errorMessage = viewModel.errorMessage
+    // Fetch data when screen loads
+    LaunchedEffect(Unit) {
+        viewModel.fetchDeliveryBoys(orgId)
+    }
+    var selectedBoy by remember { mutableStateOf<DeliveryBoy?>(null) }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("DeliveryBoys", color = Color.White) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = colorResource(id = R.color.pink)
+                )
+            )
+        }
+    )
 
+    { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+        ) {
+            // 🔼 Button at the top
+            Button(
+                onClick = {
+                    navController.navigate("organization_deliveryBoys/${orgId}")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = colorResource(id = R.color.pink))
+            ) {
+                Text("Register DeliveryBoy", color = Color.White)
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 🔄 Main content area
+            when {
+                isLoading -> {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    }
+                }
+
+                errorMessage != null -> {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Text(
+                            text = errorMessage ?: "Unknown error",
+                            color = Color.Red,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                }
+
+                deliveryBoys.isEmpty() -> {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Text(
+                            text = "No delivery boys registered.",
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                }
+
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                    ) {
+                        items(deliveryBoys) { boy ->
+//                            DeliveryBoyItem(deliveryBoy = boy)
+                            DeliveryBoyItem(deliveryBoy = boy, onClick = {
+                                selectedBoy = boy
+                            })
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+                    }
+                }
+            }
+            selectedBoy?.let {
+                DeliveryBoyDetailDialog(
+                    deliveryBoy = it,
+                    onDismiss = { selectedBoy = null }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DeliveryBoyItem(deliveryBoy: DeliveryBoy, onClick: () -> Unit) {
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(16.dp)
+        ) {
+            AsyncImage(
+                model = deliveryBoy.profile_picture,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column {
+                Text(text = deliveryBoy.name, fontWeight = FontWeight.Bold)
+                Text(text = deliveryBoy.email, style = MaterialTheme.typography.bodySmall)
+                Text(text = "Status: ${deliveryBoy.status}")
+            }
+        }
+    }
+}
+
+@Composable
+fun DeliveryBoyDetailDialog(
+    deliveryBoy: DeliveryBoy,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = { onDismiss() }) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = Color.White,
+            tonalElevation = 8.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Delivery Boy Details",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    IconButton(onClick = { onDismiss() }) {
+                        Icon(Icons.Default.Close, contentDescription = "Close")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                AsyncImage(
+                    model = deliveryBoy.profile_picture,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                        .align(Alignment.CenterHorizontally)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("Name: ${deliveryBoy.name}")
+                Text("Email: ${deliveryBoy.email}")
+                Text("Phone: ${deliveryBoy.phone_no}")
+                Text("CNIC: ${deliveryBoy.cnic}")
+                Text("Status: ${deliveryBoy.status}")
+                Text("Approval: ${deliveryBoy.approval_status}")
+                Text("Address: ${deliveryBoy.street}, ${deliveryBoy.city}, ${deliveryBoy.zip_code}, ${deliveryBoy.country}")
+                Text("License #: ${deliveryBoy.license_no}")
+                Text("License Expiry: ${deliveryBoy.license_expiration_date}")
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    AsyncImage(
+                        model = deliveryBoy.license_front,
+                        contentDescription = "License Front",
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                    )
+                    AsyncImage(
+                        model = deliveryBoy.license_back,
+                        contentDescription = "License Back",
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
+    }
+}
+
+//@Composable
+//fun DeliveryBoyItem(deliveryBoy: DeliveryBoy) {
+//    Card(
+//        shape = RoundedCornerShape(12.dp),
+//        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+//        modifier = Modifier.fillMaxWidth()
+//    ) {
+//        Row(
+//            verticalAlignment = Alignment.CenterVertically,
+//            modifier = Modifier.padding(16.dp)
+//        ) {
+//            AsyncImage(
+//                model = deliveryBoy.profile_picture,
+//                contentDescription = null,
+//                modifier = Modifier
+//                    .size(64.dp)
+//                    .clip(CircleShape)
+//            )
+//
+//            Spacer(modifier = Modifier.width(16.dp))
+//
+//            Column {
+//                Text(text = deliveryBoy.name, fontWeight = FontWeight.Bold)
+//                Text(text = deliveryBoy.email, style = MaterialTheme.typography.bodySmall)
+//                Text(text = "Status: ${deliveryBoy.status}")
+//            }
+//        }
+//    }
+//}
 
 

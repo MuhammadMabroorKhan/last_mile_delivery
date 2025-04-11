@@ -34,6 +34,7 @@ import com.example.lastmiledelivery.ui.customer.OrderDetailScreen
 import com.example.lastmiledelivery.ui.customer.ShopDetailsScreen
 import com.example.lastmiledelivery.ui.customer.TrackOrderScreen
 import com.example.lastmiledelivery.ui.deliveryboy.DeliveryBoyMainScreen
+import com.example.lastmiledelivery.ui.organization.DeliveryBoyListScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationDeliveryBoySignupScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationMainScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationSignup
@@ -91,6 +92,12 @@ fun AppNavigation() {
 //            val organizationId = backStackEntry.arguments?.getString("organizationId") ?: ""
 //            OrganizationDeliveryBoySignupScreen(navController = navController, organizationId = organizationId)
 //        }
+
+        composable("deliveryboys/{orgId}") { backStackEntry ->
+            val orgId = backStackEntry.arguments?.getString("orgId")?.toIntOrNull() ?: 0
+            DeliveryBoyListScreen(orgId = orgId,navController=navController)
+        }
+
         composable(
             "organization_deliveryBoys/{organizationId}",
             arguments = listOf(
@@ -103,6 +110,9 @@ fun AppNavigation() {
                 organizationId = organizationId
             )
         }
+
+
+
 
         composable("customer_signup") { CustomerSignupScreen(navController = navController) }
         //Map Picker for Signup

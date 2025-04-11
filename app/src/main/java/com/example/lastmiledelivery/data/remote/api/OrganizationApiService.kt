@@ -1,6 +1,7 @@
 package com.example.lastmiledelivery.data.remote.api
 
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
+import com.example.lastmiledelivery.data.models.organization.DeliveryBoyResponse
 import com.example.lastmiledelivery.data.models.organization.DeliveryBoySignupResponse
 import com.example.lastmiledelivery.data.models.organization.OrganizationData
 import com.example.lastmiledelivery.data.models.organization.OrganizationSignupResponse
@@ -58,4 +59,9 @@ interface OrganizationApiService {
 
     @GET("api/organizations/{id}")
     suspend fun getOrganizationData(@Path("id") id: Int): Response<OrganizationData>
+
+    @GET("api/organizations/{organization_id}/deliveryboys")
+    suspend fun getDeliveryBoys(
+        @Path("organization_id") organizationId: Int
+    ): Response<DeliveryBoyResponse>
 }

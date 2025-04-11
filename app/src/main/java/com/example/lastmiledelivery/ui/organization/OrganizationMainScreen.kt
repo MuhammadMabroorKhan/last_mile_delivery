@@ -248,7 +248,8 @@ fun DrawerContent(
                 text = "DeliveryBoy",
                 icon = Icons.Filled.DeliveryDining,
                 navController = navController,
-                route = "organization_deliveryBoys/${organization.organizationId}",
+//                route = "organization_deliveryBoys/${organization.organizationId}",
+                route = "deliveryboys/${organization.organizationId}",
                 drawerState = drawerState,
                 scope = scope
             )

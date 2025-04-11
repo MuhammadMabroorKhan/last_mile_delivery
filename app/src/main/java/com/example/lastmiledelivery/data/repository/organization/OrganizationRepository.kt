@@ -2,6 +2,7 @@ package com.example.lastmiledelivery.data.repository.organization
 
 import com.example.lastmiledelivery.data.models.customer.ApiException
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
+import com.example.lastmiledelivery.data.models.organization.DeliveryBoy
 import com.example.lastmiledelivery.data.models.organization.DeliveryBoySignupResponse
 import com.example.lastmiledelivery.data.models.organization.OrganizationData
 import com.example.lastmiledelivery.data.models.organization.OrganizationSignupResponse
@@ -121,7 +122,18 @@ class OrganizationRepository @Inject constructor(private val api: OrganizationAp
         }
     }
 
-
+    suspend fun getDeliveryBoysByOrganization(orgId: Int): Result<List<DeliveryBoy>> {
+        return try {
+            val response = api.getDeliveryBoys(orgId)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!.deliveryBoys)
+            } else {
+                Result.success(emptyList()) // Return empty list safely
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
 
 }

@@ -11,6 +11,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
+import com.example.lastmiledelivery.data.models.organization.DeliveryBoy
 import com.example.lastmiledelivery.data.models.organization.DeliveryBoySignupResponse
 import com.example.lastmiledelivery.data.models.organization.OrganizationData
 import com.example.lastmiledelivery.data.models.organization.OrganizationSignupResponse
@@ -145,4 +146,32 @@ class OrganizationViewModel @Inject constructor(private val repository: Organiza
         val id = sharedPreferences.getInt("organization_id", -1)
         return if (id != -1) id else null
     }
+
+
+    var deliveryBoyList by mutableStateOf<List<DeliveryBoy>>(emptyList())
+        private set
+
+    var isLoading by mutableStateOf(false)
+        private set
+
+    var _errorMessage by mutableStateOf<String?>(null)
+        private set
+
+    fun fetchDeliveryBoys(orgId: Int) {
+        viewModelScope.launch {
+            isLoading = true
+            _errorMessage = null
+
+            val result = repository.getDeliveryBoysByOrganization(orgId)
+            if (result.isSuccess) {
+                deliveryBoyList = result.getOrNull() ?: emptyList()
+            } else {
+                _errorMessage = result.exceptionOrNull()?.localizedMessage ?: "Unknown error"
+            }
+
+            isLoading = false
+        }
+    }
+
+
 }
