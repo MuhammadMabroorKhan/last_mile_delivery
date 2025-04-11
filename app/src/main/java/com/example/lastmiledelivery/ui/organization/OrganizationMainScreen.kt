@@ -1,6 +1,7 @@
 package com.example.lastmiledelivery.ui.organization
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DeliveryDining
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
@@ -56,6 +58,7 @@ import com.example.lastmiledelivery.ui.organization.DrawerContent
 import com.example.lastmiledelivery.viewmodels.AuthViewModel
 import com.example.lastmiledelivery.viewmodels.common.ShopCategoryViewModel
 import com.example.lastmiledelivery.viewmodels.customer.CustomerViewModel
+import com.example.lastmiledelivery.viewmodels.organization.OrganizationViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -66,16 +69,16 @@ import kotlinx.coroutines.launch
 fun OrganizationMainScreen(
     navController: NavHostController,
     authViewModel: AuthViewModel = hiltViewModel(),
-    categoryViewModel: ShopCategoryViewModel = hiltViewModel(), // ✅ Multiple ViewModels can be used
-    customerViewModel: CustomerViewModel = hiltViewModel()
+    organizationViewModel: OrganizationViewModel = hiltViewModel()
 ) {
-
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val user = remember { authViewModel.getUserDetails() }
 
-    // Redirect to login if not logged in
+    val organization = organizationViewModel.organizationState
+    val error = organizationViewModel.errorMessage
+
     LaunchedEffect(Unit) {
         if (!authViewModel.isLoggedIn()) {
             navController.navigate("login") {
@@ -83,6 +86,18 @@ fun OrganizationMainScreen(
             }
         }
     }
+
+    // Fetch org data
+    LaunchedEffect(key1 = user.id) {
+        organizationViewModel.fetchOrganizationData(user.id)
+    }
+
+    // Log stored ID
+    LaunchedEffect(organizationViewModel.organizationState) {
+        val storedOrgId = organizationViewModel.getOrganizationId()
+        Log.d("OrganizationMainScreen", "Stored Organization ID: $storedOrgId")
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -95,15 +110,11 @@ fun OrganizationMainScreen(
                     title = { Text("Dashboard", color = Color.White) },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(
-                                Icons.Filled.Menu,
-                                contentDescription = "Menu",
-                                tint = Color.White // ✅ Set icon color to white
-                            )
+                            Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = Color.White)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = colorResource(id = R.color.pink)// ✅ Use a pink shade
+                        containerColor = colorResource(id = R.color.pink)
                     )
                 )
             }
@@ -113,34 +124,52 @@ fun OrganizationMainScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-
-
-                // Content Section (Scrollable)
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 8.dp) // Adjust padding to prevent overlap with header
+                        .padding(top = 8.dp)
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Welcome Organization",
+                        text = "Welcome Organization ${user.name}",
                         style = MaterialTheme.typography.headlineMedium,
-                        color = Color.Black, // Ensure text is visible on pink background
+                        color = Color.Black,
                         modifier = Modifier
                             .align(Alignment.Start)
                             .padding(start = 16.dp)
                     )
                     Text(
-                        text = "Welcome ${user.name}",
+                        text = "ID ${user.id}",
                         style = MaterialTheme.typography.headlineMedium,
-                        color = Color.Black, // Ensure text is visible on pink background
+                        color = Color.Black,
                         modifier = Modifier
                             .align(Alignment.Start)
                             .padding(start = 16.dp)
                     )
-
-
+                    Text(
+                        text = organization?.name ?: "",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = Color.Black,
+                        modifier = Modifier
+                            .align(Alignment.Start)
+                            .padding(start = 16.dp)
+                    )
+                    Text(
+                        text = " ${organization?.organizationId.toString()}" ?: "",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = Color.Black,
+                        modifier = Modifier
+                            .align(Alignment.Start)
+                            .padding(start = 16.dp)
+                    )
+                    error?.let {
+                        Text(
+                            text = it,
+                            color = Color.Red,
+                            modifier = Modifier.padding(top = 16.dp)
+                        )
+                    }
                 }
             }
         }
@@ -150,14 +179,40 @@ fun OrganizationMainScreen(
 
 
 
-
 @Composable
 fun DrawerContent(
     navController: NavHostController,
     drawerState: DrawerState,
     scope: CoroutineScope,
-    authViewModel: AuthViewModel = hiltViewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    organizationViewModel: OrganizationViewModel = hiltViewModel()
 ) {
+
+    val user = remember { authViewModel.getUserDetails() }
+
+    val organization = organizationViewModel.organizationState
+    val error = organizationViewModel.errorMessage
+
+    LaunchedEffect(Unit) {
+        if (!authViewModel.isLoggedIn()) {
+            navController.navigate("login") {
+                popUpTo("Organization") { inclusive = true }
+            }
+        }
+    }
+
+    // Fetch org data
+    LaunchedEffect(key1 = user.id) {
+        organizationViewModel.fetchOrganizationData(user.id)
+    }
+
+    // Log stored ID
+    LaunchedEffect(organizationViewModel.organizationState) {
+        val storedOrgId = organizationViewModel.getOrganizationId()
+        Log.d("OrganizationMainScreen", "Stored Organization ID: $storedOrgId")
+    }
+
+
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -188,6 +243,16 @@ fun DrawerContent(
             scope = scope
         )
 
+        if (organization != null) {
+            DrawerItem(
+                text = "DeliveryBoy",
+                icon = Icons.Filled.DeliveryDining,
+                navController = navController,
+                route = "organization_deliveryBoys/${organization.organizationId}",
+                drawerState = drawerState,
+                scope = scope
+            )
+        }
 
         // 🔹 **Logout (Same Design as Other Items)**
         DrawerItem(
@@ -221,7 +286,7 @@ fun DrawerItem(
                 if (isLogout) {
                     authViewModel?.logout()
                     navController.navigate(route) {
-                        popUpTo("customer") { inclusive = true }
+                        popUpTo("Organization") { inclusive = true }
                     }
                 } else {
                     navController.navigate(route)

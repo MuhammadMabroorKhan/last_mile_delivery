@@ -34,6 +34,7 @@ import com.example.lastmiledelivery.ui.customer.OrderDetailScreen
 import com.example.lastmiledelivery.ui.customer.ShopDetailsScreen
 import com.example.lastmiledelivery.ui.customer.TrackOrderScreen
 import com.example.lastmiledelivery.ui.deliveryboy.DeliveryBoyMainScreen
+import com.example.lastmiledelivery.ui.organization.OrganizationDeliveryBoySignupScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationMainScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationSignup
 import com.example.lastmiledelivery.ui.vendor.API_Vendor.API_VendorItemsScreen
@@ -81,6 +82,27 @@ fun AppNavigation() {
         composable("role_selection") { RoleSelectionScreen(navController) }
         composable("vendor_signup") { VendorSignupScreen(navController = navController) }
         composable("Organization_signup") { OrganizationSignup(navController = navController) }
+//        composable(
+//            "organization_deliveryBoys/{organizationId}",
+//            arguments = listOf(
+//                navArgument("organizationId") { type = NavType.StringType }
+//            )
+//        ) { backStackEntry ->
+//            val organizationId = backStackEntry.arguments?.getString("organizationId") ?: ""
+//            OrganizationDeliveryBoySignupScreen(navController = navController, organizationId = organizationId)
+//        }
+        composable(
+            "organization_deliveryBoys/{organizationId}",
+            arguments = listOf(
+                navArgument("organizationId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val organizationId = backStackEntry.arguments?.getString("organizationId") ?: ""
+            OrganizationDeliveryBoySignupScreen(
+                navController = navController,
+                organizationId = organizationId
+            )
+        }
 
         composable("customer_signup") { CustomerSignupScreen(navController = navController) }
         //Map Picker for Signup

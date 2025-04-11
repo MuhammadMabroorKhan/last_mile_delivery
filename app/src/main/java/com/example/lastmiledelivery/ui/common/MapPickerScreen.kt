@@ -419,6 +419,45 @@ fun ProfilePicturePicker(
     }
 }
 
+
+
+@Composable
+fun PicturePicker(
+    profilePictureUri: Uri?,
+    onImageSelected: (Uri?) -> Unit
+) {
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        onImageSelected(uri) // Update the selected image URI
+    }
+
+    Box(
+        modifier = Modifier
+            .size(100.dp)
+            .background(Color.LightGray)
+            .clickable { launcher.launch("image/*") }, // Click to open gallery
+        contentAlignment = Alignment.Center
+    ) {
+        if (profilePictureUri != null) {
+            // Show selected image
+            Image(
+                painter = rememberAsyncImagePainter(profilePictureUri),
+                contentDescription = "Selected Profile Picture",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            // Show default image (replace with your actual drawable)
+            Image(
+                painter = painterResource(id = R.drawable.account_circle), // Add a default image to res/drawable
+                contentDescription = "Default Profile Picture",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                colorFilter = ColorFilter.tint(Color.LightGray) // Apply tint color
+            )
+        }
+    }
+}
 fun uriToFile(uri: Uri, context: Context): File? {
     val inputStream = context.contentResolver.openInputStream(uri) ?: return null
     val file = File(context.cacheDir, "profile_picture.jpg") // Save as JPEG

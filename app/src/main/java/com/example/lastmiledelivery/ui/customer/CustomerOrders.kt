@@ -373,14 +373,34 @@ fun ItemCard(item: Item) {
                     .background(Color.Gray) // A placeholder color
             ) {
                 // Load the image if available, otherwise use the default image
-                AsyncImage(
-                    model = item.itemPicture ?: defaultImage,
-                    contentDescription = "Item Image",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Crop
-                )
+//                AsyncImage(
+//                    model = item.itemPicture ?: defaultImage,
+//                    contentDescription = "Item Image",
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .clip(RoundedCornerShape(8.dp)),
+//                    contentScale = ContentScale.Crop
+//                )
+                if (!item.itemPicture.isNullOrBlank()) {
+                    AsyncImage(
+                        model = item.itemPicture,
+                        contentDescription = "Item Image",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+//                    AsyncImage(
+//                        model = defaultImage, // your local fallback image or placeholder URL
+//                        contentDescription = "Default Image",
+//                        modifier = Modifier
+//                            .fillMaxSize()
+//                            .clip(RoundedCornerShape(8.dp)),
+//                        contentScale = ContentScale.Crop
+//                    )
+                }
+
             }
 
             // Item details on the right side
