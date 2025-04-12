@@ -34,6 +34,7 @@ import com.example.lastmiledelivery.ui.customer.OrderDetailScreen
 import com.example.lastmiledelivery.ui.customer.ShopDetailsScreen
 import com.example.lastmiledelivery.ui.customer.TrackOrderScreen
 import com.example.lastmiledelivery.ui.deliveryboy.DeliveryBoyMainScreen
+import com.example.lastmiledelivery.ui.deliveryboy.DeliveryBoyProfileScreen
 import com.example.lastmiledelivery.ui.organization.DeliveryBoyListScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationDeliveryBoySignupScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationMainScreen
@@ -75,7 +76,7 @@ fun AppNavigation() {
         composable("splash") { SplashScreen(navController) }
         composable("admin") { AdminMainScreen(navController = navController) }
         composable("customer") { CustomerMainScreen(navController) }
-        composable("deliveryboy") { DeliveryBoyMainScreen() }
+        composable("deliveryboy") { DeliveryBoyMainScreen(navController = navController) }
         composable("vendor") { VendorMainScreenWrapper(navController) }
         composable("Organization") { OrganizationMainScreen(navController) }
 
@@ -336,7 +337,7 @@ fun AppNavigation() {
 
 
 //DeliveryBoy  Functionality ROUTES
-
+        composable("deliveryBoy_Profile") { DeliveryBoyProfileScreen(navController) }
 
     }
 }

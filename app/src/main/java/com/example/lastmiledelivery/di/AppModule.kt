@@ -4,6 +4,7 @@ package com.example.lastmiledelivery.di
 import com.example.lastmiledelivery.data.remote.api.AdminApiService
 import com.example.lastmiledelivery.data.remote.api.ApiService
 import com.example.lastmiledelivery.data.remote.api.CustomerApiService
+import com.example.lastmiledelivery.data.remote.api.DeliveryBoysApiService
 import com.example.lastmiledelivery.data.remote.api.OrganizationApiService
 import com.example.lastmiledelivery.data.remote.api.VendorApiService
 import com.example.lastmiledelivery.data.repository.AuthRepository
@@ -95,6 +96,13 @@ object AppModule {
     @Singleton
     fun provideVendorApiService(retrofit: Retrofit): VendorApiService {
         return retrofit.create(VendorApiService::class.java)
+    }
+
+    //Delivery Boy api service
+    @Provides
+    @Singleton
+    fun provideDeliveryBoyApiService(retrofit: Retrofit):DeliveryBoysApiService{
+        return retrofit.create(DeliveryBoysApiService::class.java)
     }
 
     @Provides

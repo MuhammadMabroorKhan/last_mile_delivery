@@ -426,7 +426,7 @@ fun ShopCard(
 }
 
 @Composable
-fun DrawerContent(
+private fun DrawerContent(
     navController: NavHostController,
     drawerState: DrawerState,
     scope: CoroutineScope,
