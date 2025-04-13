@@ -12,6 +12,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.lastmiledelivery.data.models.customer.CustomerData
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyDataResponse
+import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyToggleResponse
 import com.example.lastmiledelivery.data.repository.deliveryboy.DeliveryBoyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -50,8 +51,33 @@ class DeliveryBoyViewModel @Inject constructor(
         }
     }
 
-    fun getDeliveryBoyID():Int?{
-        return sharedPreferences.getInt("deliveryBoy_ID",-1)
+    fun getDeliveryBoyID(): Int? {
+        return sharedPreferences.getInt("deliveryBoy_ID", -1)
+    }
+
+    var deliveryBoyStatusState by mutableStateOf<DeliveryBoyToggleResponse?>(null)
+        private set
+
+    var errorMessageStatus by mutableStateOf<String?>(null)
+        private set
+
+    fun deliveryBoyToggleStatus(id: Int) {
+        viewModelScope.launch {
+
+            try {
+                val response = repository.deliveryBoyToggleStatus(id)
+                if (response?.deliveryBoyONOFF != null) {
+                    deliveryBoyStatusState = response
+                    getDeliveryBoyData(id)
+                    errorMessageStatus = null
+                } else {
+                    errorMessageStatus = response?.message ?: "Unknown error"
+                }
+            } catch (e: Exception) {
+                errorMessageStatus = e.localizedMessage ?: "APi Exception"
+            }
+
+        }
     }
 }
 

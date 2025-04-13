@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,6 +27,8 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
@@ -35,6 +38,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -43,8 +48,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -102,7 +109,6 @@ fun DeliveryBoyMainScreen(
     val deliveryBoyData = deliveryBoyViewModel.deliveryBoyState
     val error = deliveryBoyViewModel.errorMessage
 
-
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -123,17 +129,11 @@ fun DeliveryBoyMainScreen(
                         }
                     },
                     actions = {
-
                         // Cart Icon
                         IconButton(onClick = {
                             navController.navigate("deliveryBoy_Profile")
 
                         }) {
-//                            Icon(
-//                                Icons.Filled.Person,
-//                                contentDescription = "Profile",
-//                                tint = Color.White, // ✅ Set icon color to white
-//                            )
                             AsyncImage(
                                 model = deliveryBoyData?.profile_picture,
                                 contentDescription = "Profile Picture",
@@ -157,6 +157,21 @@ fun DeliveryBoyMainScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
+//                deliveryBoyData?.delivery_boy_id?.let {
+//                    StatusSwitchToggle(deliveryBoyViewModel,
+//                        it
+//                    )
+//                }
+                deliveryBoyData?.delivery_boy_id?.let {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 8.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        StatusSwitchToggle(viewModel = deliveryBoyViewModel, deliveryBoyId = it)
+                    }
+                }
 
                 Text(text = "Welcome Delivery Boy", style = MaterialTheme.typography.headlineMedium)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -305,3 +320,65 @@ fun DrawerItem(
     }
 }
 
+
+@Composable
+fun StatusSwitchToggle(
+    viewModel: DeliveryBoyViewModel,
+    deliveryBoyId: Int
+) {
+    val error = viewModel.errorMessageStatus
+    val deliveryBoyState = viewModel.deliveryBoyState
+
+    // Local toggle state
+    var isOnline by remember { mutableStateOf(false) }
+
+    // When status changes in state, update the switch
+    LaunchedEffect(deliveryBoyState?.status) {
+        isOnline = deliveryBoyState?.status == "Available"
+    }
+
+    // Initially load delivery boy data
+    LaunchedEffect(deliveryBoyId) {
+        viewModel.getDeliveryBoyData(deliveryBoyId)
+    }
+
+    val switchColor = colorResource(id = R.color.pink)
+
+    Column(
+        modifier = Modifier.padding(4.dp),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = if (isOnline) "Online" else "Offline",
+                modifier = Modifier.padding(end = 8.dp),
+                color = if (isOnline) Color.Green else Color.Red,
+                style = MaterialTheme.typography.bodyLarge
+            )
+
+            Switch(
+                checked = isOnline,
+                onCheckedChange = {
+                    isOnline = it // update UI right away
+                    viewModel.deliveryBoyToggleStatus(deliveryBoyId)
+                },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = switchColor,
+                    uncheckedThumbColor = Color.White,
+                    uncheckedTrackColor = Color.Gray
+                )
+            )
+        }
+
+//        error?.let {
+//            Text(
+//                text = "Error: $it",
+//                color = Color.Red,
+//                style = MaterialTheme.typography.bodyMedium
+//            )
+//        }
+    }
+}

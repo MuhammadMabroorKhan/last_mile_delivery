@@ -2,6 +2,7 @@ package com.example.lastmiledelivery.ui.vendor
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -76,6 +78,7 @@ fun VendorScaffold(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val authViewModel: AuthViewModel = hiltViewModel()
+
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -166,6 +169,9 @@ private fun DrawerContent(
 ) {
     val vendorId by vendorViewModel.vendorId.observeAsState()
 
+
+    val user = remember { authViewModel.getUserDetails() }  // Get user data
+
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -201,6 +207,18 @@ private fun DrawerContent(
             icon = Icons.Filled.ShoppingCart,
             navController = navController,
             route = "shopscreen/${vendorId}", // Dynamic vendor ID
+            drawerState = drawerState,
+            scope = scope
+        )
+//        user?.let {
+//
+//
+//        }
+        DrawerItem(
+            text = "Profile",
+            icon = Icons.Filled.Person,
+            navController = navController,
+            route = "vendorProfile/${user.id}", // Dynamic vendor ID
             drawerState = drawerState,
             scope = scope
         )

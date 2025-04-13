@@ -11,6 +11,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.lastmiledelivery.data.models.vendor.AvailableOrganization
+import com.example.lastmiledelivery.data.models.vendor.RequestedOrganization
 import com.example.lastmiledelivery.data.models.vendor.VendorOrder
 import com.example.lastmiledelivery.data.models.vendor.VendorOrderDetailInfo
 import com.example.lastmiledelivery.data.models.vendor.VendorResponse
@@ -28,7 +30,10 @@ import retrofit2.Response
 import javax.inject.Inject
 
 @HiltViewModel   //private val context: Application
-class VendorViewModel @Inject constructor(private val repository: VendorRepository ,private val context: Application) : ViewModel() {
+class VendorViewModel @Inject constructor(
+    private val repository: VendorRepository,
+    private val context: Application
+) : ViewModel() {
     private val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
 
     private val _signupState = MutableLiveData<Result<VendorSignupResponse>?>()
@@ -70,15 +75,15 @@ class VendorViewModel @Inject constructor(private val repository: VendorReposito
     private val _isLoading = MutableLiveData(true)  // Loading state
     val isLoading: LiveData<Boolean> get() = _isLoading
 
-fun getVendorData(id: Int) {
-    viewModelScope.launch {
-        _isLoading.value = true  // Start loading
-        val result = repository.getVendorData(id)
-        Log.d("RecievedIDHEREViewModel"," ${id}")
-        _vendorData.value = result
-        _isLoading.value = false  // Stop loading
+    fun getVendorData(id: Int) {
+        viewModelScope.launch {
+            _isLoading.value = true  // Start loading
+            val result = repository.getVendorData(id)
+            Log.d("RecievedIDHEREViewModel", " ${id}")
+            _vendorData.value = result
+            _isLoading.value = false  // Stop loading
+        }
     }
-}
 
 
     fun clearVendorState() {
@@ -91,10 +96,10 @@ fun getVendorData(id: Int) {
     fun setVendorId(id: Int) {
         _vendorId.value = id
         with(sharedPreferences.edit()) {
-            putInt("vendor_id",id)
+            putInt("vendor_id", id)
             apply()
         }
-        Log.d("viewmodel_VendorID","$id")
+        Log.d("viewmodel_VendorID", "$id")
     }
 
     fun getVendorId(): Int? {
@@ -157,6 +162,55 @@ fun getVendorData(id: Int) {
         }
     }
 
+
+    var availableOrganizations by mutableStateOf<List<AvailableOrganization>>(emptyList())
+        private set
+
+    var requestedOrganizations by mutableStateOf<List<RequestedOrganization>>(emptyList())
+        private set
+
+    var isLoadingOrganization by mutableStateOf(false)
+    var errorMessage by mutableStateOf<String?>(null)
+
+    fun loadOrganizations(vendorId: Int) {
+        viewModelScope.launch {
+            isLoadingOrganization = true
+            errorMessage = null
+            try {
+                val result = repository.fetchOrganizations(vendorId)
+                availableOrganizations = result?.availableOrganizations ?: emptyList()
+                requestedOrganizations = result?.requestedOrConnectedOrganizations ?: emptyList()
+            } catch (e: Exception) {
+                errorMessage = e.localizedMessage
+            }
+            isLoadingOrganization = false
+        }
+    }
+
+
+    var connectMessage by mutableStateOf<String?>(null)
+    var connectError by mutableStateOf<String?>(null)
+
+    fun connectToOrganization(vendorId: Int, orgId: Int) {
+        viewModelScope.launch {
+            connectMessage = null
+            connectError = null
+
+            try {
+                val result = repository.connectVendorToOrganization(vendorId, orgId)
+                if (result.success == true || result.message?.contains("success", true) == true) {
+                    connectMessage = result.message
+                    // Optionally reload organizations
+                    loadOrganizations(vendorId)
+                } else {
+                    connectError = result.errors?.values?.flatten()?.joinToString("\n")
+                        ?: result.message ?: result.error ?: "Unknown error"
+                }
+            } catch (e: Exception) {
+                connectError = e.localizedMessage ?: "Unexpected error"
+            }
+        }
+    }
 
 
 }

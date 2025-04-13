@@ -4,12 +4,16 @@ package com.example.lastmiledelivery.data.repository.vendor
 import android.util.Log
 import com.example.lastmiledelivery.data.models.customer.ApiException
 import com.example.lastmiledelivery.data.models.vendor.Branch
+import com.example.lastmiledelivery.data.models.vendor.ConnectVendorRequest
+import com.example.lastmiledelivery.data.models.vendor.ConnectVendorResponse
+import com.example.lastmiledelivery.data.models.vendor.OrganizationResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorOrdersResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorSignupResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorSuborderDetailInfo
 import com.example.lastmiledelivery.data.models.vendor.VendorSuborderDetailResponse
 import com.example.lastmiledelivery.data.remote.api.VendorApiService
+import com.google.gson.Gson
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import org.json.JSONObject
@@ -76,7 +80,7 @@ class VendorRepository @Inject constructor(private val vendorApiService: VendorA
 
             if (response.isSuccessful) {
                 val responseBody = response.body()
-                Log.d("responseBody","${id} responseBody ${responseBody} ")
+                Log.d("responseBody", "${id} responseBody ${responseBody} ")
                 if (responseBody != null) {
                     Result.success(responseBody)
                 } else {
@@ -95,7 +99,7 @@ class VendorRepository @Inject constructor(private val vendorApiService: VendorA
     }
 
 
-//get orders
+    //get orders
     suspend fun getVendorOrders(vendorId: Int): VendorOrdersResponse? {
         return try {
             val response = vendorApiService.getVendorOrders(vendorId)
@@ -105,26 +109,47 @@ class VendorRepository @Inject constructor(private val vendorApiService: VendorA
         }
     }
 
-//get SUborder detail with item detail
+    //get SUborder detail with item detail
 // Assuming you're using a ViewModel or repository for API calls
-suspend fun getSuborderDetails(
-    vendorId: Int,
-    shopId: Int,
-    branchId: Int,
-    suborderId: Int
-): VendorSuborderDetailResponse? {
-    // Call the API
-    val response = vendorApiService.getSuborderDetails(vendorId, shopId, branchId, suborderId)
+    suspend fun getSuborderDetails(
+        vendorId: Int,
+        shopId: Int,
+        branchId: Int,
+        suborderId: Int
+    ): VendorSuborderDetailResponse? {
+        // Call the API
+        val response = vendorApiService.getSuborderDetails(vendorId, shopId, branchId, suborderId)
 
-    if (response.isSuccessful) {
-        // Return the entire response body, which is of type VendorSuborderDetailResponse
-        return response.body()
-    } else {
-        // Handle the error case (e.g., logging, showing error message)
-        return null
+        if (response.isSuccessful) {
+            // Return the entire response body, which is of type VendorSuborderDetailResponse
+            return response.body()
+        } else {
+            // Handle the error case (e.g., logging, showing error message)
+            return null
+        }
     }
-}
 
 
+    suspend fun fetchOrganizations(vendorId: Int): OrganizationResponse? {
+        val response = vendorApiService.getAvailableOrganizations(vendorId)
+        return if (response.isSuccessful) response.body() else null
+    }
 
+    suspend fun connectVendorToOrganization(
+        vendorId: Int,
+        organizationId: Int
+    ): ConnectVendorResponse {
+        val request = ConnectVendorRequest(vendorId, organizationId)
+        val response = vendorApiService.connectVendorToOrganization(request)
+        if (response.isSuccessful) {
+            return response.body() ?: ConnectVendorResponse(message = "Empty response")
+        } else {
+            val errorBody = response.errorBody()?.string()
+            return try {
+                Gson().fromJson(errorBody, ConnectVendorResponse::class.java)
+            } catch (e: Exception) {
+                ConnectVendorResponse(message = "Something went wrong", error = e.localizedMessage)
+            }
+        }
+    }
 }

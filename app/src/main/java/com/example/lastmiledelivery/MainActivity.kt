@@ -46,6 +46,8 @@ import com.example.lastmiledelivery.ui.vendor.VendorBranchesScreen
 //import com.example.lastmiledelivery.ui.vendor.VendorMainScreen
 import com.example.lastmiledelivery.ui.vendor.VendorMainScreenWrapper
 import com.example.lastmiledelivery.ui.vendor.VendorOrdersScreen
+import com.example.lastmiledelivery.ui.vendor.VendorOrganizationsConnection
+import com.example.lastmiledelivery.ui.vendor.VendorProfileScreen
 import com.example.lastmiledelivery.ui.vendor.VendorShopsScreen
 import com.example.lastmiledelivery.ui.vendor.VendorSignupScreen
 import com.example.lastmiledelivery.viewmodels.AuthViewModel
@@ -203,6 +205,23 @@ fun AppNavigation() {
             val suborderId = backStackEntry.arguments?.getInt("suborderId") ?: 0
             SuborderDetailsScreen(vendorId, shopId, branchId, suborderId,navController=navController)
         }
+
+        composable(
+            "vendorProfile/{vendorId}",
+            arguments = listOf(navArgument("vendorId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val vendorId = backStackEntry.arguments?.getInt("vendorId") ?: 0
+            VendorProfileScreen(vendorId=vendorId, navController = navController)
+        }
+
+        composable(
+            "vendorOrganizationsConnection/{vendorId}",
+            arguments = listOf(navArgument("vendorId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val vendorId = backStackEntry.arguments?.getInt("vendorId") ?: 0
+            VendorOrganizationsConnection(vendorId=vendorId,navController = navController)
+        }
+
         //API Vendor
         composable(
             "API_VendorItemsScreen/{shopcategory_name}/{shopcategory_ID}/{vendorId}/{branchId}/{shopId}/{approvalStatus}",

@@ -2,10 +2,13 @@ package com.example.lastmiledelivery.data.remote.api
 
 import com.example.lastmiledelivery.data.models.admin.MessageResponse
 import com.example.lastmiledelivery.data.models.vendor.BranchesResponse
+import com.example.lastmiledelivery.data.models.vendor.ConnectVendorRequest
+import com.example.lastmiledelivery.data.models.vendor.ConnectVendorResponse
 import com.example.lastmiledelivery.data.models.vendor.CreateBranchResponse
 import com.example.lastmiledelivery.data.models.vendor.CreateItemRequest
 import com.example.lastmiledelivery.data.models.vendor.ItemCategoryResponse
 import com.example.lastmiledelivery.data.models.vendor.ItemVariationResponse
+import com.example.lastmiledelivery.data.models.vendor.OrganizationResponse
 import com.example.lastmiledelivery.data.models.vendor.PredefinedAttributesResponse
 import com.example.lastmiledelivery.data.models.vendor.ShopCreationResponse
 import com.example.lastmiledelivery.data.models.vendor.ShopRequest
@@ -159,4 +162,14 @@ interface VendorApiService {
         @Path("branchId") branchId: Int,
         @Path("suborderId") suborderId: Int
     ): Response<VendorSuborderDetailResponse>
+
+    @GET("api/vendor/{vendorId}/available-organizations")
+    suspend fun getAvailableOrganizations(
+        @Path("vendorId") vendorId: Int
+    ): Response<OrganizationResponse>
+
+    @POST("api/organization/connect-vendor")
+    suspend fun connectVendorToOrganization(
+        @Body body: ConnectVendorRequest
+    ): Response<ConnectVendorResponse>
 }
