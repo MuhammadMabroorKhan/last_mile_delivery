@@ -15,6 +15,8 @@ import com.example.lastmiledelivery.data.models.organization.DeliveryBoy
 import com.example.lastmiledelivery.data.models.organization.DeliveryBoySignupResponse
 import com.example.lastmiledelivery.data.models.organization.OrganizationData
 import com.example.lastmiledelivery.data.models.organization.OrganizationSignupResponse
+import com.example.lastmiledelivery.data.models.organization.VendorOrganizationRejectionReason
+import com.example.lastmiledelivery.data.models.organization.VendorRequestOrganizationResponse
 import com.example.lastmiledelivery.data.repository.customer.CustomerRepository
 import com.example.lastmiledelivery.data.repository.organization.OrganizationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,7 +27,10 @@ import javax.inject.Inject
 
 
 @HiltViewModel
-class OrganizationViewModel @Inject constructor(private val repository: OrganizationRepository, private val context: Application) : ViewModel() {
+class OrganizationViewModel @Inject constructor(
+    private val repository: OrganizationRepository,
+    private val context: Application
+) : ViewModel() {
     private val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
 
     private val _signupState = MutableLiveData<Result<OrganizationSignupResponse>?>()
@@ -173,5 +178,103 @@ class OrganizationViewModel @Inject constructor(private val repository: Organiza
         }
     }
 
+    var vendorRequestsOrganizationForCOnnection by mutableStateOf<VendorRequestOrganizationResponse?>(
+        null
+    )
+        private set
+
+    var errorMessageVendorRequest by mutableStateOf<String?>(null)
+        private set
+
+    var isLoadingVendorRequest by mutableStateOf(false)
+        private set
+
+    fun loadVendorRequests(orgId: Int) {
+        viewModelScope.launch {
+            isLoadingVendorRequest = true
+            errorMessageVendorRequest = null
+
+            val result = repository.fetchVendorRequests(orgId)
+
+            if (result.isSuccess) {
+                vendorRequestsOrganizationForCOnnection = result.getOrNull()
+            } else {
+                errorMessageVendorRequest = result.exceptionOrNull()?.message ?: "Unknown error"
+            }
+
+            isLoadingVendorRequest = false
+        }
+    }
+
+    var acceptRequestMessage by mutableStateOf<String?>(null)
+        private set
+
+    fun acceptVendorRequest(requestId: Int, onComplete: () -> Unit) {
+        viewModelScope.launch {
+            val result = repository.acceptVendorRequest(requestId)
+//            acceptRequestMessage = when (result) {
+//                is Result.Success -> result.getOrNull()?.message
+//                is Result.Failure -> result.exceptionOrNull()?.message ?: "Unknown error"
+//            }
+            if (result.isSuccess) {
+                acceptRequestMessage = result.getOrNull()?.message
+            } else {
+                acceptRequestMessage = result.exceptionOrNull()?.message ?: "Unknown error"
+            }
+
+
+            onComplete()
+        }
+    }
+
+    var rejectionReasons by mutableStateOf<List<VendorOrganizationRejectionReason>>(emptyList())
+    var rejectionError by mutableStateOf<String?>(null)
+
+    fun fetchRejectionReasons(organizationId: Int) {
+        viewModelScope.launch {
+            val result = repository.getRejectionReasons(organizationId)
+            if (result.isSuccess) {
+                rejectionReasons = result.getOrNull() ?: emptyList()
+                rejectionError = null
+            } else {
+                rejectionReasons = emptyList()
+                rejectionError = result.exceptionOrNull()?.message ?: "Error fetching data"
+            }
+        }
+    }
+
+
+    var correctReasonMessage by mutableStateOf<String?>(null)
+
+    fun correctRejectionReason(reasonId: Int, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val result = repository.correctRejectionReason(reasonId)
+            if (result.isSuccess) {
+                correctReasonMessage = result.getOrNull()
+                // Refresh the list after correction
+                fetchRejectionReasons(rejectionReasons.firstOrNull()?.organization_ID ?: 0)
+                onResult(true)
+            } else {
+                correctReasonMessage = result.exceptionOrNull()?.message
+                onResult(false)
+            }
+        }
+    }
+
+
+    var rejectMessage by mutableStateOf<String?>(null)
+
+    fun rejectVendorRequest(requestId: Int, reasons: List<String>, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val result = repository.rejectVendorRequest(requestId, reasons)
+            if (result.isSuccess) {
+                rejectMessage = result.getOrNull()
+                onResult(true)
+            } else {
+                rejectMessage = result.exceptionOrNull()?.message
+                onResult(false)
+            }
+        }
+    }
 
 }

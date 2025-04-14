@@ -178,14 +178,25 @@ fun VendorOrganizationsConnection(
                             organization = it,
                             onDismiss = { reqConOrg = null })
                     }
-                    viewModel.connectMessage?.let {
-                        Toast.makeText(context, "\"✅ $it\"", Toast.LENGTH_LONG).show()
+//                    viewModel.connectMessage?.let {
+//                        Toast.makeText(context, "\"✅ $it\"", Toast.LENGTH_LONG).show()
+//                    }
+//
+//                    viewModel.connectError?.let {
+//                        Toast.makeText(context, "\"❌ $it\"", Toast.LENGTH_LONG).show()
+//                    }
+                    var hasShownMessage by remember { mutableStateOf(false) }
+                    var hasShownError by remember { mutableStateOf(false) }
+
+                    if (viewModel.connectMessage != null && !hasShownMessage) {
+                        Toast.makeText(context, "✅ ${viewModel.connectMessage}", Toast.LENGTH_LONG).show()
+                        hasShownMessage = true
                     }
 
-                    viewModel.connectError?.let {
-                        Toast.makeText(context, "\"❌ $it\"", Toast.LENGTH_LONG).show()
+                    if (viewModel.connectError != null && !hasShownError) {
+                        Toast.makeText(context, "❌ ${viewModel.connectError}", Toast.LENGTH_LONG).show()
+                        hasShownError = true
                     }
-
                 }
             }
         }

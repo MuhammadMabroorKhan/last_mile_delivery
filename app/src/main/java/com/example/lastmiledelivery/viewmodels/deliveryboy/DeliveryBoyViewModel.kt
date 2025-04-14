@@ -13,6 +13,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.lastmiledelivery.data.models.customer.CustomerData
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyDataResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyToggleResponse
+import com.example.lastmiledelivery.data.models.deliveryboy.ReadySuborder
 import com.example.lastmiledelivery.data.repository.deliveryboy.DeliveryBoyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -77,6 +78,27 @@ class DeliveryBoyViewModel @Inject constructor(
                 errorMessageStatus = e.localizedMessage ?: "APi Exception"
             }
 
+        }
+    }
+
+
+    var readySuborders by mutableStateOf<List<ReadySuborder>>(emptyList())
+        private set
+
+    var isLoadingReadySuborders by mutableStateOf(false)
+    var errorMessageReadySuborders by mutableStateOf<String?>(null)
+
+    fun fetchReadySuborders(deliveryBoyId: Int) {
+        viewModelScope.launch {
+            isLoadingReadySuborders = true
+            val result = repository.getReadySubordersForDeliveryBoy(deliveryBoyId)
+            isLoadingReadySuborders = false
+
+            result.onSuccess {
+                readySuborders = it
+            }.onFailure {
+                errorMessageReadySuborders = it.localizedMessage
+            }
         }
     }
 }

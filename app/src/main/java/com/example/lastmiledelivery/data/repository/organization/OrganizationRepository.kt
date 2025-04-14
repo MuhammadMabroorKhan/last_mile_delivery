@@ -6,6 +6,10 @@ import com.example.lastmiledelivery.data.models.organization.DeliveryBoy
 import com.example.lastmiledelivery.data.models.organization.DeliveryBoySignupResponse
 import com.example.lastmiledelivery.data.models.organization.OrganizationData
 import com.example.lastmiledelivery.data.models.organization.OrganizationSignupResponse
+import com.example.lastmiledelivery.data.models.organization.RejectVendorRequestBody
+import com.example.lastmiledelivery.data.models.organization.SimpleResponse
+import com.example.lastmiledelivery.data.models.organization.VendorOrganizationRejectionReason
+import com.example.lastmiledelivery.data.models.organization.VendorRequestOrganizationResponse
 import com.example.lastmiledelivery.data.remote.api.CustomerApiService
 import com.example.lastmiledelivery.data.remote.api.OrganizationApiService
 import okhttp3.MultipartBody
@@ -135,5 +139,91 @@ class OrganizationRepository @Inject constructor(private val api: OrganizationAp
         }
     }
 
+    suspend fun fetchVendorRequests(orgId: Int): Result<VendorRequestOrganizationResponse> {
+        return try {
+            val response = api.getVendorRequests(orgId)
+            if (response.isSuccessful) {
+                response.body()?.let {
+                    Result.success(it)
+                } ?: Result.failure(Exception("Empty body"))
+            } else {
+                Result.failure(Exception("Error: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun acceptVendorRequest(requestId: Int): Result<SimpleResponse> {
+        return try {
+            val response = api.acceptVendorRequest(requestId)
+            if (response.isSuccessful) {
+                response.body()?.let {
+                    Result.success(it)
+                } ?: Result.failure(Exception("Empty response body"))
+            } else {
+                Result.failure(Exception("Error: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getRejectionReasons(organizationId: Int): Result<List<VendorOrganizationRejectionReason>> {
+        return try {
+            val response = api.getRejectionReasons(organizationId)
+            if (response.isSuccessful && response.body()?.rejectionReasons != null) {
+                Result.success(response.body()!!.rejectionReasons!!)
+            } else {
+                Result.failure(Exception(response.message()))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun correctRejectionReason(reasonId: Int): Result<String> {
+        return try {
+            val response = api.correctRejectionReason(reasonId)
+            if (response.isSuccessful) {
+                Result.success(response.body()?.message ?: "Correction successful")
+            } else {
+                Result.failure(Exception(response.errorBody()?.string() ?: "Correction failed"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+
+//    suspend fun rejectVendorRequest(requestId: Int, reasons: List<String>): Result<String> {
+//        return try {
+//            val response = api.rejectVendorRequest(requestId, mapOf("rejection_reasons" to reasons))
+//            if (response.isSuccessful) {
+//                Result.success(response.body()?.message ?: "Rejected successfully")
+//            } else {
+//                Result.failure(Exception(response.errorBody()?.string() ?: "Failed to reject"))
+//            }
+//        } catch (e: Exception) {
+//            Result.failure(e)
+//        }
+//    }
+
+
+    suspend fun rejectVendorRequest(requestId: Int, reasons: List<String>): Result<String> {
+        return try {
+            val response = api.rejectVendorRequest(
+                requestId,
+                RejectVendorRequestBody(rejection_reasons = reasons)
+            )
+            if (response.isSuccessful) {
+                Result.success(response.body()?.message ?: "Rejected successfully")
+            } else {
+                Result.failure(Exception(response.errorBody()?.string() ?: "Failed to reject"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 
 }

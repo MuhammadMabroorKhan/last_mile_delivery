@@ -35,10 +35,13 @@ import com.example.lastmiledelivery.ui.customer.ShopDetailsScreen
 import com.example.lastmiledelivery.ui.customer.TrackOrderScreen
 import com.example.lastmiledelivery.ui.deliveryboy.DeliveryBoyMainScreen
 import com.example.lastmiledelivery.ui.deliveryboy.DeliveryBoyProfileScreen
+import com.example.lastmiledelivery.ui.deliveryboy.ReadySubordersScreen
 import com.example.lastmiledelivery.ui.organization.DeliveryBoyListScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationDeliveryBoySignupScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationMainScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationSignup
+import com.example.lastmiledelivery.ui.organization.VendorConnectionRequest
+import com.example.lastmiledelivery.ui.organization.VendorRequestDetailScreen
 import com.example.lastmiledelivery.ui.vendor.API_Vendor.API_VendorItemsScreen
 import com.example.lastmiledelivery.ui.vendor.IN_APP.IN_APP_VendorItemsScreen
 import com.example.lastmiledelivery.ui.vendor.SuborderDetailsScreen
@@ -98,8 +101,45 @@ fun AppNavigation() {
 
         composable("deliveryboys/{orgId}") { backStackEntry ->
             val orgId = backStackEntry.arguments?.getString("orgId")?.toIntOrNull() ?: 0
-            DeliveryBoyListScreen(orgId = orgId,navController=navController)
+            DeliveryBoyListScreen(orgId = orgId, navController = navController)
         }
+
+
+        composable("vendorConnectionScreenForOrganization/{orgId}") { backStackEntry ->
+            val orgId = backStackEntry.arguments?.getString("orgId")?.toIntOrNull() ?: 0
+            VendorConnectionRequest(organizationId = orgId, navController = navController)
+        }
+
+        composable(
+            route = "vendor_request_detail/{vendorName}/{vendorEmail}/{vendorPhone}/{orgUserName}/{approvalStatus}/{vendorProfilePicture}/{organizationID}/{requestID}/{vendorID}",
+            arguments = listOf(
+                navArgument("vendorName") { type = NavType.StringType },
+                navArgument("vendorEmail") { type = NavType.StringType },
+                navArgument("vendorPhone") { type = NavType.StringType },
+                navArgument("orgUserName") { type = NavType.StringType },
+                navArgument("approvalStatus") { type = NavType.StringType },
+                navArgument("vendorProfilePicture") { type = NavType.StringType },
+                navArgument("organizationID") { type = NavType.StringType },
+                navArgument("requestID") { type = NavType.StringType },
+                navArgument("vendorID") { type = NavType.StringType }
+            )
+
+        ) { backStackEntry ->
+            val args = backStackEntry.arguments!!
+            VendorRequestDetailScreen(
+                vendorName = args.getString("vendorName") ?: "",
+                vendorEmail = args.getString("vendorEmail") ?: "",
+                vendorPhone = args.getString("vendorPhone") ?: "",
+                orgUserName = args.getString("orgUserName") ?: "",
+                approvalStatus = args.getString("approvalStatus") ?: "",
+                vendorProfilePicture = args.getString("vendorProfilePicture") ?: "",
+                organizationId = args.getString("organizationID") ?: "",
+                requestID = args.getString("requestID") ?: "",
+                vendorId = args.getString("vendorID") ?: "",
+                navController=navController
+            )
+        }
+
 
         composable(
             "organization_deliveryBoys/{organizationId}",
@@ -203,7 +243,13 @@ fun AppNavigation() {
             val shopId = backStackEntry.arguments?.getInt("shopId") ?: 0
             val branchId = backStackEntry.arguments?.getInt("branchId") ?: 0
             val suborderId = backStackEntry.arguments?.getInt("suborderId") ?: 0
-            SuborderDetailsScreen(vendorId, shopId, branchId, suborderId,navController=navController)
+            SuborderDetailsScreen(
+                vendorId,
+                shopId,
+                branchId,
+                suborderId,
+                navController = navController
+            )
         }
 
         composable(
@@ -211,7 +257,7 @@ fun AppNavigation() {
             arguments = listOf(navArgument("vendorId") { type = NavType.IntType })
         ) { backStackEntry ->
             val vendorId = backStackEntry.arguments?.getInt("vendorId") ?: 0
-            VendorProfileScreen(vendorId=vendorId, navController = navController)
+            VendorProfileScreen(vendorId = vendorId, navController = navController)
         }
 
         composable(
@@ -219,7 +265,7 @@ fun AppNavigation() {
             arguments = listOf(navArgument("vendorId") { type = NavType.IntType })
         ) { backStackEntry ->
             val vendorId = backStackEntry.arguments?.getInt("vendorId") ?: 0
-            VendorOrganizationsConnection(vendorId=vendorId,navController = navController)
+            VendorOrganizationsConnection(vendorId = vendorId, navController = navController)
         }
 
         //API Vendor
@@ -280,9 +326,6 @@ fun AppNavigation() {
         }
 
 
-
-
-
 //Customer  Functionality ROUTES
         composable("shop_details") { backStackEntry ->
             val parentEntry = remember(backStackEntry) {
@@ -314,7 +357,7 @@ fun AppNavigation() {
             val cartJson = backStackEntry.arguments?.getString("cartJson") ?: ""
             val customerJson = backStackEntry.arguments?.getString("customerJson") ?: ""
 
-            OrderConfirmationScreen(navController,userId, customerId, cartJson, customerJson)
+            OrderConfirmationScreen(navController, userId, customerId, cartJson, customerJson)
         }
 
 
@@ -331,7 +374,12 @@ fun AppNavigation() {
             val customerId = backStackEntry.arguments?.getInt("customerId") ?: -1
             val addressId = backStackEntry.arguments?.getInt("addressId") ?: -1
             if (orderId != -1 && customerId != -1 && addressId != -1) {
-                OrderDetailScreen(navController=navController,orderId = orderId, customerId = customerId, addressId = addressId)
+                OrderDetailScreen(
+                    navController = navController,
+                    orderId = orderId,
+                    customerId = customerId,
+                    addressId = addressId
+                )
             }
         }
 
@@ -357,6 +405,23 @@ fun AppNavigation() {
 
 //DeliveryBoy  Functionality ROUTES
         composable("deliveryBoy_Profile") { DeliveryBoyProfileScreen(navController) }
+
+        composable(
+            route = "ready_suborders_deliveryBoyScreen/{deliveryBoyID}/{lmdUserID}",
+            arguments = listOf(
+                navArgument("deliveryBoyID") { type = NavType.IntType },
+                navArgument("lmdUserID") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val deliveryBoyID = backStackEntry.arguments?.getInt("deliveryBoyID") ?: 0
+            val lmdUserID = backStackEntry.arguments?.getInt("lmdUserID") ?: 0
+            ReadySubordersScreen(
+                deliveryBoyID = deliveryBoyID,
+                lmdUserID = lmdUserID,
+                navController = navController
+            )
+        }
+
 
     }
 }

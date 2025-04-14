@@ -255,6 +255,18 @@ private fun DrawerContent(
             )
         }
 
+        if (organization != null) {
+            DrawerItem(
+                text = "Vendors Connection",
+                icon = Icons.Filled.DeliveryDining,
+                navController = navController,
+    //                route = "organization_deliveryBoys/${organization.organizationId}",
+                route = "vendorConnectionScreenForOrganization/${organization.organizationId}",
+                drawerState = drawerState,
+                scope = scope
+            )
+        }
+
         // 🔹 **Logout (Same Design as Other Items)**
         DrawerItem(
             text = "Logout",
@@ -270,7 +282,7 @@ private fun DrawerContent(
 }
 
 @Composable
-fun DrawerItem(
+private fun DrawerItem(
     text: String,
     icon: ImageVector,
     navController: NavHostController,

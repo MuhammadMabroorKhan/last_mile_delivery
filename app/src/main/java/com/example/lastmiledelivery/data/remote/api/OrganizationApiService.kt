@@ -3,11 +3,17 @@ package com.example.lastmiledelivery.data.remote.api
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
 import com.example.lastmiledelivery.data.models.organization.DeliveryBoyResponse
 import com.example.lastmiledelivery.data.models.organization.DeliveryBoySignupResponse
+import com.example.lastmiledelivery.data.models.organization.MessageResponse
 import com.example.lastmiledelivery.data.models.organization.OrganizationData
 import com.example.lastmiledelivery.data.models.organization.OrganizationSignupResponse
+import com.example.lastmiledelivery.data.models.organization.RejectVendorRequestBody
+import com.example.lastmiledelivery.data.models.organization.RejectionReasonResponse
+import com.example.lastmiledelivery.data.models.organization.SimpleResponse
+import com.example.lastmiledelivery.data.models.organization.VendorRequestOrganizationResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
@@ -64,4 +70,32 @@ interface OrganizationApiService {
     suspend fun getDeliveryBoys(
         @Path("organization_id") organizationId: Int
     ): Response<DeliveryBoyResponse>
+
+    @GET("api/pending-vendor-requests/{organizationId}")
+    suspend fun getVendorRequests(@Path("organizationId") orgId: Int): Response<VendorRequestOrganizationResponse>
+
+    @POST("api/accept-vendor-request/{requestId}")
+    suspend fun acceptVendorRequest(
+        @Path("requestId") requestId: Int
+    ): Response<SimpleResponse>
+
+    @GET("api/rejection-reasons/{organizationId}")
+    suspend fun getRejectionReasons(
+        @Path("organizationId") organizationId: Int
+    ): Response<RejectionReasonResponse>
+
+    @POST("api/correct-rejection-reason/{reasonId}")
+    suspend fun correctRejectionReason(
+        @Path("reasonId") reasonId: Int
+    ): Response<MessageResponse>
+
+
+@POST("api/reject-vendor-request/{requestId}")
+suspend fun rejectVendorRequest(
+    @Path("requestId") requestId: Int,
+    @Body body: RejectVendorRequestBody
+): Response<MessageResponse>
+
+
 }
+

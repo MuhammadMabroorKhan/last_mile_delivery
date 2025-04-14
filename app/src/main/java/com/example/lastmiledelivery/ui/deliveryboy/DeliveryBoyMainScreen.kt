@@ -2,6 +2,7 @@ package com.example.lastmiledelivery.ui.deliveryboy
 
 import android.annotation.SuppressLint
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -129,6 +131,25 @@ fun DeliveryBoyMainScreen(
                         }
                     },
                     actions = {
+                        // 🔔 Notification Icon
+                        IconButton(onClick = {
+                            Toast.makeText(
+                                context,
+                                "${deliveryBoyData?.delivery_boy_id}No new notifications ${user.id}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            deliveryBoyData?.delivery_boy_id?.let { deliveryBoyId ->
+                                navController.navigate("ready_suborders_deliveryBoyScreen/${deliveryBoyId}/${user.id}")
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.Notifications,
+                                contentDescription = "Notifications",
+                                tint = Color.White
+                            )
+                        }
+
+
                         // Cart Icon
                         IconButton(onClick = {
                             navController.navigate("deliveryBoy_Profile")
