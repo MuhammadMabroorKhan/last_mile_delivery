@@ -1,11 +1,13 @@
 package com.example.lastmiledelivery.data.repository.deliveryboy
 
 import com.example.lastmiledelivery.data.models.customer.CustomerData
+import com.example.lastmiledelivery.data.models.deliveryboy.AcceptOrderResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyDataResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyToggleResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.ReadySuborder
 import com.example.lastmiledelivery.data.remote.api.DeliveryBoysApiService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import retrofit2.Response
 import javax.inject.Inject
 
 
@@ -48,6 +50,11 @@ class DeliveryBoyRepository @Inject constructor(private val api: DeliveryBoysApi
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+
+    suspend fun acceptOrder(deliveryBoyId: Int, suborderId: Int): Response<AcceptOrderResponse> {
+        return api.acceptOrder(deliveryBoyId, suborderId)
     }
 
 }

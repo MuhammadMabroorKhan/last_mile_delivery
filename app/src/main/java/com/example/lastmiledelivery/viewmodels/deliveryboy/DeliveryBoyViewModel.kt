@@ -8,14 +8,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.compose.runtime.State
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.lastmiledelivery.data.models.customer.CustomerData
+import com.example.lastmiledelivery.data.models.deliveryboy.AcceptOrderResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyDataResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyToggleResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.ReadySuborder
 import com.example.lastmiledelivery.data.repository.deliveryboy.DeliveryBoyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -101,5 +108,56 @@ class DeliveryBoyViewModel @Inject constructor(
             }
         }
     }
+
+
+    private val _acceptOrderResponse = mutableStateOf<AcceptOrderResponse?>(null)
+    val acceptOrderResponse: State<AcceptOrderResponse?> = _acceptOrderResponse
+
+    private val _loading = mutableStateOf(false)
+    val loading: State<Boolean> = _loading
+
+    fun acceptOrder(deliveryBoyId: Int, suborderId: Int) {
+        viewModelScope.launch {
+            _loading.value = true
+            try {
+                val response = repository.acceptOrder(deliveryBoyId, suborderId)
+                if (response.isSuccessful) {
+                    _acceptOrderResponse.value = response.body()
+                } else {
+                    _acceptOrderResponse.value =
+                        AcceptOrderResponse(error = "Failed to accept order.")
+                }
+            } catch (e: Exception) {
+                _acceptOrderResponse.value =
+                    AcceptOrderResponse(error = "Network error: ${e.message}")
+            } finally {
+                _loading.value = false
+            }
+        }
+
+    }
+
+    fun clearAcceptOrderResponse() {
+        _acceptOrderResponse.value = null
+    }
+
+
+    private var autoRefreshJob: Job? = null
+
+    fun startAutoRefreshReadyOrders(deliveryBoyId: Int, intervalMillis: Long = 5000L) {
+        if (autoRefreshJob?.isActive == true) return // Prevent multiple jobs
+
+        autoRefreshJob = viewModelScope.launch {
+            while (isActive) {
+                fetchReadySuborders(deliveryBoyId)
+                delay(intervalMillis)
+            }
+        }
+    }
+
+    fun stopAutoRefreshReadyOrders() {
+        autoRefreshJob?.cancel()
+    }
+
 }
 

@@ -1,5 +1,6 @@
 package com.example.lastmiledelivery.ui.deliveryboy
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -41,6 +42,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -59,6 +61,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
@@ -90,6 +95,9 @@ fun ReadySubordersScreen(
     val isLoading = viewModel.isLoadingReadySuborders
     val error = viewModel.errorMessageReadySuborders
 
+    val response = viewModel.acceptOrderResponse.value
+    val loading = viewModel.loading.value
+
     LaunchedEffect(Unit) {
         viewModel.fetchReadySuborders(deliveryBoyId = lmdUserID) // Replace with actual ID
     }
@@ -118,6 +126,28 @@ fun ReadySubordersScreen(
     }
 
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(Unit) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> {
+                    viewModel.startAutoRefreshReadyOrders(lmdUserID)
+                }
+                Lifecycle.Event.ON_STOP -> {
+                    viewModel.stopAutoRefreshReadyOrders()
+                }
+                else -> {}
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            viewModel.stopAutoRefreshReadyOrders()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -144,10 +174,9 @@ fun ReadySubordersScreen(
                 .fillMaxSize()
         ) {
             if (isLoading) {
-                CircularProgressIndicator()
+//                CircularProgressIndicator()
             } else if (error != null) {
                 Text(text = "Error: $error", color = Color.Red)
-
 
             } else {
 
@@ -235,7 +264,7 @@ fun ReadySubordersScreen(
                                 ) {
                                     Button(
                                         onClick = {
-
+                                            viewModel.acceptOrder(deliveryBoyID, suborder.suborder_id)
                                         }
                                     ) {
                                         Text("Accept Order")
@@ -384,7 +413,9 @@ fun ReadySubordersScreen(
                         }
                     },
                     confirmButton = {
-                        Button(onClick = { showDialog = false }) {
+                        Button(onClick = {
+                            selectedSuborder?.let { viewModel.acceptOrder(deliveryBoyID, it.suborder_id) }
+                            showDialog = false }) {
                             Text("Accept")
                         }
                     },
@@ -394,6 +425,19 @@ fun ReadySubordersScreen(
                         }
                     }
                 )
+            }
+            val context = LocalContext.current
+
+            LaunchedEffect(response) {
+                response?.let {
+                    if (it.message != null) {
+                        Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
+                        viewModel.fetchReadySuborders(deliveryBoyId = lmdUserID)
+                    } else if (it.error != null) {
+                        Toast.makeText(context, it.error, Toast.LENGTH_SHORT).show()
+                    }
+                    viewModel.clearAcceptOrderResponse()
+                }
             }
 
 
