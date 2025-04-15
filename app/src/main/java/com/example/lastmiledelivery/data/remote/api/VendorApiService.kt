@@ -13,6 +13,8 @@ import com.example.lastmiledelivery.data.models.vendor.PredefinedAttributesRespo
 import com.example.lastmiledelivery.data.models.vendor.ShopCreationResponse
 import com.example.lastmiledelivery.data.models.vendor.ShopRequest
 import com.example.lastmiledelivery.data.models.vendor.ShopResponse
+import com.example.lastmiledelivery.data.models.vendor.SuborderStatusUpdateRequest
+import com.example.lastmiledelivery.data.models.vendor.SuborderStatusUpdateResponse
 import com.example.lastmiledelivery.data.models.vendor.ToggleBranchResponse
 import com.example.lastmiledelivery.data.models.vendor.UpdateBranchResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorItemResponse
@@ -172,4 +174,11 @@ interface VendorApiService {
     suspend fun connectVendorToOrganization(
         @Body body: ConnectVendorRequest
     ): Response<ConnectVendorResponse>
+
+
+    @POST("api/suborders/{suborderId}/status")
+    suspend fun updateSuborderStatus(
+        @Path("suborderId") suborderId: Int,
+        @Body request: SuborderStatusUpdateRequest
+    ): Response<SuborderStatusUpdateResponse>
 }

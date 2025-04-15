@@ -4,6 +4,8 @@ plugins {
 
     id("kotlin-kapt") // For annotation processing
     id("com.google.dagger.hilt.android")
+
+    id("kotlin-parcelize")
 }
 
 android {

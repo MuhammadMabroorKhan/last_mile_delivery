@@ -7,6 +7,8 @@ import com.example.lastmiledelivery.data.models.vendor.Branch
 import com.example.lastmiledelivery.data.models.vendor.ConnectVendorRequest
 import com.example.lastmiledelivery.data.models.vendor.ConnectVendorResponse
 import com.example.lastmiledelivery.data.models.vendor.OrganizationResponse
+import com.example.lastmiledelivery.data.models.vendor.SuborderStatusUpdateRequest
+import com.example.lastmiledelivery.data.models.vendor.SuborderStatusUpdateResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorOrdersResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorSignupResponse
@@ -152,4 +154,23 @@ class VendorRepository @Inject constructor(private val vendorApiService: VendorA
             }
         }
     }
+
+
+    suspend fun updateSuborderStatus(suborderId: Int, newStatus: String): SuborderStatusUpdateResponse? {
+        return try {
+            val response = vendorApiService.updateSuborderStatus(suborderId, SuborderStatusUpdateRequest(newStatus))
+            if (response.isSuccessful) {
+                response.body()
+            } else {
+                response.errorBody()?.let {
+                    val errorMessage = it.string()
+                    SuborderStatusUpdateResponse(false, errorMessage, null)
+                }
+            }
+        } catch (e: Exception) {
+            SuborderStatusUpdateResponse(false, e.localizedMessage ?: "An error occurred", null)
+        }
+    }
+
+
 }

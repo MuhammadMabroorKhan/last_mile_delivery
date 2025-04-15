@@ -14,6 +14,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.lastmiledelivery.data.models.deliveryboy.AssignedSuborder
 import com.example.lastmiledelivery.ui.admin.AdminMainScreen
 import com.example.lastmiledelivery.ui.admin.BranchDetailScreen
 import com.example.lastmiledelivery.ui.admin.PendingBranchesScreen
@@ -33,9 +34,11 @@ import com.example.lastmiledelivery.ui.customer.OrderConfirmationScreen
 import com.example.lastmiledelivery.ui.customer.OrderDetailScreen
 import com.example.lastmiledelivery.ui.customer.ShopDetailsScreen
 import com.example.lastmiledelivery.ui.customer.TrackOrderScreen
+import com.example.lastmiledelivery.ui.deliveryboy.AssignedOrdersScreen
 import com.example.lastmiledelivery.ui.deliveryboy.DeliveryBoyMainScreen
 import com.example.lastmiledelivery.ui.deliveryboy.DeliveryBoyProfileScreen
 import com.example.lastmiledelivery.ui.deliveryboy.ReadySubordersScreen
+import com.example.lastmiledelivery.ui.deliveryboy.SuborderTrackingDeliveryBoyScreen
 import com.example.lastmiledelivery.ui.organization.DeliveryBoyListScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationDeliveryBoySignupScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationMainScreen
@@ -136,7 +139,7 @@ fun AppNavigation() {
                 organizationId = args.getString("organizationID") ?: "",
                 requestID = args.getString("requestID") ?: "",
                 vendorId = args.getString("vendorID") ?: "",
-                navController=navController
+                navController = navController
             )
         }
 
@@ -422,8 +425,51 @@ fun AppNavigation() {
             )
         }
 
+        composable(
+            route = "deliveryBoySuborders/{deliveryBoyID}/{lmdUserID}",
+            arguments = listOf(
+                navArgument("deliveryBoyID") { type = NavType.IntType },
+                navArgument("lmdUserID") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val deliveryBoyID = backStackEntry.arguments?.getInt("deliveryBoyID") ?: 0
+            val lmdUserID = backStackEntry.arguments?.getInt("lmdUserID") ?: 0
+            AssignedOrdersScreen(
+                deliveryBoyID = deliveryBoyID,
+                lmdUserID = lmdUserID,
+                navController = navController
+            )
+        }
+//        composable("tracking_screenDeliveryBoy") {
+//            val order = remember {
+//                navController.previousBackStackEntry?.savedStateHandle?.get<AssignedSuborder>("assigned_order")
+//            }
+//            order?.let {
+//                SuborderTrackingDeliveryBoyScreen(order = it, navController = navController)
+//            }
+//        }
+        composable("tracking_screenDeliveryBoy") {
+            val previousEntry = navController.previousBackStackEntry
+            val order = remember { previousEntry?.savedStateHandle?.get<AssignedSuborder>("assigned_order") }
+            val deliveryBoyId = remember { previousEntry?.savedStateHandle?.get<Int>("delivery_boy_id") }
+
+            if (order != null && deliveryBoyId != null) {
+                SuborderTrackingDeliveryBoyScreen(
+                    order = order,
+                    deliveryBoyID = deliveryBoyId,
+                    navController = navController
+                )
+            }
+        }
+
 
     }
+
+
 }
+
+
+
+
 
 

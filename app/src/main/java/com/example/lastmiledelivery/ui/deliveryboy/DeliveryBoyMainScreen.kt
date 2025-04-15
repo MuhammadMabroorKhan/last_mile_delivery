@@ -114,7 +114,9 @@ fun DeliveryBoyMainScreen(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            DrawerContent(navController, drawerState, scope)
+            deliveryBoyData?.delivery_boy_id?.let { deliveryBoyId ->
+                DrawerContent(deliveryBoyId=deliveryBoyId,user.id,navController, drawerState, scope)
+            }
         }
     ) {
         Scaffold(
@@ -239,6 +241,8 @@ fun DeliveryBoyMainScreen(
 
 @Composable
 private fun DrawerContent(
+    deliveryBoyId: Int,
+    lmdUserId: Int,
     navController: NavHostController,
     drawerState: DrawerState,
     scope: CoroutineScope,
@@ -275,10 +279,10 @@ private fun DrawerContent(
         )
 
         DrawerItem(
-            text = "Orders",
+            text = "Suborders",
             icon = Icons.Filled.ReceiptLong,
             navController = navController,
-            route = "customerOrders",
+            route = "deliveryBoySuborders/${deliveryBoyId}/${lmdUserId}",
             drawerState = drawerState,
             scope = scope
         )

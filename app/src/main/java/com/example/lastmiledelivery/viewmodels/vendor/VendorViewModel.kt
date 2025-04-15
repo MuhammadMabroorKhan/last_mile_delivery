@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lastmiledelivery.data.models.vendor.AvailableOrganization
 import com.example.lastmiledelivery.data.models.vendor.RequestedOrganization
+import com.example.lastmiledelivery.data.models.vendor.SuborderStatusUpdateResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorOrder
 import com.example.lastmiledelivery.data.models.vendor.VendorOrderDetailInfo
 import com.example.lastmiledelivery.data.models.vendor.VendorResponse
@@ -211,6 +212,44 @@ class VendorViewModel @Inject constructor(
             }
         }
     }
+
+    private val _statusUpdateResponse = mutableStateOf<SuborderStatusUpdateResponse?>(null)
+    val statusUpdateResponse: State<SuborderStatusUpdateResponse?> = _statusUpdateResponse
+
+    fun updateSuborderStatus(suborderId: Int, currentStatus: String) {
+        val nextStatus = getNextStatus(currentStatus)
+        if (nextStatus != null) {
+            viewModelScope.launch {
+                val result = repository.updateSuborderStatus(suborderId, nextStatus)
+                _statusUpdateResponse.value = result
+            }
+        }
+    }
+
+    private fun getNextStatus(currentStatus: String): String? {
+        return when (currentStatus.lowercase()) {
+            "pending" -> "in_progress"
+            "in_progress" -> "ready"
+            "picked_up" -> "handover_confirmed" // show button only at picked_up
+            else -> null // returns null for "ready", "assigned", etc.
+        }
+    }
+
+
+    fun updatePaymentStatus(suborderId: Int, currentPaymentStatus: String) {
+        val nextPaymentStatus = when (currentPaymentStatus.lowercase()) {
+            "confirmed_by_deliveryboy" -> "confirmed_by_vendor"
+            else -> null
+        }
+
+        if (nextPaymentStatus != null) {
+            viewModelScope.launch {
+                val result = repository.updateSuborderStatus(suborderId, nextPaymentStatus)
+                _statusUpdateResponse.value = result
+            }
+        }
+    }
+
 
 
 }

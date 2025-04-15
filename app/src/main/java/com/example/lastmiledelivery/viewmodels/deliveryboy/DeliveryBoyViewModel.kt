@@ -13,8 +13,11 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.lastmiledelivery.data.models.customer.CustomerData
 import com.example.lastmiledelivery.data.models.deliveryboy.AcceptOrderResponse
+import com.example.lastmiledelivery.data.models.deliveryboy.AssignedSuborder
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyDataResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyToggleResponse
+import com.example.lastmiledelivery.data.models.deliveryboy.LatestLocationResponse
+import com.example.lastmiledelivery.data.models.deliveryboy.ReachDestinationResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.ReadySuborder
 import com.example.lastmiledelivery.data.repository.deliveryboy.DeliveryBoyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -159,5 +162,107 @@ class DeliveryBoyViewModel @Inject constructor(
         autoRefreshJob?.cancel()
     }
 
+
+    var assignedOrders by mutableStateOf<List<AssignedSuborder>>(emptyList())
+        private set
+
+    var isLoadingassignedOrders by mutableStateOf(false)
+    var errorMessageassignedOrders by mutableStateOf<String?>(null)
+
+    fun fetchAssignedSuborders(deliveryBoyId: Int) {
+        viewModelScope.launch {
+            isLoadingassignedOrders = true
+            errorMessageassignedOrders = null
+
+            val response = repository.getAssignedSuborders(deliveryBoyId)
+            if (response?.status == "success") {
+                assignedOrders = response.data ?: emptyList()
+            } else {
+                errorMessageassignedOrders = "Failed to load orders"
+            }
+            isLoadingassignedOrders = false
+        }
+    }
+
+
+    var pickupResponse by mutableStateOf<String?>(null)
+    var pickupError by mutableStateOf<String?>(null)
+    var isLoadingpickupResponse by mutableStateOf(false)
+
+    fun confirmPickup(suborderId: Int, lat: Double, lng: Double) {
+        viewModelScope.launch {
+            isLoadingpickupResponse = true
+            val result = repository.confirmPickup(suborderId, lat, lng)
+            isLoadingpickupResponse = false
+            result.onSuccess {
+                pickupResponse = it
+            }.onFailure {
+                pickupError = it.message
+            }
+        }
+    }
+
+
+    private var locationJob: Job? = null
+
+    fun startLocationUpdates(
+        suborderId: Int,
+        orderStatus: String,
+        getCurrentLocation: suspend () -> Pair<Double, Double>
+    ) {
+        if (orderStatus.equals("handover_confirmed", true) || orderStatus.equals(
+                "in_transit",
+                true
+            )
+        ) {
+            locationJob?.cancel()
+            locationJob = viewModelScope.launch {
+                while (isActive) {
+                    val (lat, lng) = getCurrentLocation()
+                    repository.updateLocation(suborderId, lat, lng)
+                    delay(10000) // 10 seconds
+                }
+            }
+        }
+    }
+
+    fun stopLocationUpdates() {
+        locationJob?.cancel()
+    }
+
+
+    var isLoadingDestination by mutableStateOf(false)
+    var reachDestinationResponse by mutableStateOf<ReachDestinationResponse?>(null)
+    var destinationError by mutableStateOf<String?>(null)
+
+    fun reachDestination(deliveryBoyId: Int, suborderId: Int, lat: Double, lng: Double) {
+        viewModelScope.launch {
+            isLoadingDestination = true
+            val result = repository.reachDestination(deliveryBoyId, suborderId, lat, lng)
+            reachDestinationResponse = result
+            destinationError = result?.error
+            isLoadingDestination = false
+        }
+    }
+
+
+    var latestLocation by mutableStateOf<LatestLocationResponse?>(null)
+        private set
+
+    var latestLocationError by mutableStateOf<String?>(null)
+        private set
+
+    fun getLatestLocation(suborderId: Int) {
+        viewModelScope.launch {
+            val result = repository.fetchLatestLocation(suborderId)
+            result.onSuccess {
+                latestLocation = it
+                latestLocationError = null
+            }.onFailure {
+                latestLocation = null
+                latestLocationError = it.message
+            }
+        }
+    }
 }
 

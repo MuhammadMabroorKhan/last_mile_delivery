@@ -68,6 +68,7 @@ import com.example.lastmiledelivery.data.models.vendor.ShopRequest
 import com.example.lastmiledelivery.viewmodels.common.ShopCategoryViewModel
 import com.example.lastmiledelivery.viewmodels.vendor.VendorViewModel
 import android.widget.Toast
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -77,6 +78,8 @@ import androidx.navigation.NavHostController
 import coil.request.ImageRequest
 import com.example.lastmiledelivery.viewmodels.common.StatusViewModel
 import com.example.lastmiledelivery.viewmodels.customer.CustomerViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -148,7 +151,11 @@ fun VendorOrdersScreen(
                                     Spacer(modifier = Modifier.height(8.dp))
 
                                     // Customer Info
-                                    Text("Customer Info", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text(
+                                        "Customer Info",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp
+                                    )
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         AsyncImage(
                                             model = order.customer.picture,
@@ -169,7 +176,11 @@ fun VendorOrdersScreen(
                                     Spacer(modifier = Modifier.height(8.dp))
 
                                     // Suborders
-                                    Text("Suborders", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text(
+                                        "Suborders",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp
+                                    )
                                     order.suborders.forEach { sub ->
                                         Card(
                                             modifier = Modifier
@@ -185,7 +196,11 @@ fun VendorOrdersScreen(
                                                     )
                                                 },
                                             shape = RoundedCornerShape(12.dp),
-                                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = Color(
+                                                    0xFFF5F5F5
+                                                )
+                                            )
                                         ) {
                                             Row(
                                                 modifier = Modifier
@@ -202,8 +217,14 @@ fun VendorOrdersScreen(
                                                             append(" | API ID: $it")
                                                         }
                                                     }
-                                                    Text(suborderLine, fontWeight = FontWeight.SemiBold)
-                                                    Text("Status: ${sub.status.uppercase()}", color = Color.Blue)
+                                                    Text(
+                                                        suborderLine,
+                                                        fontWeight = FontWeight.SemiBold
+                                                    )
+                                                    Text(
+                                                        "Status: ${sub.status.uppercase()}",
+                                                        color = Color.Blue
+                                                    )
                                                     Text("Total: Rs. ${sub.total}")
                                                     Text("Vendor Type. ${sub.vendor_type}")
                                                 }
@@ -249,7 +270,7 @@ fun SuborderDetailsScreen(
         viewModel.loadSuborderDetails(vendorId, shopId, branchId, suborderId)
     }
 
-
+    val response = viewModel.statusUpdateResponse.value
     val statusViewModel: StatusViewModel = hiltViewModel()
 
     LaunchedEffect(Unit) {
@@ -259,7 +280,7 @@ fun SuborderDetailsScreen(
     val statuses = statusViewModel.statuses.value
     val loading = statusViewModel.isLoading.value
 
-
+    val scrollState = rememberScrollState()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -277,6 +298,7 @@ fun SuborderDetailsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp)
+                .verticalScroll(scrollState)
         ) {
             when {
                 isLoading -> {
@@ -303,7 +325,10 @@ fun SuborderDetailsScreen(
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Suborder ID: ${details.suborder_id}", fontWeight = FontWeight.Bold)
+                            Text(
+                                "Suborder ID: ${details.suborder_id}",
+                                fontWeight = FontWeight.Bold
+                            )
 
                             Spacer(modifier = Modifier.height(8.dp))
 
@@ -312,7 +337,11 @@ fun SuborderDetailsScreen(
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            Text("Payment Status: ${details.payment_status}")
+                            Text(
+                                "Payment Status: ${details.payment_status}",
+                                Modifier.background(color = Color.White),
+                                color = Color(0xFF388E3C)
+                            )
                             Text("Total Amount: Rs. ${details.total_amount}")
                             Text("Vendor Type: ${details.vendor_type}")
                         }
@@ -355,7 +384,10 @@ fun SuborderDetailsScreen(
                                             .weight(1f)
                                             .align(Alignment.CenterVertically)
                                     ) {
-                                        Text(orderDetail.item.item_name, fontWeight = FontWeight.SemiBold)
+                                        Text(
+                                            orderDetail.item.item_name,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
                                         Text("Qty: ${orderDetail.quantity}")
                                         Text("Price: Rs. ${orderDetail.order_detail_price}")
                                         Text("Total: Rs. ${orderDetail.order_detail_total}")
@@ -365,49 +397,6 @@ fun SuborderDetailsScreen(
                         }
                     }
 
-
-//                    if (statuses != null) {
-//                        val currentStatus = "${details.status}" // You can dynamically set this later
-//                        val statusList = statuses.suborderStatuses.values.toList()
-//                        val currentIndex = statusList.indexOf(currentStatus)
-//
-//
-//                        Text(
-//                            text = "Suborder Statuses:",
-//                            style = MaterialTheme.typography.titleMedium,
-//                            fontWeight = FontWeight.Bold
-//                        )
-//
-//                        Spacer(modifier = Modifier.height(8.dp))
-//
-//                        statusList.forEachIndexed { index, status ->
-//                            val color = when {
-//                                index < currentIndex -> Color.Gray              // Past
-//                                index == currentIndex -> Color.Blue             // Current
-//                                else -> Color(0xFF81C784)                       // Upcoming
-//                            }
-//
-//                            Row(
-//                                verticalAlignment = Alignment.CenterVertically,
-//                                modifier = Modifier
-//                                    .fillMaxWidth()
-//                                    .padding(vertical = 4.dp)
-//                            ) {
-//                                Box(
-//                                    modifier = Modifier
-//                                        .size(12.dp)
-//                                        .clip(CircleShape)
-//                                        .background(color)
-//                                )
-//                                Spacer(modifier = Modifier.width(8.dp))
-//                                Text(
-//                                    text = status.replace("_", " ").replaceFirstChar { it.uppercase() },
-//                                    color = color,
-//                                    fontSize = 16.sp
-//                                )
-//                            }
-//                        }
-//                    }
                     if (statuses != null) {
                         val currentStatus = "${details.status}"
                         val statusList = statuses.suborderStatuses.values.toList()
@@ -449,19 +438,113 @@ fun SuborderDetailsScreen(
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = status.replace("_", " ").replaceFirstChar { it.uppercase() },
+                                        text = status.replace("_", " ")
+                                            .replaceFirstChar { it.uppercase() },
                                         color = color,
                                         fontSize = 16.sp
                                     )
                                 }
                             }
                         }
+
+
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+
+                        val nextStatus = when (currentStatus.lowercase()) {
+                            "pending" -> "in_progress"
+                            "in_progress" -> "ready"
+                            "picked_up" -> "handover_confirmed" // show button only at picked_up
+//                            "in_transit" -> "confirmed_by_vendor"
+                            else -> null
+                        }
+                        val coroutineScope = rememberCoroutineScope()
+                        nextStatus?.let {
+                            Button(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        viewModel.updateSuborderStatus(
+                                            details.suborder_id,
+                                            currentStatus
+                                        )
+
+                                        delay(3000) // <-- Delay of 2 seconds
+
+                                        viewModel.loadSuborderDetails(
+                                            vendorId,
+                                            shopId,
+                                            branchId,
+                                            suborderId
+                                        )
+                                        statusViewModel.loadStatuses()
+                                    }
+
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    "Update Status to ${
+                                        it.replace("_", " ").replaceFirstChar { c -> c.uppercase() }
+                                    }"
+                                )
+                            }
+                        }
+
+                        response?.let {
+                            Spacer(modifier = Modifier.height(8.dp))
+
+
+                            Text(
+                                text = it.message,
+                                color = if (it.success) Color.Green else Color.Red
+                            )
+                        }
+
+
+                        val currentPaymentStatus = details.payment_status?.lowercase()
+                        val nextPaymentStatus = when (currentPaymentStatus) {
+                            "confirmed_by_deliveryboy" -> "confirmed_by_vendor"
+                            else -> null
+                        }
+
+
+                        nextPaymentStatus?.let {
+                            Button(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        if (currentPaymentStatus != null) {
+                                            viewModel.updatePaymentStatus(
+                                                details.suborder_id,
+                                                currentPaymentStatus
+                                            )
+
+                                        }
+                                        delay(2000)
+                                        viewModel.loadSuborderDetails(
+                                            vendorId,
+                                            shopId,
+                                            branchId,
+                                            suborderId
+                                        )
+                                        statusViewModel.loadStatuses()
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    "Update Payment Status to ${
+                                        it.replace("_", " ").replaceFirstChar { c -> c.uppercase() }
+                                    }"
+                                )
+                            }
+                        }
+
+
                     }
 
                 }
             }
-
-
 
 
         }
