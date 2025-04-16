@@ -20,6 +20,7 @@ import com.example.lastmiledelivery.data.models.customer.MenuResponse
 import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
 import com.example.lastmiledelivery.data.models.customer.OrderResponse
+import com.example.lastmiledelivery.data.models.customer.PaymentStatusResponse
 import com.example.lastmiledelivery.data.models.customer.RouteInfoResponse
 import com.example.lastmiledelivery.data.remote.api.CustomerApiService
 import com.google.gson.Gson
@@ -44,7 +45,19 @@ class CustomerRepository @Inject constructor(private val api: CustomerApiService
     ): Result<CustomerSignupResponse> {
         return try {
             val response = api.customerSignup(
-                name, email, phoneNo, password, cnic, addressType, street, city, zipCode, country, latitude, longitude, profilePicture
+                name,
+                email,
+                phoneNo,
+                password,
+                cnic,
+                addressType,
+                street,
+                city,
+                zipCode,
+                country,
+                latitude,
+                longitude,
+                profilePicture
             )
 
             if (response.isSuccessful) {
@@ -91,7 +104,11 @@ class CustomerRepository @Inject constructor(private val api: CustomerApiService
     }
 
 
-    suspend fun getCategories(vendorId: Int, shopId: Int, branchId: Int): Result<List<CategoryResponse>> {
+    suspend fun getCategories(
+        vendorId: Int,
+        shopId: Int,
+        branchId: Int
+    ): Result<List<CategoryResponse>> {
         return try {
             val response = api.getCategories(vendorId, shopId, branchId)
             if (response.isSuccessful && response.body() != null) {
@@ -105,7 +122,6 @@ class CustomerRepository @Inject constructor(private val api: CustomerApiService
     }
 
 
-
     suspend fun getVendorMenu(vendorId: Int, shopId: Int, branchId: Int): Result<MenuResponse> {
         return try {
             val response = api.getVendorMenu(vendorId, shopId, branchId)
@@ -116,13 +132,16 @@ class CustomerRepository @Inject constructor(private val api: CustomerApiService
                 jsonElement?.let {
                     when {
                         it.isJsonArray -> {  // ✅ Handle list of items
-                            val menuItems: List<MenuItem> = Gson().fromJson(it, object : TypeToken<List<MenuItem>>() {}.type)
+                            val menuItems: List<MenuItem> =
+                                Gson().fromJson(it, object : TypeToken<List<MenuItem>>() {}.type)
                             Result.success(MenuResponse(items = menuItems))
                         }
+
                         it.isJsonObject && it.asJsonObject.has("error") -> {  // ✅ Handle error object
                             val errorMessage = it.asJsonObject.get("error").asString
                             Result.success(MenuResponse(error = errorMessage))
                         }
+
                         else -> {
                             Result.failure(Exception("Unexpected response format"))
                         }
@@ -138,9 +157,6 @@ class CustomerRepository @Inject constructor(private val api: CustomerApiService
     }
 
 
-
-
-
     suspend fun updateCustomer(
         customerId: Int,
         name: String?,
@@ -154,7 +170,10 @@ class CustomerRepository @Inject constructor(private val api: CustomerApiService
             Log.d("UpdateCustomerRepo", "Sending Update Request for Customer ID: $customerId")
             Log.d("UpdateCustomerRepo", "Name: $name, Email: $email, Phone No: $phoneNo")
             Log.d("UpdateCustomerRepo", "Password: $password, CNIC: $cnic")
-            Log.d("UpdateCustomerRepo", "Profile Picture Part: ${profilePicture?.body?.contentLength()} bytes")
+            Log.d(
+                "UpdateCustomerRepo",
+                "Profile Picture Part: ${profilePicture?.body?.contentLength()} bytes"
+            )
 
             val response = api.updateCustomer(
                 customerId,
@@ -181,24 +200,23 @@ class CustomerRepository @Inject constructor(private val api: CustomerApiService
     }
 
 
-
-suspend fun getCartDetails(customerId: Int): Result<CartResponse?> {
-    return try {
-        val response = api.getCartDetails(customerId)
-        if (response.isSuccessful) {
-            val cartResponse = response.body()
-            if (cartResponse != null) {
-                Result.success(cartResponse)  // ✅ Success with actual cart data
+    suspend fun getCartDetails(customerId: Int): Result<CartResponse?> {
+        return try {
+            val response = api.getCartDetails(customerId)
+            if (response.isSuccessful) {
+                val cartResponse = response.body()
+                if (cartResponse != null) {
+                    Result.success(cartResponse)  // ✅ Success with actual cart data
+                } else {
+                    Result.success(null)  // ✅ Return null instead of failure
+                }
             } else {
-                Result.success(null)  // ✅ Return null instead of failure
+                Result.failure(Exception("Failed to fetch cart. Server returned error."))
             }
-        } else {
-            Result.failure(Exception("Failed to fetch cart. Server returned error."))
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-    } catch (e: Exception) {
-        Result.failure(e)
     }
-}
 
 
     suspend fun addItemToCart(request: AddToCartRequest): Result<AddCartResponse> {
@@ -295,6 +313,34 @@ suspend fun getCartDetails(customerId: Int): Result<CartResponse?> {
     }
 
 
+    suspend fun confirmOrderDelivery(suborderId: Int): Result<String> {
+        return try {
+            val response = api.confirmOrderDelivery(suborderId)
+            if (response.isSuccessful) {
+                response.body()?.message?.let {
+                    Result.success(it)
+                } ?: Result.failure(Exception("Empty success response"))
+            } else {
+                val errorMsg = response.errorBody()?.string()
+                Result.failure(Exception(errorMsg ?: "Unknown error"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun fetchPaymentStatus(suborderId: Int): PaymentStatusResponse? {
+        return try {
+            val response = api.getPaymentStatus(suborderId)
+            if (response.isSuccessful) {
+                response.body()
+            } else {
+                PaymentStatusResponse(null, null, "Error fetching payment status.")
+            }
+        } catch (e: Exception) {
+            PaymentStatusResponse(null, null, e.message ?: "Unknown error")
+        }
+    }
 }
 
 

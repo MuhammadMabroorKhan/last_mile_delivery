@@ -3,6 +3,7 @@ package com.example.lastmiledelivery.data.remote.api
 import com.example.lastmiledelivery.data.models.deliveryboy.AcceptOrderResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.AssignedSuborderResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyDataResponse
+import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyPaymentConfirmResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyToggleResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.LatestLocationResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.LocationRequest
@@ -54,12 +55,11 @@ interface DeliveryBoysApiService {
     ): Response<PickupSuccessResponse>
 
 
-
-        @PUT("api/deliveryboy/order/{suborderId}/location")
-        suspend fun updateLocation(
-            @Path("suborderId") suborderId: Int,
-            @Body location: LocationRequest
-        ): Response<LocationResponse>
+    @PUT("api/deliveryboy/order/{suborderId}/location")
+    suspend fun updateLocation(
+        @Path("suborderId") suborderId: Int,
+        @Body location: LocationRequest
+    ): Response<LocationResponse>
 
     @POST("api/deliveryboy/reach-destination/{deliveryBoyId}/{suborderId}")
     suspend fun reachDestination(
@@ -70,4 +70,9 @@ interface DeliveryBoysApiService {
 
     @GET("api/suborder/{suborderId}/latest-location")
     suspend fun getLatestLocation(@Path("suborderId") suborderId: Int): Response<LatestLocationResponse>
+
+    @POST("api/deliveryboy/confirm-payment/{suborderId}")
+    suspend fun confirmPaymentByDeliveryBoy(
+        @Path("suborderId") suborderId: Int
+    ): Response<DeliveryBoyPaymentConfirmResponse>
 }

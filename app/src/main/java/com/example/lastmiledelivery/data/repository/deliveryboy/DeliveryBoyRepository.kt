@@ -141,4 +141,19 @@ class DeliveryBoyRepository @Inject constructor(private val api: DeliveryBoysApi
             Result.failure(e)
         }
     }
+
+
+    suspend fun confirmPaymentByDeliveryBoy(suborderId: Int): Result<String> {
+        return try {
+            val response = api.confirmPaymentByDeliveryBoy(suborderId)
+            if (response.isSuccessful) {
+                Result.success(response.body()?.message ?: "Success")
+            } else {
+                Result.failure(Exception(response.errorBody()?.string() ?: "Unknown error"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
 }

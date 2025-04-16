@@ -385,22 +385,31 @@ fun AppNavigation() {
                 )
             }
         }
-
+//        navController.navigate("track_order/${suborder.suborder_id}/$customerId/$addressId/${suborder.vendor_ID}/${suborder.shop_ID}/${suborder.branch_ID}")
         composable(
-            "track_order/{suborderId}/{customerId}/{addressId}",
+            "track_order/{suborderId}/{customerId}/{addressId}/{vendor_ID}/{shop_ID}/{branch_ID}",
             arguments = listOf(
                 navArgument("suborderId") { type = NavType.IntType },
                 navArgument("customerId") { type = NavType.IntType },
-                navArgument("addressId") { type = NavType.IntType }
+                navArgument("addressId") { type = NavType.IntType },
+                navArgument("vendor_ID") { type = NavType.IntType },
+                navArgument("shop_ID") { type = NavType.IntType },
+                navArgument("branch_ID") { type = NavType.IntType }
             )
         ) { backStackEntry ->
             val suborderId = backStackEntry.arguments?.getInt("suborderId") ?: 0
             val customerId = backStackEntry.arguments?.getInt("customerId") ?: 0
             val addressId = backStackEntry.arguments?.getInt("addressId") ?: 0
+            val vendor_ID = backStackEntry.arguments?.getInt("vendor_ID") ?: 0
+            val shop_ID = backStackEntry.arguments?.getInt("shop_ID") ?: 0
+            val branch_ID = backStackEntry.arguments?.getInt("branch_ID") ?: 0
             TrackOrderScreen(
                 suborderId = suborderId,
                 customerId = customerId,
                 addressId = addressId,
+                vendor_ID=vendor_ID,
+                shop_ID = shop_ID,
+                branch_ID = branch_ID,
                 navController = navController
             )
         }

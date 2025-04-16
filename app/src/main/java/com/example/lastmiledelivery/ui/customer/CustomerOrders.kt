@@ -18,8 +18,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForwardIos
@@ -40,6 +42,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -80,12 +83,17 @@ import com.google.maps.android.compose.Polyline
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.example.lastmiledelivery.viewmodels.common.StatusViewModel
+import com.example.lastmiledelivery.viewmodels.deliveryboy.DeliveryBoyViewModel
+import com.example.lastmiledelivery.viewmodels.vendor.VendorViewModel
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
@@ -104,7 +112,7 @@ fun CustomerOrders(
     val customerData by customerViewModel.customerData.collectAsState()
     val errorMessage by customerViewModel.errorMessages.collectAsState()
 
-    val context= LocalContext.current
+    val context = LocalContext.current
 
     // Trigger data fetch when the composable enters composition
     LaunchedEffect(key1 = user.id) {
@@ -121,7 +129,6 @@ fun CustomerOrders(
     }
     // Observe customer data and error messages
     val customer = customerViewModel.customerState
-
 
 
     val orderState = customerViewModel.orderState
@@ -174,7 +181,11 @@ fun CustomerOrders(
 }
 
 @Composable
-fun OrderCard(order: Order,  navController: NavHostController,context: Context = LocalContext.current) {
+fun OrderCard(
+    order: Order,
+    navController: NavHostController,
+    context: Context = LocalContext.current
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -196,7 +207,11 @@ fun OrderCard(order: Order,  navController: NavHostController,context: Context =
                 Text("Amount: PKR ${order.total_amount}", fontSize = 16.sp)
                 Text("Status: ${order.order_status}", color = Color.Gray)
                 Text("Date: ${order.order_date}", fontSize = 12.sp, color = Color.DarkGray)
-                Text("Payment: ${order.payment_status} (${order.payment_method})", fontSize = 12.sp, color = Color.Gray)
+                Text(
+                    "Payment: ${order.payment_status} (${order.payment_method})",
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
             }
 
             IconButton(onClick = {
@@ -216,7 +231,13 @@ fun OrderCard(order: Order,  navController: NavHostController,context: Context =
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OrderDetailScreen(navController: NavHostController, orderId: Int, customerId: Int, addressId: Int, viewModel: CustomerViewModel = hiltViewModel()) {
+fun OrderDetailScreen(
+    navController: NavHostController,
+    orderId: Int,
+    customerId: Int,
+    addressId: Int,
+    viewModel: CustomerViewModel = hiltViewModel()
+) {
     // Fetch the order details when the screen is loaded
     LaunchedEffect(orderId) {
         viewModel.fetchOrderDetails(orderId)
@@ -268,7 +289,7 @@ fun OrderDetailScreen(navController: NavHostController, orderId: Int, customerId
                         details.suborders?.let { suborders ->
                             LazyColumn {
                                 items(suborders) { suborder ->
-                                    SubOrderCard(suborder,customerId,addressId,navController)
+                                    SubOrderCard(suborder, customerId, addressId, navController)
                                 }
                             }
                         }
@@ -280,9 +301,13 @@ fun OrderDetailScreen(navController: NavHostController, orderId: Int, customerId
 }
 
 
-
 @Composable
-fun SubOrderCard(suborder: SubOrders, customerId: Int, addressId: Int, navController: NavHostController) {
+fun SubOrderCard(
+    suborder: SubOrders,
+    customerId: Int,
+    addressId: Int,
+    navController: NavHostController
+) {
     // State to manage the expansion of the suborder details
     var expanded by remember { mutableStateOf(false) }
 
@@ -337,10 +362,11 @@ fun SubOrderCard(suborder: SubOrders, customerId: Int, addressId: Int, navContro
             Button(
                 onClick = {
                     // Navigate to the track order screen and pass necessary parameters
-                    navController.navigate("track_order/${suborder.suborder_id}/$customerId/$addressId")
+//                    navController.navigate("track_order/${suborder.suborder_id}/$customerId/$addressId")
+                    navController.navigate("track_order/${suborder.suborder_id}/$customerId/$addressId/${suborder.vendor_ID}/${suborder.shop_ID}/${suborder.branch_ID}")
                 },
                 modifier = Modifier.fillMaxWidth(),
-                colors= ButtonDefaults.buttonColors(colorResource(id = R.color.pink))
+                colors = ButtonDefaults.buttonColors(colorResource(id = R.color.pink))
             ) {
                 Text(text = "Track Order", color = Color.White)
             }
@@ -425,18 +451,354 @@ fun ItemCard(item: Item) {
 }
 
 
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun TrackOrderScreen(
+//    suborderId: Int,
+//    customerId: Int,
+//    addressId: Int,
+//    vendor_ID: Int,
+//    shop_ID: Int,
+//    branch_ID: Int,
+//    navController: NavHostController,
+//    viewModel: CustomerViewModel = hiltViewModel(),
+//    deliveryBoyViewModel: DeliveryBoyViewModel = hiltViewModel(),
+//    vendorViewModel: VendorViewModel = hiltViewModel()
+//) {
+//    val suborderDetails by vendorViewModel.suborderDetails.collectAsState()
+//    val orderDetails by vendorViewModel.orderDetails.collectAsState()
+//    val isLoadingSUbOrderDetail by vendorViewModel.isLoadingSuborderDetails
+//    val error by vendorViewModel.errors
+//
+//    // Load suborder details when the screen is launched or the suborderId changes
+//    LaunchedEffect(suborderId) {
+//        vendorViewModel.loadSuborderDetails(vendor_ID, shop_ID, branch_ID, suborderId)
+//    }
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//    LaunchedEffect(Unit) {
+//        viewModel.getRouteInfo(suborderId)
+//    }
+//
+//    var orderLocationTrackingStatus by remember { mutableStateOf("-") }
+//
+//    LaunchedEffect(suborderId) {
+//        suborderId?.let { suborderId ->
+//            deliveryBoyViewModel.getLatestLocation(suborderId)
+//        }
+//    }
+//
+//    var orderPaymentStatus by remember { mutableStateOf("-") }
+//
+//    val status = viewModel.paymentStatus.value
+//
+//    DisposableEffect(suborderId) {
+//        viewModel.startPolling(suborderId)
+//        orderPaymentStatus = status?.paymentStatus.toString()
+//        onDispose {
+//            viewModel.stopPolling()
+//        }
+//    }
+//
+//    val scrollState = rememberScrollState()
+//    val context = LocalContext.current
+//
+//    val routeInfo by remember { derivedStateOf { viewModel.routeInfo } }
+//    val isLoading by remember { derivedStateOf { viewModel.isLoading } }
+//
+//    val statusViewModel: StatusViewModel = hiltViewModel()
+//
+//    LaunchedEffect(Unit) {
+//        statusViewModel.loadStatuses()
+//    }
+//
+//    val statuses = statusViewModel.statuses.value
+//    val loading = statusViewModel.isLoading.value
+//
+//
+//    Scaffold(
+//        topBar = {
+//            TopAppBar(
+//                title = { Text("Track Order", color = Color.White) },
+//                navigationIcon = {
+//                    IconButton(onClick = { navController.popBackStack() }) {
+//                        Icon(
+//                            imageVector = Icons.Default.ArrowBack,
+//                            contentDescription = "Back",
+//                            tint = Color.White
+//                        )
+//                    }
+//                },
+//                colors = TopAppBarDefaults.topAppBarColors(
+//                    containerColor = colorResource(id = R.color.pink)
+//                )
+//            )
+//        }
+//    ) { padding ->
+//
+//        Box(
+//            modifier = Modifier
+//                .padding(padding)
+//                .fillMaxSize()
+//        ) {
+//            when {
+//                isLoading -> {
+//                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+//                }
+//
+//                routeInfo != null -> {
+//                    val pickup = routeInfo!!.data?.pickup_location
+//                    val drop = routeInfo!!.data?.drop_location
+//
+//                    if (pickup != null && drop != null) {
+//                        val pickupLatLng = LatLng(pickup.latitude, pickup.longitude)
+//                        val dropLatLng = LatLng(drop.latitude, drop.longitude)
+//
+//                        val cameraPositionState = rememberCameraPositionState {
+//                            position = CameraPosition.fromLatLngZoom(pickupLatLng, 18f)
+//                        }
+//
+//                        Column(modifier = Modifier.fillMaxSize()) {
+//                            GoogleMap(
+//                                modifier = Modifier
+//                                    .fillMaxWidth()
+//                                    .height(300.dp),
+//                                cameraPositionState = cameraPositionState
+//                            ) {
+//                                Marker(
+//                                    state = MarkerState(position = pickupLatLng),
+//                                    title = "Pickup Location"
+//                                )
+//                                Marker(
+//                                    state = MarkerState(position = dropLatLng),
+//                                    title = "Drop Location"
+//                                )
+//                                Polyline(
+//                                    points = listOf(pickupLatLng, dropLatLng),
+//                                    color = Color.Blue,
+//                                    width = 5f
+//                                )
+//                            }
+//
+//                            Spacer(modifier = Modifier.height(16.dp))
+//
+////                            Column(modifier = Modifier.padding(16.dp)) {
+////                                Text("Pickup: ${pickup.latitude}, ${pickup.longitude}")
+////                                Text("Drop: ${drop.latitude}, ${drop.longitude}")
+////                                Text("Order Date: ${routeInfo!!.data?.order_date}")
+////                                Text("Estimated Delivery Time: ${routeInfo!!.data?.estimated_delivery_time}")
+////                                Text("Delivery Time: ${routeInfo!!.data?.delivery_time}")
+////                            }
+//                        }
+//                    } else {
+//                        Text(
+//                            "Location data not available",
+//                            modifier = Modifier.align(Alignment.Center)
+//                        )
+//                    }
+//                }
+//
+//                else -> {
+//                    Text("No tracking info available", modifier = Modifier.align(Alignment.Center))
+//                }
+//            }
+//
+//            if (statuses != null) {
+//                val currentStatus = "picked_up" // You can dynamically set this later
+//                val statusList = statuses.suborderStatuses.values.toList()
+//                val currentIndex = statusList.indexOf(currentStatus)
+//
+//
+//                var orderStatus by remember { mutableStateOf(currentStatus ?: "-") }
+//
+//                Column(
+//                    modifier = Modifier
+//                        .align(Alignment.BottomCenter)
+//                        .padding(16.dp)
+//                        .verticalScroll(scrollState)
+//                ) {
+//                    Text(
+//                        text = "Suborder Statuses:",
+//                        style = MaterialTheme.typography.titleMedium,
+//                        fontWeight = FontWeight.Bold
+//                    )
+//
+//                    Spacer(modifier = Modifier.height(8.dp))
+//                    Text(
+//                        text = "${vendor_ID}  , ${shop_ID}  ${branch_ID}  ${suborderId}:",
+//                        style = MaterialTheme.typography.titleMedium,
+//                        fontWeight = FontWeight.Bold
+//                    )
+//                    Text(
+//                        text = "${orderStatus}  , ${orderPaymentStatus}:",
+//                        style = MaterialTheme.typography.titleMedium,
+//                        fontWeight = FontWeight.Bold
+//                    )
+//                    Text(
+//                        text = "${orderLocationTrackingStatus}:",
+//                        style = MaterialTheme.typography.titleMedium,
+//                        fontWeight = FontWeight.Bold
+//                    )
+//
+//                    when {
+//                        status?.error != null -> {
+//                            Text("Error: ${status?.error}", color = Color.Red)
+//                        }
+//
+//                        status?.paymentStatus != null -> {
+////                            Text(
+////                                text = "Payment Status: ${status?.paymentStatus?.replace("_", " ")?.uppercase()}",
+////                                color = if (status?.paymentStatus == "confirmed_by_customer") Color.Green else Color.Yellow,
+////                                fontSize = 20.sp
+////                            )
+//                            orderPaymentStatus = status?.paymentStatus
+//                        }
+//
+//                        else -> {
+//                            Text("Fetching payment status...", color = Color.Gray)
+//                        }
+//                    }
+//                    Spacer(modifier = Modifier.height(8.dp))
+//
+//                    statusList.forEachIndexed { index, status ->
+//                        val color = when {
+//                            index < currentIndex -> Color.Gray              // Past
+//                            index == currentIndex -> Color.Blue             // Current
+//                            else -> Color(0xFF81C784)                       // Upcoming
+//                        }
+//
+//                        Row(
+//                            verticalAlignment = Alignment.CenterVertically,
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .padding(vertical = 4.dp)
+//                        ) {
+//                            Box(
+//                                modifier = Modifier
+//                                    .size(12.dp)
+//                                    .clip(CircleShape)
+//                                    .background(color)
+//                            )
+//                            Spacer(modifier = Modifier.width(8.dp))
+//                            Text(
+//                                text = status.replace("_", " ").replaceFirstChar { it.uppercase() },
+//                                color = color,
+//                                fontSize = 16.sp
+//                            )
+//                        }
+//                    }
+//
+//
+//                    deliveryBoyViewModel.latestLocation?.let {
+//                        if (currentStatus.equals(
+//                                "handover_confirmed",
+//                                true
+//                            ) || currentStatus.equals(
+//                                "in_transit",
+//                                true
+//                            )
+//                        ) {
+////                            orderStatus = currentStatus ?: orderStatus
+////                            orderPaymentStatus = it.status ?: orderPaymentStatus
+//                            orderLocationTrackingStatus = it.status ?: orderLocationTrackingStatus
+//
+//                        }
+//                    }
+//
+//                    // 👉 Show "Confirm Delivery" button if status is "reached_destination"
+//                    if (orderStatus.equals("reached_destination", true)
+//                        || orderLocationTrackingStatus.equals("reached_destination", true)
+//                    ) {
+//                        Spacer(modifier = Modifier.height(16.dp))
+//                        Button(onClick = {
+//                            viewModel.confirmDelivery(suborderId = suborderId)
+//                        }) {
+//                            Text("Confirm Delivery")
+//                        }
+//
+//                        // Optional: Show success/error toast
+//                        val result = viewModel.confirmDeliveryResult.value
+//                        result?.let {
+//                            when {
+//                                it.isSuccess -> {
+//                                    Toast.makeText(context, it.getOrNull(), Toast.LENGTH_SHORT)
+//                                        .show()
+//                                    viewModel.clearDeliveryResult()
+//                                }
+//
+//                                it.isFailure -> {
+//                                    Toast.makeText(
+//                                        context,
+//                                        it.exceptionOrNull()?.message,
+//                                        Toast.LENGTH_SHORT
+//                                    ).show()
+//                                    viewModel.clearDeliveryResult()
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackOrderScreen(
     suborderId: Int,
     customerId: Int,
     addressId: Int,
+    vendor_ID: Int,
+    shop_ID: Int,
+    branch_ID: Int,
     navController: NavHostController,
-    viewModel: CustomerViewModel = hiltViewModel()
+    viewModel: CustomerViewModel = hiltViewModel(),
+    deliveryBoyViewModel: DeliveryBoyViewModel = hiltViewModel(),
+    vendorViewModel: VendorViewModel = hiltViewModel()
 ) {
+    val suborderDetails by vendorViewModel.suborderDetails.collectAsState()
+    val orderDetails by vendorViewModel.orderDetails.collectAsState()
+    val isLoadingSUbOrderDetail by vendorViewModel.isLoadingSuborderDetails
+    val error by vendorViewModel.errors
+
+    // Load suborder details when the screen is launched or the suborderId changes
+    LaunchedEffect(suborderId) {
+        vendorViewModel.loadSuborderDetails(vendor_ID, shop_ID, branch_ID, suborderId)
+    }
+
     LaunchedEffect(Unit) {
         viewModel.getRouteInfo(suborderId)
     }
+
+    var orderLocationTrackingStatus by remember { mutableStateOf("-") }
+
+    LaunchedEffect(suborderId) {
+        suborderId?.let { suborderId ->
+            deliveryBoyViewModel.getLatestLocation(suborderId)
+        }
+    }
+
+    var orderPaymentStatus by remember { mutableStateOf("-") }
+
+    val status = viewModel.paymentStatus.value
+
+//    DisposableEffect(suborderId) {
+//        viewModel.startPolling(suborderId)
+//        orderPaymentStatus = status?.paymentStatus.toString()
+//        onDispose {
+//            viewModel.stopPolling()
+//        }
+//    }
+    val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+    val context = LocalContext.current
 
     val routeInfo by remember { derivedStateOf { viewModel.routeInfo } }
     val isLoading by remember { derivedStateOf { viewModel.isLoading } }
@@ -449,6 +811,7 @@ fun TrackOrderScreen(
 
     val statuses = statusViewModel.statuses.value
     val loading = statusViewModel.isLoading.value
+
 
     Scaffold(
         topBar = {
@@ -525,7 +888,10 @@ fun TrackOrderScreen(
 //                            }
                         }
                     } else {
-                        Text("Location data not available", modifier = Modifier.align(Alignment.Center))
+                        Text(
+                            "Location data not available",
+                            modifier = Modifier.align(Alignment.Center)
+                        )
                     }
                 }
 
@@ -534,55 +900,175 @@ fun TrackOrderScreen(
                 }
             }
 
-            if (statuses != null) {
-                val currentStatus = "picked_up" // You can dynamically set this later
-                val statusList = statuses.suborderStatuses.values.toList()
-                val currentIndex = statusList.indexOf(currentStatus)
+            when {
+                isLoadingSUbOrderDetail -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
 
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(16.dp)
-                ) {
+                error != null -> {
                     Text(
-                        text = "Suborder Statuses:",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        text = error ?: "Unknown error",
+                        color = Color.Red,
+                        modifier = Modifier.padding(8.dp)
                     )
+                }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                suborderDetails != null -> {
+                    val details = suborderDetails!!
 
-                    statusList.forEachIndexed { index, status ->
-                        val color = when {
-                            index < currentIndex -> Color.Gray              // Past
-                            index == currentIndex -> Color.Blue             // Current
-                            else -> Color(0xFF81C784)                       // Upcoming
-                        }
+                    if (statuses != null) {
+                        val currentStatus =
+                            "${details.status}" // You can dynamically set this later
+                        val statusList = statuses.suborderStatuses.values.toList()
+                        val currentIndex = statusList.indexOf(currentStatus)
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
+
+                        var orderStatus by remember { mutableStateOf(currentStatus ?: "-") }
+                        orderPaymentStatus = details.payment_status
+                        Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp)
+                                .align(Alignment.BottomCenter)
+                                .padding(16.dp)
+                                .verticalScroll(scrollState)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .clip(CircleShape)
-                                    .background(color)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = status.replace("_", " ").replaceFirstChar { it.uppercase() },
-                                color = color,
-                                fontSize = 16.sp
+                                text = "Suborder Statuses:",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
+
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "${orderStatus} , ${orderPaymentStatus} , $orderLocationTrackingStatus",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Light,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+//                            when {
+//                                status?.error != null -> {
+//                                    Text("Error: ${status?.error}", color = Color.Red)
+//                                }
+//
+//                                status?.paymentStatus != null -> {
+////                            Text(
+////                                text = "Payment Status: ${status?.paymentStatus?.replace("_", " ")?.uppercase()}",
+////                                color = if (status?.paymentStatus == "confirmed_by_customer") Color.Green else Color.Yellow,
+////                                fontSize = 20.sp
+////                            )
+//                                    orderPaymentStatus = status?.paymentStatus
+//                                }
+//
+//                                else -> {
+//                                    Text("Fetching payment status...", color = Color.Gray)
+//                                }
+//                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            statusList.forEachIndexed { index, status ->
+                                val color = when {
+                                    index < currentIndex -> Color.Gray              // Past
+                                    index == currentIndex -> Color.Blue             // Current
+                                    else -> Color(0xFF81C784)                       // Upcoming
+                                }
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(12.dp)
+                                            .clip(CircleShape)
+                                            .background(color)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = status.replace("_", " ")
+                                            .replaceFirstChar { it.uppercase() },
+                                        color = color,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
+
+                            deliveryBoyViewModel.latestLocation?.let {
+                                if (currentStatus.equals(
+                                        "handover_confirmed",
+                                        true
+                                    ) || currentStatus.equals(
+                                        "in_transit",
+                                        true
+                                    )
+                                ) {
+//                            orderStatus = currentStatus ?: orderStatus
+//                            orderPaymentStatus = it.status ?: orderPaymentStatus
+                                    orderLocationTrackingStatus =
+                                        it.status ?: orderLocationTrackingStatus
+
+                                }
+                            }
+
+                            if (
+                                orderLocationTrackingStatus.equals("reached_destination", true)
+                            ) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(onClick = {
+                                    coroutineScope.launch {
+                                        viewModel.confirmDelivery(suborderId = suborderId)
+                                        delay(2000)
+                                        vendorViewModel.loadSuborderDetails(
+                                            vendor_ID,
+                                            shop_ID,
+                                            branch_ID,
+                                            suborderId
+                                        )
+                                        statusViewModel.loadStatuses()
+                                        deliveryBoyViewModel.getLatestLocation(suborderId)
+                                        delay(2000)
+                                        deliveryBoyViewModel.latestLocation?.let {
+                                            orderLocationTrackingStatus =
+                                                it.status ?: orderLocationTrackingStatus
+
+                                        }
+                                    }
+                                }) {
+                                    Text("Confirm Delivery")
+                                }
+
+                                // Optional: Show success/error toast
+                                val result = viewModel.confirmDeliveryResult.value
+                                result?.let {
+                                    when {
+                                        it.isSuccess -> {
+                                            Toast.makeText(
+                                                context,
+                                                it.getOrNull(),
+                                                Toast.LENGTH_SHORT
+                                            )
+                                                .show()
+                                            viewModel.clearDeliveryResult()
+                                        }
+
+                                        it.isFailure -> {
+                                            Toast.makeText(
+                                                context,
+                                                it.exceptionOrNull()?.message,
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            viewModel.clearDeliveryResult()
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
-
         }
     }
 }
-

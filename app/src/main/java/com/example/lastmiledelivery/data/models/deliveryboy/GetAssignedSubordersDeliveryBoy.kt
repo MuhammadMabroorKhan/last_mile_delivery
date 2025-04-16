@@ -123,3 +123,10 @@ data class LatestLocationResponse(
     val status: String?,
     @SerializedName("time_stamp") val timeStamp: String?
 )
+
+
+
+//COnfirm Payment By deliveryboy
+data class DeliveryBoyPaymentConfirmResponse(
+    val message: String
+)

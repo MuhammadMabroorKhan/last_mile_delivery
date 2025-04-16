@@ -319,7 +319,8 @@ fun SuborderTrackingDeliveryBoyScreen(
     var currentLatLng by remember { mutableStateOf<LatLng?>(null) }
     var locationError by remember { mutableStateOf<String?>(null) }
 
-    var orderStatus by remember { mutableStateOf(order.status ?: "-") }
+     var orderStatus by remember { mutableStateOf(order.status ?: "-") }
+     var orderPaymentStatus by remember { mutableStateOf(order.payment_status ?: "-") }
     LaunchedEffect(order.suborder_id) {
         order.suborder_id?.let { suborderId ->
             viewModel.getLatestLocation(suborderId)
@@ -332,6 +333,7 @@ fun SuborderTrackingDeliveryBoyScreen(
             )
         ) {
             orderStatus = it.status ?: orderStatus
+            orderPaymentStatus = order.payment_status ?: orderPaymentStatus
         }
     }
     var deliveryBoyIcon by remember { mutableStateOf<BitmapDescriptor?>(null) }
@@ -347,6 +349,7 @@ fun SuborderTrackingDeliveryBoyScreen(
             pickupIcon = bitmapDescriptorFromVector(context, R.drawable.storefront)
             dropIcon = bitmapDescriptorFromVector(context, R.drawable.account_circle)
         }
+        orderPaymentStatus = order.payment_status ?: orderPaymentStatus
     }
 
     // Check location settings and fetch location
@@ -373,14 +376,49 @@ fun SuborderTrackingDeliveryBoyScreen(
                     ) == PackageManager.PERMISSION_GRANTED
                 ) {
                     // Now it's safe to call lastLocation
-                    fusedLocationClient.lastLocation
-                        .addOnSuccessListener { location ->
+//                    fusedLocationClient.lastLocation
+//                        .addOnSuccessListener { location ->
+//                            if (location != null) {
+//                                currentLatLng = LatLng(location.latitude, location.longitude)
+//                            } else {
+//                                locationError = "Unable to fetch current location."
+//                            }
+//                        }
+                    val locationRequest = LocationRequest.create().apply {
+                        interval = 5000 // 5 seconds
+                        fastestInterval = 2000
+                        priority = Priority.PRIORITY_HIGH_ACCURACY
+                    }
+
+                    val locationCallback = object : LocationCallback() {
+                        override fun onLocationResult(locationResult: LocationResult) {
+                            val location = locationResult.lastLocation
                             if (location != null) {
                                 currentLatLng = LatLng(location.latitude, location.longitude)
+                                locationError = null
+                                fusedLocationClient.removeLocationUpdates(this) // stop after one good result
                             } else {
-                                locationError = "Unable to fetch current location."
+                                locationError = "Still trying to fetch current location..."
                             }
                         }
+                    }
+
+// Check permissions again here
+                    if (ActivityCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        fusedLocationClient.requestLocationUpdates(
+                            locationRequest,
+                            locationCallback,
+                            Looper.getMainLooper()
+                        )
+                    } else {
+                        locationError = "Location permission not granted."
+                    }
+
+
                 } else {
                     locationError = "Location permission not granted."
                 }
@@ -470,6 +508,17 @@ fun SuborderTrackingDeliveryBoyScreen(
                 Text(
 //                    text = "Status: ${order.status ?: "-"}",
                     text = "Status: ${orderStatus}",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFE3F2FD))
+                        .padding(12.dp),
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1565C0),
+                    textAlign = TextAlign.Center
+                )
+                Text(
+//                    text = "Status: ${order.status ?: "-"}",
+                    text = "Payment Status: ${orderPaymentStatus}",
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color(0xFFE3F2FD))
@@ -590,11 +639,8 @@ fun SuborderTrackingDeliveryBoyScreen(
                     // In the success observer
                     viewModel.pickupResponse?.let {
                         orderStatus = "picked_up" // or whatever new status your API returns
-
-
 //                            can show toast here
                     }
-
 
                     viewModel.pickupError?.let {
                         Text(
@@ -636,7 +682,10 @@ fun SuborderTrackingDeliveryBoyScreen(
                                 if (order.status.equals(
                                         "handover_confirmed",
                                         true
-                                    ) || order.status.equals("in_transit", true) || orderStatus.equals("in_transit", true)
+                                    ) || order.status.equals(
+                                        "in_transit",
+                                        true
+                                    ) || orderStatus.equals("in_transit", true)
                                 ) {
                                     orderStatus = it.status ?: orderStatus
                                 }
@@ -678,6 +727,58 @@ fun SuborderTrackingDeliveryBoyScreen(
                         )
                     }
                 }
+
+
+
+//                orderPaymentStatus = order.payment_status ?: orderPaymentStatus
+//                if (order.payment_status.equals("confirmed_by_customer", true)) {
+                if (orderPaymentStatus.equals("confirmed_by_customer", true)) {
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = {
+                            order.suborder_id?.let {
+                                viewModel.confirmPaymentByDeliveryBoy(it)
+                            }
+
+                            orderPaymentStatus = "confirmed_by_deliveryboy"
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = colorResource(id = R.color.pink))
+                    ) {
+                        if (viewModel.isLoadingPaymentConfirm) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Confirm Recieved Payment", color = Color.White)
+                        }
+                    }
+
+                    viewModel.paymentConfirmResponse?.let {
+                        Text(
+                            text = it,
+                            color = Color.Green,
+                            modifier = Modifier.padding(12.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    viewModel.paymentConfirmError?.let {
+                        Text(
+                            text = it,
+                            color = Color.Red,
+                            modifier = Modifier.padding(12.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+
+
             }
         }
     }

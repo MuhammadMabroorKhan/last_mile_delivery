@@ -30,13 +30,17 @@ import com.example.lastmiledelivery.data.models.customer.MenuResponse
 import com.example.lastmiledelivery.data.models.customer.Order
 import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
+import com.example.lastmiledelivery.data.models.customer.PaymentStatusResponse
 import com.example.lastmiledelivery.data.models.customer.RouteInfoResponse
 import com.example.lastmiledelivery.data.repository.customer.CustomerRepository
 import com.example.lastmiledelivery.ui.common.uriToFile
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -48,7 +52,10 @@ import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
 @HiltViewModel
-class CustomerViewModel @Inject constructor(private val repository: CustomerRepository,private val context: Application) : ViewModel() {
+class CustomerViewModel @Inject constructor(
+    private val repository: CustomerRepository,
+    private val context: Application
+) : ViewModel() {
     private val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
 
     private val _signupState = MutableLiveData<Result<CustomerSignupResponse>?>()
@@ -63,7 +70,19 @@ class CustomerViewModel @Inject constructor(private val repository: CustomerRepo
     ) {
         viewModelScope.launch {
             val result = repository.customerSignup(
-                name, email, phoneNo, password, cnic, addressType, street, city, zipCode, country, latitude, longitude, profilePicture
+                name,
+                email,
+                phoneNo,
+                password,
+                cnic,
+                addressType,
+                street,
+                city,
+                zipCode,
+                country,
+                latitude,
+                longitude,
+                profilePicture
             )
             _signupState.value = result
         }
@@ -92,7 +111,7 @@ class CustomerViewModel @Inject constructor(private val repository: CustomerRepo
                         putInt("customer_id", customerState!!.customerId)
                         apply()
                     }
-                    Log.d("CUSTOMERID","${customerState!!.customerId}")
+                    Log.d("CUSTOMERID", "${customerState!!.customerId}")
                 } else {
                     errorMessage = "Customer not found"
                 }
@@ -142,7 +161,6 @@ class CustomerViewModel @Inject constructor(private val repository: CustomerRepo
     }
 
 
-
     private val _categories = MutableStateFlow<List<CategoryResponse>>(emptyList())
     val categories: StateFlow<List<CategoryResponse>> = _categories
 
@@ -158,22 +176,24 @@ class CustomerViewModel @Inject constructor(private val repository: CustomerRepo
     }
 
 
-sealed class MenuState {
-    object Loading : MenuState()
-    data class Success(val menu: MenuResponse) : MenuState()
-    data class Error(val message: String) : MenuState()
-}
+    sealed class MenuState {
+        object Loading : MenuState()
+        data class Success(val menu: MenuResponse) : MenuState()
+        data class Error(val message: String) : MenuState()
+    }
 
-//    private val _menuState = MutableStateFlow<MenuState>(MenuState.Loading)
+    //    private val _menuState = MutableStateFlow<MenuState>(MenuState.Loading)
 //    val menuState: StateFlow<MenuState> get() = _menuState
     private val _menuState = MutableStateFlow<MenuState>(MenuState.Loading)
     val menuState: StateFlow<MenuState> get() = _menuState
 
 
-
     fun fetchVendorMenu(vendorId: Int, shopId: Int, branchId: Int) {
         viewModelScope.launch {
-            Log.d("VendorMenu", "Fetching menu for vendor: $vendorId, shop: $shopId, branch: $branchId")
+            Log.d(
+                "VendorMenu",
+                "Fetching menu for vendor: $vendorId, shop: $shopId, branch: $branchId"
+            )
 
             _menuState.value = MenuState.Loading // Show loading state
 
@@ -182,7 +202,8 @@ sealed class MenuState {
                 if (response.error != null || response.items.isNullOrEmpty()) {
                     // If API returns an error or empty items, show "No items found"
                     Log.e("VendorMenu", "No items found for this vendor/shop/branch")
-                    _menuState.value = MenuState.Success(MenuResponse(items = emptyList())) // ✅ Proper type
+                    _menuState.value =
+                        MenuState.Success(MenuResponse(items = emptyList())) // ✅ Proper type
 
                 } else {
                     _menuState.value = MenuState.Success(response) // Show menu items
@@ -190,66 +211,76 @@ sealed class MenuState {
                 }
             }.onFailure { error ->
                 Log.e("VendorMenu", "Error: ${error.localizedMessage}")
-                _menuState.value = MenuState.Success(MenuResponse(error = "")) // ✅ If expecting error string
+                _menuState.value =
+                    MenuState.Success(MenuResponse(error = "")) // ✅ If expecting error string
                 // Show empty items instead of error
             }
         }
     }
 
 
-
-
-
     var updateState by mutableStateOf<Result<GenericResponse>?>(null) // ✅ Use GenericResponse
         private set
 
-fun updateCustomer(
-    customerId: Int,
-    name: String?,
-    email: String?,
-    phoneNo: String?,
-    password: String?,
-    cnic: String?,
-    profilePictureUri: Uri?,
-    context: Context
-) {
-    viewModelScope.launch {
-        try {
-            withContext(Dispatchers.IO) {
-                            Log.d("UpdateCustomer", "Customer ID: $customerId")
-            Log.d("UpdateCustomer", "Name: $name, Email: $email, Phone No: $phoneNo")
-            Log.d("UpdateCustomer", "Password: $password, CNIC: $cnic")
-            Log.d("UpdateCustomer", "Profile Picture URI: $profilePictureUri")
+    fun updateCustomer(
+        customerId: Int,
+        name: String?,
+        email: String?,
+        phoneNo: String?,
+        password: String?,
+        cnic: String?,
+        profilePictureUri: Uri?,
+        context: Context
+    ) {
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    Log.d("UpdateCustomer", "Customer ID: $customerId")
+                    Log.d("UpdateCustomer", "Name: $name, Email: $email, Phone No: $phoneNo")
+                    Log.d("UpdateCustomer", "Password: $password, CNIC: $cnic")
+                    Log.d("UpdateCustomer", "Profile Picture URI: $profilePictureUri")
 
-            val profilePicturePart = profilePictureUri?.let { uri ->
-                val file = uriToFiles(uri, context)
-                if (file != null && file.exists()) {
-                    Log.d("UpdateCustomer", "File Size: ${file.length()} bytes, File Name: ${file.name}")
-                    val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
-                    MultipartBody.Part.createFormData("profile_picture", file.name, requestFile)
-                } else {
-                    Log.e("UpdateCustomer", "Failed to convert URI to File")
-                    null
+                    val profilePicturePart = profilePictureUri?.let { uri ->
+                        val file = uriToFiles(uri, context)
+                        if (file != null && file.exists()) {
+                            Log.d(
+                                "UpdateCustomer",
+                                "File Size: ${file.length()} bytes, File Name: ${file.name}"
+                            )
+                            val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+                            MultipartBody.Part.createFormData(
+                                "profile_picture",
+                                file.name,
+                                requestFile
+                            )
+                        } else {
+                            Log.e("UpdateCustomer", "Failed to convert URI to File")
+                            null
+                        }
+                    }
+
+                    val result = repository.updateCustomer(
+                        customerId,
+                        name,
+                        email,
+                        phoneNo,
+                        password,
+                        cnic,
+                        profilePicturePart
+                    )
+                    updateState = result
+
+                    Log.d("UpdateCustomer", "API Response: $result")
+
                 }
+            } catch (e: Exception) {
+                Log.e("UpdateCustomer", "Error in API Call: ${e.localizedMessage}")
+            } catch (e: CancellationException) {
+                Log.e("UpdateCustomer", "Request was cancelled")
             }
-
-            val result = repository.updateCustomer(customerId, name, email, phoneNo, password, cnic, profilePicturePart)
-            updateState = result
-
-            Log.d("UpdateCustomer", "API Response: $result")
-
-            }
-        } catch (e: Exception) {
-            Log.e("UpdateCustomer", "Error in API Call: ${e.localizedMessage}")
         }
-        catch (e: CancellationException) {
-            Log.e("UpdateCustomer", "Request was cancelled")
-        }
+
     }
-
-}
-
-
 
 
     fun uriToFiles(uri: Uri, context: Context): File? {
@@ -268,15 +299,16 @@ fun updateCustomer(
     }
 
 
-
-
     private val _cartState = MutableStateFlow<CartState>(CartState.Loading)
     val cartState: StateFlow<CartState> get() = _cartState
 
 
     fun fetchCartDetails(customerId: Int) {
         viewModelScope.launch {
-            Log.d("CartDebug", "Fetching cart details for customerId: $customerId") // ✅ Log API call
+            Log.d(
+                "CartDebug",
+                "Fetching cart details for customerId: $customerId"
+            ) // ✅ Log API call
 
             _cartState.value = CartState.Loading
             val result = repository.getCartDetails(customerId)
@@ -284,9 +316,10 @@ fun updateCustomer(
             result.onSuccess { cartData ->
                 if (cartData == null) {  // ✅ Handle Null Cart Properly
                     Log.e("CartDebug", "ViewModel: Cart is null, showing empty cart message")
-                    _cartState.value = CartState.Empty("No items found in the cart. Please add items.")
+                    _cartState.value =
+                        CartState.Empty("No items found in the cart. Please add items.")
                 } else {
-                  _cartState.value = CartState.Success(cartData)
+                    _cartState.value = CartState.Success(cartData)
                 }
             }.onFailure { error ->
                 Log.e("CartDebug", "Error Fetching Cart: ${error.localizedMessage}") // ❌ Log errors
@@ -294,14 +327,6 @@ fun updateCustomer(
             }
         }
     }
-
-
-
-
-
-
-
-
 
 
     private val _cartResponse = MutableLiveData<Result<AddCartResponse>>()
@@ -318,17 +343,18 @@ fun updateCustomer(
                 quantity = quantity,
                 price = item.price
             )
-            Log.d("VIEWMODELCART","$request")
+            Log.d("VIEWMODELCART", "$request")
             val result = repository.addItemToCart(request)
             _cartResponse.postValue(result)
         }
     }
 
 
-
-
-
-    fun placeOrder(orderRequest: OrderRequest, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
+    fun placeOrder(
+        orderRequest: OrderRequest,
+        onSuccess: (String) -> Unit,
+        onError: (String) -> Unit
+    ) {
         viewModelScope.launch {
             try {
                 val response = repository.placeOrder(orderRequest)
@@ -344,13 +370,6 @@ fun updateCustomer(
             }
         }
     }
-
-
-
-
-
-
-
 
 
     var addressList by mutableStateOf<List<Address>>(emptyList())
@@ -374,7 +393,6 @@ fun updateCustomer(
         selectedAddress = address
         Log.d("Selected Address ID", "ID: ${address.id}")
     }
-
 
 
     private val _clearCartState = MutableStateFlow<Result<ClearCartResponse>?>(null)
@@ -433,7 +451,41 @@ fun updateCustomer(
     }
 
 
+    private val _confirmDeliveryResult = mutableStateOf<Result<String>?>(null)
+    val confirmDeliveryResult: State<Result<String>?> = _confirmDeliveryResult
 
+    fun confirmDelivery(suborderId: Int) {
+        viewModelScope.launch {
+            val result = repository.confirmOrderDelivery(suborderId)
+            _confirmDeliveryResult.value = result
+        }
+    }
+
+    fun clearDeliveryResult() {
+        _confirmDeliveryResult.value = null
+    }
+
+
+    private val _paymentStatus = mutableStateOf<PaymentStatusResponse?>(null)
+    val paymentStatus: State<PaymentStatusResponse?> = _paymentStatus
+
+    private var pollingJob: Job? = null
+
+    fun startPolling(suborderId: Int) {
+        stopPolling() // in case already running
+        pollingJob = viewModelScope.launch {
+            while (isActive) {
+                val result = repository.fetchPaymentStatus(suborderId)
+                _paymentStatus.value = result
+                delay(5000) // Poll every 5 seconds
+            }
+        }
+    }
+
+    fun stopPolling() {
+        pollingJob?.cancel()
+        pollingJob = null
+    }
 
 }
 

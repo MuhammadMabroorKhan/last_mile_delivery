@@ -8,6 +8,7 @@ import com.example.lastmiledelivery.data.models.customer.CartResponse
 import com.example.lastmiledelivery.data.models.customer.CategoryResponse
 import com.example.lastmiledelivery.data.models.customer.ClearCartRequest
 import com.example.lastmiledelivery.data.models.customer.ClearCartResponse
+import com.example.lastmiledelivery.data.models.customer.ConfirmDeliveryResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerData
 import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerOrdersResponse
@@ -17,6 +18,7 @@ import com.example.lastmiledelivery.data.models.customer.MenuResponse
 import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
 import com.example.lastmiledelivery.data.models.customer.OrderResponse
+import com.example.lastmiledelivery.data.models.customer.PaymentStatusResponse
 import com.example.lastmiledelivery.data.models.customer.RouteInfoResponse
 import com.google.gson.JsonElement
 import okhttp3.MultipartBody
@@ -26,6 +28,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Multipart
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
@@ -117,4 +120,14 @@ interface CustomerApiService {
 
     @GET("api/statuses")
     suspend fun getStatuses(): StatusesResponse
+
+    @PATCH("api/customer/order/{suborderId}/confirm-delivery")
+    suspend fun confirmOrderDelivery(
+        @Path("suborderId") suborderId: Int
+    ): Response<ConfirmDeliveryResponse>
+
+    @GET("api/suborder/{suborderId}/payment-status")
+    suspend fun getPaymentStatus(
+        @Path("suborderId") suborderId: Int
+    ): Response<PaymentStatusResponse>
 }

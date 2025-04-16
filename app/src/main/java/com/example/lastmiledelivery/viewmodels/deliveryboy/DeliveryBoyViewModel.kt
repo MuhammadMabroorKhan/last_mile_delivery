@@ -264,5 +264,27 @@ class DeliveryBoyViewModel @Inject constructor(
             }
         }
     }
+
+
+    var isLoadingPaymentConfirm by mutableStateOf(false)
+    var paymentConfirmResponse by mutableStateOf<String?>(null)
+    var paymentConfirmError by mutableStateOf<String?>(null)
+
+    fun confirmPaymentByDeliveryBoy(suborderId: Int) {
+        viewModelScope.launch {
+            isLoadingPaymentConfirm = true
+            paymentConfirmResponse = null
+            paymentConfirmError = null
+
+            val result = repository.confirmPaymentByDeliveryBoy(suborderId)
+            result.onSuccess {
+                paymentConfirmResponse = it
+            }.onFailure {
+                paymentConfirmError = it.message
+            }
+            isLoadingPaymentConfirm = false
+        }
+    }
+
 }
 
