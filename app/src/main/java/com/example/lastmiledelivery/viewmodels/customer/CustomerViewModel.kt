@@ -26,6 +26,7 @@ import com.example.lastmiledelivery.data.models.customer.CustomerData
 import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
 import com.example.lastmiledelivery.data.models.customer.GenericResponse
+import com.example.lastmiledelivery.data.models.customer.LiveLocationData
 import com.example.lastmiledelivery.data.models.customer.MenuResponse
 import com.example.lastmiledelivery.data.models.customer.Order
 import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
@@ -487,6 +488,47 @@ class CustomerViewModel @Inject constructor(
         pollingJob = null
     }
 
+
+    private val _confirmPaymentResult = mutableStateOf<Result<String>?>(null)
+    val confirmPaymentResult: State<Result<String>?> = _confirmPaymentResult
+
+    fun confirmPayment(suborderId: Int) {
+        viewModelScope.launch {
+            val result = repository.confirmPaymentByCustomer(suborderId)
+            _confirmPaymentResult.value = result
+        }
+    }
+
+    fun clearConfirmPaymentResult() {
+        _confirmPaymentResult.value = null
+    }
+
+    private val _cancelOrderResult = mutableStateOf<Result<String>?>(null)
+    val cancelOrderResult: State<Result<String>?> = _cancelOrderResult
+
+    fun cancelOrder(orderId: Int) {
+        viewModelScope.launch {
+            _cancelOrderResult.value = repository.cancelOrder(orderId)
+        }
+    }
+
+    fun clearCancelResult() {
+        _cancelOrderResult.value = null
+    }
+
+
+    private val _liveTracking = mutableStateOf<LiveLocationData?>(null)
+    val liveTracking: State<LiveLocationData?> = _liveTracking
+
+    fun getLatestLocation(suborderId: Int) {
+        viewModelScope.launch {
+            while (true) {
+                val result = repository.getLiveTracking(suborderId)
+                _liveTracking.value = result?.data
+                delay(5000) // Refresh every 10 seconds
+            }
+        }
+    }
 }
 
 sealed class OrderUiState {

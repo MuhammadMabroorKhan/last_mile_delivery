@@ -311,7 +311,8 @@ fun SuborderTrackingDeliveryBoyScreen(
     deliveryBoyID: Int,
     order: AssignedSuborder,
     navController: NavHostController,
-    viewModel: DeliveryBoyViewModel = hiltViewModel()
+    viewModel: DeliveryBoyViewModel = hiltViewModel(),
+    customerViewModel: CustomerViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -319,13 +320,17 @@ fun SuborderTrackingDeliveryBoyScreen(
     var currentLatLng by remember { mutableStateOf<LatLng?>(null) }
     var locationError by remember { mutableStateOf<String?>(null) }
 
-     var orderStatus by remember { mutableStateOf(order.status ?: "-") }
-     var orderPaymentStatus by remember { mutableStateOf(order.payment_status ?: "-") }
+    var orderStatus by remember { mutableStateOf(order.status ?: "-") }
+    var orderPaymentStatus by remember { mutableStateOf(order.payment_status ?: "-") }
     LaunchedEffect(order.suborder_id) {
         order.suborder_id?.let { suborderId ->
             viewModel.getLatestLocation(suborderId)
         }
     }
+    LaunchedEffect(order.suborder_id) {
+        order.suborder_id?.let { customerViewModel.getLatestLocation(it) }
+    }
+
     viewModel.latestLocation?.let {
         if (order.status.equals("handover_confirmed", true) || order.status.equals(
                 "in_transit",
@@ -451,6 +456,8 @@ fun SuborderTrackingDeliveryBoyScreen(
         order.customer?.delivery_address?.longitude ?: 0.0
     )
 
+    val liveTrackingData by customerViewModel.liveTracking
+
 
     //////FOR UPDATE LOCATION
     LaunchedEffect(orderStatus) {
@@ -542,11 +549,45 @@ fun SuborderTrackingDeliveryBoyScreen(
 
                             }
                         ) {
-                            if (deliveryBoyIcon != null) {
-                                Marker(
-                                    state = MarkerState(position = currentLatLng!!),
-                                    title = "You (Delivery Boy)",
-                                    icon = deliveryBoyIcon
+
+                            // Live Tracking Marker and Orange Line
+                            if (liveTrackingData != null) {
+                                val liveLatLng = LatLng(
+                                    liveTrackingData!!.latitude,
+                                    liveTrackingData!!.longitude
+                                )
+
+                                if (deliveryBoyIcon != null) {
+                                    Marker(
+                                        state = MarkerState(position = liveLatLng),
+                                        title = "Delivery Boy Location",
+//                                        icon = BitmapDescriptorFactory.defaultMarker(
+//                                            BitmapDescriptorFactory.HUE_ORANGE
+//                                        )
+                                        icon = deliveryBoyIcon
+                                    )
+                                }
+
+                                // Optional orange line: pickup -> live location
+                                Polyline(
+                                    points = listOf(pickupLatLng, liveLatLng),
+                                    color = Color(0xFFFFA500), // Orange
+                                    width = 6f
+                                )
+                            } else {
+
+                                if (deliveryBoyIcon != null) {
+                                    Marker(
+                                        state = MarkerState(position = currentLatLng!!),
+                                        title = "You (Delivery Boy)",
+                                        icon = deliveryBoyIcon
+                                    )
+                                }
+                                // Add polyline regardless of icon state (optional)
+                                Polyline(
+                                    points = listOf(currentLatLng!!, pickupLatLng),
+                                    color = Color.Blue,
+                                    width = 8f
                                 )
                             }
 
@@ -566,17 +607,14 @@ fun SuborderTrackingDeliveryBoyScreen(
                                 )
                             }
 
-                            // Add polyline regardless of icon state (optional)
-                            Polyline(
-                                points = listOf(currentLatLng!!, pickupLatLng),
-                                color = Color.Blue,
-                                width = 8f
-                            )
+
                             Polyline(
                                 points = listOf(pickupLatLng, dropLatLng),
                                 color = Color.Gray,
                                 width = 8f
                             )
+
+
                         }
 
                     }
@@ -727,7 +765,6 @@ fun SuborderTrackingDeliveryBoyScreen(
                         )
                     }
                 }
-
 
 
 //                orderPaymentStatus = order.payment_status ?: orderPaymentStatus

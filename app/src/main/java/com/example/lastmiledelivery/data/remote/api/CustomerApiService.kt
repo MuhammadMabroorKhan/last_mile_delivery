@@ -4,16 +4,19 @@ import com.example.lastmiledelivery.data.models.StatusesResponse
 import com.example.lastmiledelivery.data.models.customer.AddCartResponse
 import com.example.lastmiledelivery.data.models.customer.AddToCartRequest
 import com.example.lastmiledelivery.data.models.customer.AddressResponse
+import com.example.lastmiledelivery.data.models.customer.CancelOrderResponse
 import com.example.lastmiledelivery.data.models.customer.CartResponse
 import com.example.lastmiledelivery.data.models.customer.CategoryResponse
 import com.example.lastmiledelivery.data.models.customer.ClearCartRequest
 import com.example.lastmiledelivery.data.models.customer.ClearCartResponse
 import com.example.lastmiledelivery.data.models.customer.ConfirmDeliveryResponse
+import com.example.lastmiledelivery.data.models.customer.ConfirmPaymentResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerData
 import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerOrdersResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
 import com.example.lastmiledelivery.data.models.customer.GenericResponse
+import com.example.lastmiledelivery.data.models.customer.LiveTrackingResponse
 import com.example.lastmiledelivery.data.models.customer.MenuResponse
 import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
@@ -130,4 +133,19 @@ interface CustomerApiService {
     suspend fun getPaymentStatus(
         @Path("suborderId") suborderId: Int
     ): Response<PaymentStatusResponse>
+
+    @POST("api/customer/confirm-payment/{suborderId}")
+    suspend fun confirmPaymentByCustomer(
+        @Path("suborderId") suborderId: Int
+    ): Response<ConfirmPaymentResponse>
+
+    @PUT("api/customers/orders/{orderId}/cancel")
+    suspend fun cancelOrder(
+        @Path("orderId") orderId: Int
+    ): Response<CancelOrderResponse>
+
+    @GET("api/suborders/{suborderId}/live-tracking")
+    suspend fun getLiveTracking(
+        @Path("suborderId") suborderId: Int
+    ): Response<LiveTrackingResponse>
 }

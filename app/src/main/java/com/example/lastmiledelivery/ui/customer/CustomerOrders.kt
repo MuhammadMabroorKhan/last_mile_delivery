@@ -1,8 +1,11 @@
 package com.example.lastmiledelivery.ui.customer
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +28,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
@@ -85,9 +89,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
 import com.example.lastmiledelivery.viewmodels.common.StatusViewModel
 import com.example.lastmiledelivery.viewmodels.deliveryboy.DeliveryBoyViewModel
 import com.example.lastmiledelivery.viewmodels.vendor.VendorViewModel
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.Marker
@@ -180,12 +187,63 @@ fun CustomerOrders(
     }
 }
 
+//@Composable
+//fun OrderCard(
+//    order: Order,
+//    navController: NavHostController,
+//    context: Context = LocalContext.current
+//) {
+//    Card(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(8.dp)
+//            .clickable {
+//                navController.navigate("orderDetail/${order.id}/${order.customers_ID}/${order.addresses_ID}")
+//            },
+//        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+//        shape = RoundedCornerShape(16.dp)
+//    ) {
+//        Row(
+//            modifier = Modifier
+//                .padding(16.dp)
+//                .fillMaxWidth(),
+//            horizontalArrangement = Arrangement.SpaceBetween
+//        ) {
+//            Column {
+//                Text("Order #${order.id}", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+//                Text("Amount: PKR ${order.total_amount}", fontSize = 16.sp)
+//                Text("Status: ${order.order_status}", color = Color.Gray)
+//                Text("Date: ${order.order_date}", fontSize = 12.sp, color = Color.DarkGray)
+//                Text(
+//                    "Payment: ${order.payment_status} (${order.payment_method})",
+//                    fontSize = 12.sp,
+//                    color = Color.Gray
+//                )
+//            }
+//
+//            IconButton(onClick = {
+//                navController.navigate("orderDetail/${order.id}/${order.customers_ID}/${order.addresses_ID}")
+//
+//            }) {
+//                Icon(
+//                    imageVector = Icons.Filled.ArrowForwardIos,
+//                    contentDescription = "More Options",
+//                    tint = Color.Black
+//                )
+//            }
+//        }
+//    }
+//}
 @Composable
 fun OrderCard(
     order: Order,
     navController: NavHostController,
-    context: Context = LocalContext.current
+    context: Context = LocalContext.current,
+    viewModel: CustomerViewModel = hiltViewModel()
 ) {
+    val cancelResult by viewModel.cancelOrderResult
+    val coroutineScope = rememberCoroutineScope()
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -214,15 +272,52 @@ fun OrderCard(
                 )
             }
 
-            IconButton(onClick = {
-                navController.navigate("orderDetail/${order.id}/${order.customers_ID}/${order.addresses_ID}")
+            Row {
+                IconButton(onClick = {
+                    navController.navigate("orderDetail/${order.id}/${order.customers_ID}/${order.addresses_ID}")
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowForwardIos,
+                        contentDescription = "More Options",
+                        tint = Color.Black
+                    )
+                }
 
-            }) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowForwardIos,
-                    contentDescription = "More Options",
-                    tint = Color.Black
-                )
+                // Show delete icon only if order is pending
+                if (order.order_status.equals("pending", ignoreCase = true)) {
+                    IconButton(onClick = {
+                        coroutineScope.launch {
+                            viewModel.cancelOrder(order.id)
+                            delay(3000)
+                            viewModel.fetchCustomerOrders(order.customers_ID)
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.Delete,
+                            contentDescription = "Cancel Order",
+                            tint = Color.Red
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Show toast for result
+    cancelResult?.let {
+        when {
+            it.isSuccess -> {
+                Toast.makeText(context, it.getOrNull(), Toast.LENGTH_SHORT).show()
+                viewModel.clearCancelResult()
+            }
+
+            it.isFailure -> {
+                Toast.makeText(
+                    context,
+                    it.exceptionOrNull()?.message ?: "Error occurred",
+                    Toast.LENGTH_SHORT
+                ).show()
+                viewModel.clearCancelResult()
             }
         }
     }
@@ -749,6 +844,8 @@ fun ItemCard(item: Item) {
 //        }
 //    }
 //}
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackOrderScreen(
@@ -785,6 +882,11 @@ fun TrackOrderScreen(
         }
     }
 
+    val liveTrackingData by viewModel.liveTracking
+
+    LaunchedEffect(suborderId) {
+        viewModel.getLatestLocation(suborderId)
+    }
     var orderPaymentStatus by remember { mutableStateOf("-") }
 
     val status = viewModel.paymentStatus.value
@@ -813,6 +915,33 @@ fun TrackOrderScreen(
     val loading = statusViewModel.isLoading.value
 
 
+    val result by viewModel.confirmPaymentResult
+
+
+    var deliveryBoyIcon by remember { mutableStateOf<BitmapDescriptor?>(null) }
+    var pickupIcon by remember { mutableStateOf<BitmapDescriptor?>(null) }
+    var dropIcon by remember { mutableStateOf<BitmapDescriptor?>(null) }
+
+// Safely load icons after GoogleMap is initialized
+    var mapLoaded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(mapLoaded) {
+        if (mapLoaded) {
+            deliveryBoyIcon =
+                com.example.lastmiledelivery.ui.deliveryboy.bitmapDescriptorFromVector(
+                    context,
+                    R.drawable.logo
+                )
+            pickupIcon = com.example.lastmiledelivery.ui.deliveryboy.bitmapDescriptorFromVector(
+                context,
+                R.drawable.storefront
+            )
+            dropIcon = com.example.lastmiledelivery.ui.deliveryboy.bitmapDescriptorFromVector(
+                context,
+                R.drawable.account_circle
+            )
+        }
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -856,25 +985,96 @@ fun TrackOrderScreen(
                         }
 
                         Column(modifier = Modifier.fillMaxSize()) {
+//                            GoogleMap(
+//                                modifier = Modifier
+//                                    .fillMaxWidth()
+//                                    .height(300.dp),
+//                                cameraPositionState = cameraPositionState
+//                            ) {
+//                                Marker(
+//                                    state = MarkerState(position = pickupLatLng),
+//                                    title = "Pickup Location"
+//                                )
+//                                Marker(
+//                                    state = MarkerState(position = dropLatLng),
+//                                    title = "Drop Location"
+//                                )
+//                                Polyline(
+//                                    points = listOf(pickupLatLng, dropLatLng),
+//                                    color = Color.Blue,
+//                                    width = 5f
+//                                )
+//                            }
+
                             GoogleMap(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(300.dp),
+                                onMapLoaded = {
+                                    mapLoaded = true // triggers the LaunchedEffect above
+                                },
                                 cameraPositionState = cameraPositionState
                             ) {
-                                Marker(
-                                    state = MarkerState(position = pickupLatLng),
-                                    title = "Pickup Location"
-                                )
-                                Marker(
-                                    state = MarkerState(position = dropLatLng),
-                                    title = "Drop Location"
-                                )
+
+
+                                if (pickupIcon != null) {
+                                    Marker(
+                                        state = MarkerState(position = pickupLatLng),
+                                        title = "Pickup Location",
+                                        icon = pickupIcon
+                                    )
+                                }
+
+                                if (dropIcon != null) {
+                                    Marker(
+                                        state = MarkerState(position = dropLatLng),
+                                        title = "Drop Location",
+                                        icon = dropIcon
+                                    )
+                                }
+
+//                                // Pickup and Drop Markers
+//                                Marker(
+//                                    state = MarkerState(position = pickupLatLng),
+//                                    title = "Pickup Location"
+//                                )
+//                                Marker(
+//                                    state = MarkerState(position = dropLatLng),
+//                                    title = "Drop Location"
+//                                )
+
+                                // Blue Route Line
                                 Polyline(
                                     points = listOf(pickupLatLng, dropLatLng),
                                     color = Color.Blue,
                                     width = 5f
                                 )
+
+                                // Live Tracking Marker and Orange Line
+                                if (liveTrackingData != null) {
+                                    val liveLatLng = LatLng(
+                                        liveTrackingData!!.latitude,
+                                        liveTrackingData!!.longitude
+                                    )
+
+                                    if (deliveryBoyIcon != null) {
+                                        Marker(
+                                            state = MarkerState(position = liveLatLng),
+                                            title = "Delivery Boy Location",
+//                                        icon = BitmapDescriptorFactory.defaultMarker(
+//                                            BitmapDescriptorFactory.HUE_ORANGE
+//                                        )
+                                            icon = deliveryBoyIcon
+                                        )
+                                    }
+
+                                    // Optional orange line: pickup -> live location
+                                    Polyline(
+                                        points = listOf(pickupLatLng, liveLatLng),
+                                        color = Color(0xFFFFA500), // Orange
+                                        width = 6f
+                                    )
+                                }
                             }
 
                             Spacer(modifier = Modifier.height(16.dp))
@@ -1065,10 +1265,97 @@ fun TrackOrderScreen(
                                     }
                                 }
                             }
+                            if (
+                                (orderLocationTrackingStatus.equals(
+                                    "delivered",
+                                    ignoreCase = true
+                                ) || orderStatus.equals("delivered", ignoreCase = true))
+
+                                && orderPaymentStatus.equals("pending", ignoreCase = true)
+                            ) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(onClick = {
+                                    coroutineScope.launch {
+                                        viewModel.confirmPayment(suborderId)
+                                        delay(2000)
+                                        vendorViewModel.loadSuborderDetails(
+                                            vendor_ID,
+                                            shop_ID,
+                                            branch_ID,
+                                            suborderId
+                                        )
+                                        statusViewModel.loadStatuses()
+                                        deliveryBoyViewModel.getLatestLocation(suborderId)
+                                        delay(2000)
+                                        deliveryBoyViewModel.latestLocation?.let {
+                                            orderLocationTrackingStatus =
+                                                it.status ?: orderLocationTrackingStatus
+
+                                        }
+                                    }
+
+
+                                }) {
+                                    Text("Confirm Payment")
+                                }
+
+                                // Optional: Show Toasts for result
+                                result?.let {
+                                    when {
+                                        it.isSuccess -> {
+                                            Toast.makeText(
+                                                context,
+                                                it.getOrNull(),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            viewModel.clearConfirmPaymentResult()
+                                        }
+
+                                        it.isFailure -> {
+                                            Toast.makeText(
+                                                context,
+                                                it.exceptionOrNull()?.message,
+                                                Toast.LENGTH_SHORT
+                                            )
+                                                .show()
+                                            viewModel.clearConfirmPaymentResult()
+                                        }
+                                    }
+                                }
+                            }
+
+
                         }
                     }
                 }
             }
         }
+    }
+}
+
+
+fun bitmapDescriptorFromVector(context: Context, @DrawableRes vectorResId: Int): BitmapDescriptor? {
+    return try {
+        // Get the vector drawable
+        val vectorDrawable = ContextCompat.getDrawable(context, vectorResId)
+
+        // Convert 50dp to pixels based on the screen density
+        val sizeInPixels = (50 * context.resources.displayMetrics.density).toInt()
+
+        // Set bounds for the drawable with the desired size (50dp)
+        vectorDrawable?.setBounds(0, 0, sizeInPixels, sizeInPixels)
+
+        // Create a bitmap with the new size
+        val bitmap = Bitmap.createBitmap(sizeInPixels, sizeInPixels, Bitmap.Config.ARGB_8888)
+
+        // Draw the vector drawable onto the bitmap
+        val canvas = Canvas(bitmap)
+        vectorDrawable?.draw(canvas)
+
+        // Return the bitmap as a BitmapDescriptor
+        BitmapDescriptorFactory.fromBitmap(bitmap)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
     }
 }

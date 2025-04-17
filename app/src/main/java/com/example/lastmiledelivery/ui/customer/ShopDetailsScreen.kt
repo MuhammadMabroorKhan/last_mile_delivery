@@ -43,12 +43,17 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -68,6 +73,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import coil.compose.rememberImagePainter
 import com.example.lastmiledelivery.R
 import com.example.lastmiledelivery.data.models.customer.CartMenuItem
@@ -299,7 +305,13 @@ fun ShopDetailsScreen(
 //                                                MenuItemCard(item)
 //                                            }
                                             items(filteredItems) { item ->
-                                                MenuItemCard(item = item, vendor_id = shop.vendorId, shop_id = shop.shopId, branch_id = shop.branchId, viewModel = customerViewModel)
+                                                MenuItemCard(
+                                                    item = item,
+                                                    vendor_id = shop.vendorId,
+                                                    shop_id = shop.shopId,
+                                                    branch_id = shop.branchId,
+                                                    viewModel = customerViewModel
+                                                )
                                             }
                                         }
                                     }
@@ -357,118 +369,232 @@ fun MenuItemCard(
     vendor_id: Int,
     shop_id: Int,
     branch_id: Int,
-    viewModel: CustomerViewModel, // ✅ Directly use ViewModel
+    viewModel: CustomerViewModel,
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val user = remember { authViewModel.getUserDetails() }
     val customerData by viewModel.customerData.collectAsState()
     val errorMessage by viewModel.errorMessages.collectAsState()
 
+    var showDialog by remember { mutableStateOf(false) }
+    var quantity by remember { mutableStateOf(1) }
 
-// Trigger data fetch when the composable enters composition
     LaunchedEffect(key1 = user.id) {
         viewModel.fetchCustomerData(user.id)
     }
 
-    LaunchedEffect(viewModel.customerState) {
-        val storedCustomerId = viewModel.getCustomerId()
-        Log.d("CustomerMainScreen", "Stored Customer ID: $storedCustomerId")
-    }
-
-    // Observe customer data and error messages
     val customer = viewModel.customerState
-    val error = viewModel.errorMessage
 
+    // ✅ Show dialog when triggered
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = item.item_name, style = MaterialTheme.typography.titleLarge)
+                    IconButton(onClick = { showDialog = false }) {
+                        Icon(Icons.Default.Close, contentDescription = "Close")
+                    }
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    AsyncImage(
+                        model = item.itemPicture,
+                        contentDescription = "Item Image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Crop
+                    )
 
-    LaunchedEffect(customer?.customerId) {
-        customer?.let {
-            viewModel.fetchCustomerMainScreen(it.customerId)
-        }
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    item.item_description?.let {
+                        Text("Description: $it")
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+
+                    Text("Variation: ${item.variation_name}")
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text("Category: ${item.item_category_name}")
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text("Preparation Time: ${item.preparation_time} mins")
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text("Time Sensitive: ${item.timesensitive}")
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    item.additional_info?.let {
+                        Text("Additional Info: $it")
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+
+                    Text("Price: Rs. ${item.price}")
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // ✅ Attributes
+                    item.attributes?.takeIf { it.isNotEmpty() }?.let { attributes ->
+                        Text("Attributes:")
+                        Spacer(modifier = Modifier.height(4.dp))
+                        attributes.forEach { attr ->
+                            Text("- ${attr.key}: ${attr.value}")
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
+                    // ✅ Quantity row
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        IconButton(onClick = { if (quantity > 1) quantity-- }) {
+                            Icon(Icons.Default.Remove, contentDescription = "Decrease Quantity")
+                        }
+                        Text(
+                            text = quantity.toString(),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                        IconButton(onClick = { quantity++ }) {
+                            Icon(Icons.Default.Add, contentDescription = "Increase Quantity")
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val cartItem = CartMenuItem(
+                        id = item.item_id,
+                        item_name = item.item_name,
+                        item_description = item.item_description,
+                        price = item.price.toDoubleOrNull() ?: 0.0,
+                        itemPicture = item.itemPicture ?: "",
+                        vendor_id = vendor_id,
+                        shop_id = shop_id,
+                        branch_id = branch_id,
+                        itemdetails_id = item.itemdetail_id
+                    )
+
+                    customer?.customerId?.let {
+                        viewModel.addItemToCart(
+                            customerId = it,
+                            item = cartItem,
+                            quantity = quantity
+                        )
+                    }
+
+                    showDialog = false
+                    quantity = 1
+                }) {
+                    Text("Add to Cart")
+                }
+            }
+        )
     }
 
-
-    Card(
-        modifier = Modifier
-            .width(150.dp)
-            .padding(8.dp),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(6.dp)
+//Main Card UI
+    if (
+        item.item_name != null &&
+        item.price != null &&
+        item.itemPicture != null &&
+        item.variation_name != null
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Card(
+            modifier = Modifier
+                .width(160.dp)
+                .padding(8.dp),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(6.dp)
         ) {
-            // Image
-            AsyncImage(
-                model = item.itemPicture,
-                contentDescription = "Item Image",
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Item Name
-            Text(
-                text = item.item_name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Price & Add Button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+            Column(
+                modifier = Modifier.padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Price
-                Text(
-                    text = "Rs. ${item.price}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Black
+                AsyncImage(
+                    model = item.itemPicture,
+                    contentDescription = "Item Image",
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
                 )
 
-                // Add to Cart Button
-                IconButton(
-                    onClick = {
-                        val cartItem = CartMenuItem(
-                            id = item.item_id,
-                            item_name = item.item_name,
-                            item_description = item.item_description,
-                            price = item.price.toDoubleOrNull() ?: 0.0,
-                            itemPicture = item.itemPicture ?: "",
-                            vendor_id = vendor_id,
-                            shop_id = shop_id,
-                            branch_id = branch_id,
-                            itemdetails_id = item.itemdetail_id
-                        )
+                Spacer(modifier = Modifier.height(8.dp))
 
-                        // ✅ Directly call ViewModel function
-                        customer?.customerId?.let {
-                            viewModel.addItemToCart(
-                                customerId = it, // Replace with actual customer ID
-                                item = cartItem,
-                                quantity = 1 // Default quantity
-                            )
-                        }
-                    },
-                    modifier = Modifier
-                        .background(Color.Red, CircleShape)
-                        .size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add",
-                        tint = Color.White
+                Text(
+                    text = item.item_name ?: "",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                Text(
+                    text = item.variation_name ?: "",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Gray,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                item.item_description?.let {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.DarkGray,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center
                     )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Rs. ${item.price}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black
+                    )
+
+                    IconButton(
+                        onClick = { showDialog = true },
+                        modifier = Modifier
+                            .background(Color.Red, CircleShape)
+                            .size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add",
+                            tint = Color.White
+                        )
+                    }
                 }
             }
         }
     }
+
 }
+
 

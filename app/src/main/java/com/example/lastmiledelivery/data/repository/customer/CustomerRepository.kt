@@ -15,6 +15,7 @@ import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenRespo
 import com.example.lastmiledelivery.data.models.customer.CustomerOrdersResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
 import com.example.lastmiledelivery.data.models.customer.GenericResponse
+import com.example.lastmiledelivery.data.models.customer.LiveTrackingResponse
 import com.example.lastmiledelivery.data.models.customer.MenuItem
 import com.example.lastmiledelivery.data.models.customer.MenuResponse
 import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
@@ -339,6 +340,44 @@ class CustomerRepository @Inject constructor(private val api: CustomerApiService
             }
         } catch (e: Exception) {
             PaymentStatusResponse(null, null, e.message ?: "Unknown error")
+        }
+    }
+
+
+    suspend fun confirmPaymentByCustomer(suborderId: Int): Result<String> {
+        return try {
+            val response = api.confirmPaymentByCustomer(suborderId)
+            if (response.isSuccessful) {
+                Result.success(response.body()?.message ?: "Payment confirmed.")
+            } else {
+                val error = response.errorBody()?.string() ?: "Unknown error"
+                Result.failure(Exception(error))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun cancelOrder(orderId: Int): Result<String> {
+        return try {
+            val response = api.cancelOrder(orderId)
+            if (response.isSuccessful) {
+                Result.success(response.body()?.message ?: "Order cancelled")
+            } else {
+                val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                Result.failure(Exception(errorBody))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getLiveTracking(suborderId: Int): LiveTrackingResponse? {
+        return try {
+            val response = api.getLiveTracking(suborderId)
+            if (response.isSuccessful) response.body() else null
+        } catch (e: Exception) {
+            null
         }
     }
 }

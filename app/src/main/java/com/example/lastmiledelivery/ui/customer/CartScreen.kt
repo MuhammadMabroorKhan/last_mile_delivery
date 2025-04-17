@@ -147,9 +147,6 @@ fun CartScreen(
 
             is CartState.Success -> {
 
-
-
-
                 val cartData = (cartState as CartState.Success).cart
 
                 if (cartData.cart == null) {
@@ -293,7 +290,6 @@ fun CartScreen(
                                 .padding(top = 8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-
                             Text(
                                 text = "Total Amount: ${cartData.cart.total_amount}",
                                 fontWeight = FontWeight.Bold,
