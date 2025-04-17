@@ -16,5 +16,6 @@ interface ApiService {
         suspend fun getShopCategories(): Response<List<ShopCategoryResponse>>
 
 
+
 }
 

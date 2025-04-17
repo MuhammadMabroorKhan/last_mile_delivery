@@ -68,6 +68,7 @@ interface DeliveryBoysApiService {
         @Body location: ReachDestinationRequest
     ): Response<ReachDestinationResponse>
 
+
     @GET("api/suborder/{suborderId}/latest-location")
     suspend fun getLatestLocation(@Path("suborderId") suborderId: Int): Response<LatestLocationResponse>
 

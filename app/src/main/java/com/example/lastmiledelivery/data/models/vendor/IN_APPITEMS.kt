@@ -22,6 +22,7 @@ data class ItemVariationResponse(
     val variations: List<ItemVariation>
 )
 
+
 data class ItemVariation(
     val name: String,
     val itemcategory_ID: Int

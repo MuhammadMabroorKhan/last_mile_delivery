@@ -37,6 +37,7 @@ class VendorViewModel @Inject constructor(
 ) : ViewModel() {
     private val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
 
+
     private val _signupState = MutableLiveData<Result<VendorSignupResponse>?>()
     val signupState: MutableLiveData<Result<VendorSignupResponse>?> get() = _signupState
 

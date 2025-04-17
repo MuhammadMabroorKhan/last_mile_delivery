@@ -35,6 +35,7 @@ class VendorViewModelShops @Inject constructor(private val repository: VendorRep
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
 
+
     fun fetchShops(vendorId: Int) {
         viewModelScope.launch {
             try {

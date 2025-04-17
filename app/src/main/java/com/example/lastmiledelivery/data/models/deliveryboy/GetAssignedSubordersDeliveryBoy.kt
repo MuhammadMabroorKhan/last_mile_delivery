@@ -126,6 +126,7 @@ data class LatestLocationResponse(
 
 
 
+
 //COnfirm Payment By deliveryboy
 data class DeliveryBoyPaymentConfirmResponse(
     val message: String

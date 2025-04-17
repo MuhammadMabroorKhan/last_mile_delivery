@@ -33,6 +33,7 @@ class OrganizationViewModel @Inject constructor(
 ) : ViewModel() {
     private val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
 
+
     private val _signupState = MutableLiveData<Result<OrganizationSignupResponse>?>()
     val signupState: MutableLiveData<Result<OrganizationSignupResponse>?> get() = _signupState
 

@@ -68,6 +68,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 
+
 @Composable
 fun OrganizationSignup(
     organizationViewModel: OrganizationViewModel = hiltViewModel(),

@@ -16,6 +16,7 @@ data class VendorOrder(
     val suborders: List<VendorSuborder>
 )
 
+
 data class VendorCustomerInfo(
     val name: String,
     val email: String,

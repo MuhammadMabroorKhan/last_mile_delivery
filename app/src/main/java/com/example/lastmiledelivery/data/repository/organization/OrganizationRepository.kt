@@ -115,6 +115,7 @@ class OrganizationRepository @Inject constructor(private val api: OrganizationAp
         }
     }
 
+
     suspend fun getOrganizationData(id: Int): OrganizationData? {
         val response = api.getOrganizationData(id)
         if (response.isSuccessful) {

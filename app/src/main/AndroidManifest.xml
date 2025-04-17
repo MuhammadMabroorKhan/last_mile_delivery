@@ -31,6 +31,8 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="Your_API_KEY"/>
 
+
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

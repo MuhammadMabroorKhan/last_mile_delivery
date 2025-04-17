@@ -85,6 +85,7 @@ fun CustomerSignupScreen(
     var longitude by rememberSaveable { mutableStateOf<Double?>(null) }
 
 
+
     val lifecycleOwner by rememberUpdatedState(LocalLifecycleOwner.current)
 
     LaunchedEffect(navController.currentBackStackEntry?.savedStateHandle) {

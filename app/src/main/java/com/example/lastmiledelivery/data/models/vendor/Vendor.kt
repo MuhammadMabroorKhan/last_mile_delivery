@@ -19,6 +19,7 @@ data class Vendor(
     val longitude: Double?
 )
 
+
 data class VendorSignupResponse(
     val message: String,
     val user_id: Int?

@@ -18,6 +18,7 @@ data class CustomerSignupRequest(
     val profile_picture: MultipartBody.Part?
 )
 
+
 data class CustomerSignupResponse(
     val message: String,
     val user_id: Int?

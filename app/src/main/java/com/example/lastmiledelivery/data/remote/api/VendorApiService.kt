@@ -165,6 +165,7 @@ interface VendorApiService {
         @Path("suborderId") suborderId: Int
     ): Response<VendorSuborderDetailResponse>
 
+
     @GET("api/vendor/{vendorId}/available-organizations")
     suspend fun getAvailableOrganizations(
         @Path("vendorId") vendorId: Int

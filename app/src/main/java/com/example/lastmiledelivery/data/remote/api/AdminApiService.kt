@@ -28,6 +28,7 @@ interface AdminApiService {
         @Body requestBody: RejectVendorRequest
     ): Response<MessageResponse>
 
+
     @GET("api/admin/vendors/{vendorId}/rejection-reasons")
     suspend fun getRejectionReasons(@Path("vendorId") vendorId: Int): Response<List<RejectionReason>>
 

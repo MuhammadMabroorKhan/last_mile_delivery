@@ -12,3 +12,4 @@ data class OrganizationData(
     @SerializedName("lmd_user_role") val userRole: String,
     @SerializedName("profile_picture") val profilePicture: String
 )
+

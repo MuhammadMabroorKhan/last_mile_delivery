@@ -22,6 +22,7 @@ data class CreateBranchResponse(
     val data: BranchData?
 )
 
+
 data class BranchData(
     val latitude: Double,
     val longitude: Double,

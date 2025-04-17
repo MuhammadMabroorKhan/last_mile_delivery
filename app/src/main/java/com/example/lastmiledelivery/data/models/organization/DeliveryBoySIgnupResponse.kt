@@ -9,6 +9,7 @@ data class DeliveryBoySignupResponse(
     val errors: Map<String, List<String>>? = null
 )
 
+
 data class DeliveryBoySignupRequest(
     val name: String,
     val email: String,

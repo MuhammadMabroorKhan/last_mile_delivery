@@ -23,6 +23,7 @@ data class DeliveryBoyDataResponse(
     val longitude: Double?     // nullable
 )
 
+
 data class ErrorResponse(
     val error:String
 )

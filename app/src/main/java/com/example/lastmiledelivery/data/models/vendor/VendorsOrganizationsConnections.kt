@@ -32,6 +32,7 @@ data class RequestedOrganization(
 
 
 
+
 //Vendor Organization COnnection Request and ersponse
 data class ConnectVendorRequest(
     @SerializedName("vendor_ID") val vendorId: Int,

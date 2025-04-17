@@ -4,3 +4,4 @@ data class AcceptOrderResponse(
     val message: String? = null,
     val error: String? = null
 )
+

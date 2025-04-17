@@ -391,6 +391,7 @@ fun ShopCard(
                 )
             }
 
+
             // Shop Details
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(

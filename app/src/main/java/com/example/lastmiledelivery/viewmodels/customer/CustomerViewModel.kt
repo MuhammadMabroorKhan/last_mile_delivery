@@ -520,6 +520,7 @@ class CustomerViewModel @Inject constructor(
     private val _liveTracking = mutableStateOf<LiveLocationData?>(null)
     val liveTracking: State<LiveLocationData?> = _liveTracking
 
+
     fun getLatestLocation(suborderId: Int) {
         viewModelScope.launch {
             while (true) {

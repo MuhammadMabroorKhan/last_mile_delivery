@@ -107,6 +107,7 @@ fun DeliveryBoyProfileScreen(navController: NavHostController, authViewModel: Au
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+
                 // Name & Email
                 Text(
                     text = it.name,

@@ -51,3 +51,4 @@ data class MessageResponse(
 data class RejectVendorRequestBody(
     val rejection_reasons: List<String>
 )
+
