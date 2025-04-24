@@ -20,6 +20,8 @@ import com.example.lastmiledelivery.data.models.deliveryboy.LatestLocationRespon
 import com.example.lastmiledelivery.data.models.deliveryboy.ReachDestinationResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.ReadySuborder
 import com.example.lastmiledelivery.data.repository.deliveryboy.DeliveryBoyRepository
+import com.example.lastmiledelivery.ui.deliveryboy.interpolateLatLng
+import com.google.android.gms.maps.model.LatLng
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -229,6 +231,26 @@ class DeliveryBoyViewModel @Inject constructor(
     fun stopLocationUpdates() {
         locationJob?.cancel()
     }
+
+
+    //For SHowing SImulation
+    fun startSimulatedLocationUpdates(
+        suborderId: Int,
+        pickupLatLng: LatLng,
+        dropLatLng: LatLng
+    ) {
+        locationJob?.cancel()
+        locationJob = viewModelScope.launch {
+            val steps = 20 // total updates before reaching destination
+            for (i in 0..steps) {
+                val fraction = i / steps.toFloat()
+                val simulatedLatLng = interpolateLatLng(pickupLatLng, dropLatLng, fraction)
+                repository.updateLocation(suborderId, simulatedLatLng.latitude, simulatedLatLng.longitude)
+                delay(3000) // 3 seconds delay to simulate movement
+            }
+        }
+    }
+
 
 
     var isLoadingDestination by mutableStateOf(false)

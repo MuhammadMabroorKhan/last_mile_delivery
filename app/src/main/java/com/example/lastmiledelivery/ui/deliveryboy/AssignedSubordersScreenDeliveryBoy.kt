@@ -459,24 +459,37 @@ fun SuborderTrackingDeliveryBoyScreen(
     val liveTrackingData by customerViewModel.liveTracking
 
 
-    //////FOR UPDATE LOCATION
+    //////FOR UPDATE LOCATION (Current Location)
+//    LaunchedEffect(orderStatus) {
+//        delay(3000)
+//        if (orderStatus.equals("reached_destination", ignoreCase = true)) {
+//            viewModel.stopLocationUpdates()
+//        } else {
+//            order.suborder_id?.let {
+//                viewModel.startLocationUpdates(
+//                    it,
+//                    orderStatus
+//                ) {
+//                    // Replace this with actual location fetch logic
+//                    val location = getCurrentLocation(context)
+//                    Pair(location.latitude, location.longitude)
+//                }
+//            }
+//        }
+//    }
+
+//    FOr Simulation AUtomatic
     LaunchedEffect(orderStatus) {
         delay(3000)
         if (orderStatus.equals("reached_destination", ignoreCase = true)) {
             viewModel.stopLocationUpdates()
         } else {
             order.suborder_id?.let {
-                viewModel.startLocationUpdates(
-                    it,
-                    orderStatus
-                ) {
-                    // Replace this with actual location fetch logic
-                    val location = getCurrentLocation(context)
-                    Pair(location.latitude, location.longitude)
-                }
+                viewModel.startSimulatedLocationUpdates(it, pickupLatLng, dropLatLng)
             }
         }
     }
+
     DisposableEffect(Unit) {
         onDispose {
             viewModel.stopLocationUpdates()
@@ -901,4 +914,16 @@ suspend fun getCurrentLocation(context: Context): Location {
                 })
             }
     }
+}
+
+
+
+
+
+
+//For Simulation
+fun interpolateLatLng(start: LatLng, end: LatLng, fraction: Float): LatLng {
+    val lat = start.latitude + (end.latitude - start.latitude) * fraction
+    val lng = start.longitude + (end.longitude - start.longitude) * fraction
+    return LatLng(lat, lng)
 }
