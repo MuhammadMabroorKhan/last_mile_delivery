@@ -149,7 +149,7 @@ class DeliveryBoyViewModel @Inject constructor(
 
     private var autoRefreshJob: Job? = null
 
-    fun startAutoRefreshReadyOrders(deliveryBoyId: Int, intervalMillis: Long = 5000L) {
+    fun startAutoRefreshReadyOrders(deliveryBoyId: Int, intervalMillis: Long = 15000L) {
         if (autoRefreshJob?.isActive == true) return // Prevent multiple jobs
 
         autoRefreshJob = viewModelScope.launch {

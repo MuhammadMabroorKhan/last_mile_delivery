@@ -847,7 +847,7 @@ private fun hasLocationPermission(context: Context): Boolean {
 }
 
 
-fun bitmapDescriptorFromVector(context: Context, @DrawableRes vectorResId: Int): BitmapDescriptor? {
+private fun bitmapDescriptorFromVector(context: Context, @DrawableRes vectorResId: Int): BitmapDescriptor? {
     return try {
         // Get the vector drawable
         val vectorDrawable = ContextCompat.getDrawable(context, vectorResId)

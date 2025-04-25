@@ -38,6 +38,7 @@ import com.example.lastmiledelivery.ui.deliveryboy.AssignedOrdersScreen
 import com.example.lastmiledelivery.ui.deliveryboy.DeliveryBoyMainScreen
 import com.example.lastmiledelivery.ui.deliveryboy.DeliveryBoyProfileScreen
 import com.example.lastmiledelivery.ui.deliveryboy.ReadySubordersScreen
+import com.example.lastmiledelivery.ui.deliveryboy.ReadySubordersScreenFromMarker
 import com.example.lastmiledelivery.ui.deliveryboy.SuborderTrackingDeliveryBoyScreen
 import com.example.lastmiledelivery.ui.organization.DeliveryBoyListScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationDeliveryBoySignupScreen
@@ -431,6 +432,24 @@ fun AppNavigation() {
             ReadySubordersScreen(
                 deliveryBoyID = deliveryBoyID,
                 lmdUserID = lmdUserID,
+                navController = navController
+            )
+        }
+        composable(
+            route = "ready_suborders_deliveryBoyScreenFromMapMarker/{deliveryBoyID}/{lmdUserID}/{branchID}",
+            arguments = listOf(
+                navArgument("deliveryBoyID") { type = NavType.IntType },
+                navArgument("lmdUserID") { type = NavType.IntType },
+                navArgument("branchID") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val deliveryBoyID = backStackEntry.arguments?.getInt("deliveryBoyID") ?: 0
+            val lmdUserID = backStackEntry.arguments?.getInt("lmdUserID") ?: 0
+            val branchID = backStackEntry.arguments?.getInt("branchID") ?: 0
+            ReadySubordersScreenFromMarker(
+                deliveryBoyID = deliveryBoyID,
+                lmdUserID = lmdUserID,
+                branchID = branchID,
                 navController = navController
             )
         }

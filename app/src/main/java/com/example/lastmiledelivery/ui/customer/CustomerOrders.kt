@@ -929,15 +929,15 @@ fun TrackOrderScreen(
     LaunchedEffect(mapLoaded) {
         if (mapLoaded) {
             deliveryBoyIcon =
-                com.example.lastmiledelivery.ui.deliveryboy.bitmapDescriptorFromVector(
+                bitmapDescriptorFromVector(
                     context,
                     R.drawable.logo
                 )
-            pickupIcon = com.example.lastmiledelivery.ui.deliveryboy.bitmapDescriptorFromVector(
+            pickupIcon = bitmapDescriptorFromVector(
                 context,
                 R.drawable.storefront
             )
-            dropIcon = com.example.lastmiledelivery.ui.deliveryboy.bitmapDescriptorFromVector(
+            dropIcon = bitmapDescriptorFromVector(
                 context,
                 R.drawable.account_circle
             )
@@ -1335,7 +1335,7 @@ fun TrackOrderScreen(
 }
 
 
-fun bitmapDescriptorFromVector(context: Context, @DrawableRes vectorResId: Int): BitmapDescriptor? {
+private fun bitmapDescriptorFromVector(context: Context, @DrawableRes vectorResId: Int): BitmapDescriptor? {
     return try {
         // Get the vector drawable
         val vectorDrawable = ContextCompat.getDrawable(context, vectorResId)
