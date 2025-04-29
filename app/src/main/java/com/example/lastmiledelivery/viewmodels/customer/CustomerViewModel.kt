@@ -35,6 +35,7 @@ import com.example.lastmiledelivery.data.models.customer.PaymentStatusResponse
 import com.example.lastmiledelivery.data.models.customer.RouteInfoResponse
 import com.example.lastmiledelivery.data.repository.customer.CustomerRepository
 import com.example.lastmiledelivery.ui.common.uriToFile
+import com.google.android.gms.maps.model.LatLng
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -527,6 +528,24 @@ class CustomerViewModel @Inject constructor(
                 val result = repository.getLiveTracking(suborderId)
                 _liveTracking.value = result?.data
                 delay(5000) // Refresh every 10 seconds
+            }
+        }
+    }
+
+
+    private val _liveRoute = MutableStateFlow<List<LatLng>>(emptyList())
+    val liveRoute: StateFlow<List<LatLng>> = _liveRoute
+
+    fun startLiveRouteTracking(suborderId: Int) {
+        viewModelScope.launch {
+            while (true) {
+                val response = repository.fetchLiveRoute(suborderId)
+                val points = response?.data?.map {
+                    LatLng(it.latitude, it.longitude)
+                } ?: emptyList()
+
+                _liveRoute.value = points
+                delay(10000L) // every 10 seconds
             }
         }
     }

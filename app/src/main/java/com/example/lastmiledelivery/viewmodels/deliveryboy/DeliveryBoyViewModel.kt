@@ -253,6 +253,13 @@ class DeliveryBoyViewModel @Inject constructor(
 
 
 
+    fun sendLocationToBackend(suborderId: Int, latLng: LatLng) {
+        viewModelScope.launch {
+            repository.updateLocation(suborderId, latLng.latitude, latLng.longitude)
+        }
+    }
+
+
     var isLoadingDestination by mutableStateOf(false)
     var reachDestinationResponse by mutableStateOf<ReachDestinationResponse?>(null)
     var destinationError by mutableStateOf<String?>(null)

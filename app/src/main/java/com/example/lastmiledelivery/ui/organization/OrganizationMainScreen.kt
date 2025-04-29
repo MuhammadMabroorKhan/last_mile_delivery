@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -258,7 +259,7 @@ private fun DrawerContent(
         if (organization != null) {
             DrawerItem(
                 text = "Vendors Connection",
-                icon = Icons.Filled.DeliveryDining,
+                icon = Icons.Filled.Store,
                 navController = navController,
     //                route = "organization_deliveryBoys/${organization.organizationId}",
                 route = "vendorConnectionScreenForOrganization/${organization.organizationId}",

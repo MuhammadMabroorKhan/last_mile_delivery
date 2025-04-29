@@ -95,6 +95,9 @@ import com.example.lastmiledelivery.viewmodels.deliveryboy.DeliveryBoyViewModel
 import com.example.lastmiledelivery.viewmodels.vendor.VendorViewModel
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.Dash
+import com.google.android.gms.maps.model.Dot
+import com.google.android.gms.maps.model.Gap
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.Marker
@@ -943,6 +946,18 @@ fun TrackOrderScreen(
             )
         }
     }
+
+
+    val routePoints by viewModel.liveRoute.collectAsState()
+
+    // Trigger tracking
+    LaunchedEffect(Unit) {
+        viewModel.startLiveRouteTracking(suborderId)
+    }
+
+
+
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -1076,6 +1091,32 @@ fun TrackOrderScreen(
                                         width = 6f
                                     )
                                 }
+
+
+
+
+                                // Static route
+//                                Polyline(points = listOf(pickupLatLng, dropLatLng), color = Color.Blue, width = 5f)
+
+                                // Live path points (dotted)
+//                                if (routePoints.isNotEmpty()) {
+//                                    Polyline(
+//                                        points = routePoints,
+//                                        color = Color.Green,
+//                                        width = 5f,
+//                                        pattern = listOf(Dot(), Gap(20f)) // dotted pattern
+//                                    )
+//                                }
+                                if (routePoints.isNotEmpty()) {
+                                    Polyline(
+                                        points = routePoints,
+                                        color = Color.Green,
+                                        width = 8f,
+                                        pattern = listOf(Dash(20f), Gap(10f)) // More visible dotted/dashed pattern
+                                    )
+                                }
+
+
                             }
 
                             Spacer(modifier = Modifier.height(16.dp))
@@ -1335,7 +1376,10 @@ fun TrackOrderScreen(
 }
 
 
-private fun bitmapDescriptorFromVector(context: Context, @DrawableRes vectorResId: Int): BitmapDescriptor? {
+private fun bitmapDescriptorFromVector(
+    context: Context,
+    @DrawableRes vectorResId: Int
+): BitmapDescriptor? {
     return try {
         // Get the vector drawable
         val vectorDrawable = ContextCompat.getDrawable(context, vectorResId)

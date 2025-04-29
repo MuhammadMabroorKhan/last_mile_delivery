@@ -15,6 +15,7 @@ import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenRespo
 import com.example.lastmiledelivery.data.models.customer.CustomerOrdersResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
 import com.example.lastmiledelivery.data.models.customer.GenericResponse
+import com.example.lastmiledelivery.data.models.customer.LiveRouteTrackingResponse
 import com.example.lastmiledelivery.data.models.customer.LiveTrackingResponse
 import com.example.lastmiledelivery.data.models.customer.MenuItem
 import com.example.lastmiledelivery.data.models.customer.MenuResponse
@@ -377,6 +378,18 @@ class CustomerRepository @Inject constructor(private val api: CustomerApiService
         return try {
             val response = api.getLiveTracking(suborderId)
             if (response.isSuccessful) response.body() else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    //Route for customer
+    suspend fun fetchLiveRoute(suborderId: Int): LiveRouteTrackingResponse? {
+        return try {
+            val response = api.getLiveRouteTracking(suborderId)
+            if (response.isSuccessful) {
+                response.body()
+            } else null
         } catch (e: Exception) {
             null
         }

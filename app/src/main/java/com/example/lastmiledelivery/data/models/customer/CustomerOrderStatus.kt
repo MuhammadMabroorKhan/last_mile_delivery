@@ -39,3 +39,17 @@ data class LiveLocationData(
     val longitude: Double,
     val status: String
 )
+
+
+//Route for customer that delivery boy travel
+data class LiveRouteTrackingResponse(
+    val message: String? = null,
+    val data: List<LiveRoutePoint>? = null,
+    val error: String? = null
+)
+data class LiveRoutePoint(
+    val latitude: Double,
+    val longitude: Double,
+    val status: String,
+    val time_stamp: String
+)

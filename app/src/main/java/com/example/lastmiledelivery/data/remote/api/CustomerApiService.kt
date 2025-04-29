@@ -16,6 +16,7 @@ import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenRespo
 import com.example.lastmiledelivery.data.models.customer.CustomerOrdersResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
 import com.example.lastmiledelivery.data.models.customer.GenericResponse
+import com.example.lastmiledelivery.data.models.customer.LiveRouteTrackingResponse
 import com.example.lastmiledelivery.data.models.customer.LiveTrackingResponse
 import com.example.lastmiledelivery.data.models.customer.MenuResponse
 import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
@@ -149,4 +150,9 @@ interface CustomerApiService {
     suspend fun getLiveTracking(
         @Path("suborderId") suborderId: Int
     ): Response<LiveTrackingResponse>
+
+    @GET("api/suborders/{suborderId}/live-route-tracking")
+    suspend fun getLiveRouteTracking(
+        @Path("suborderId") suborderId: Int
+    ): Response<LiveRouteTrackingResponse>
 }

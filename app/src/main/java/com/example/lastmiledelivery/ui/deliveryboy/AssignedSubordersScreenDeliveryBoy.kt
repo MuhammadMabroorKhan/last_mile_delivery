@@ -479,16 +479,16 @@ fun SuborderTrackingDeliveryBoyScreen(
 //    }
 
 //    FOr Simulation AUtomatic
-    LaunchedEffect(orderStatus) {
-        delay(3000)
-        if (orderStatus.equals("reached_destination", ignoreCase = true)) {
-            viewModel.stopLocationUpdates()
-        } else {
-            order.suborder_id?.let {
-                viewModel.startSimulatedLocationUpdates(it, pickupLatLng, dropLatLng)
-            }
-        }
-    }
+//    LaunchedEffect(orderStatus) {
+//        delay(3000)
+//        if (orderStatus.equals("reached_destination", ignoreCase = true)) {
+//            viewModel.stopLocationUpdates()
+//        } else {
+//            order.suborder_id?.let {
+//                viewModel.startSimulatedLocationUpdates(it, pickupLatLng, dropLatLng)
+//            }
+//        }
+//    }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -558,8 +558,14 @@ fun SuborderTrackingDeliveryBoyScreen(
                                 mapLoaded = true // triggers the LaunchedEffect above
                             },
                             cameraPositionState = rememberCameraPositionState {
-                                position = CameraPosition.fromLatLngZoom(currentLatLng!!, 9f)
+                                position = CameraPosition.fromLatLngZoom(currentLatLng!!, 10f)
 
+                            },
+                            onMapClick = { latLng ->
+                                Log.d("MapClick", "Clicked on map: $latLng")
+                                order.suborder_id?.let {
+                                    viewModel.sendLocationToBackend(it, latLng)
+                                }
                             }
                         ) {
 
