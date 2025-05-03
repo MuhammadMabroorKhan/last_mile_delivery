@@ -1,6 +1,8 @@
 package com.example.lastmiledelivery.data.remote.api
 
 import com.example.lastmiledelivery.data.models.StatusesResponse
+import com.example.lastmiledelivery.data.models.customer.AddAddressRequest
+import com.example.lastmiledelivery.data.models.customer.AddAddressResponse
 import com.example.lastmiledelivery.data.models.customer.AddCartResponse
 import com.example.lastmiledelivery.data.models.customer.AddToCartRequest
 import com.example.lastmiledelivery.data.models.customer.AddressResponse
@@ -111,8 +113,8 @@ interface CustomerApiService {
     @POST("api/cart/clear")
     suspend fun clearCart(@Body request: ClearCartRequest): Response<ClearCartResponse>
 
-        @GET("api/customers/{id}/orders")
-        suspend fun getCustomerOrders(@Path("id") customerId: Int): Response<CustomerOrdersResponse>
+    @GET("api/customers/{id}/orders")
+    suspend fun getCustomerOrders(@Path("id") customerId: Int): Response<CustomerOrdersResponse>
 
     @GET("api/orders/{orderId}/details")
     suspend fun getOrderDetails(
@@ -155,4 +157,11 @@ interface CustomerApiService {
     suspend fun getLiveRouteTracking(
         @Path("suborderId") suborderId: Int
     ): Response<LiveRouteTrackingResponse>
+
+
+    @POST("api/customers/{customerId}/add-address")
+    suspend fun addAddress(
+        @Path("customerId") customerId: Int,
+        @Body address: AddAddressRequest
+    ): Response<AddAddressResponse>
 }

@@ -773,7 +773,7 @@ fun SuborderTrackingDeliveryBoyScreen(
                             textAlign = TextAlign.Center
                         )
 
-//                        orderStatus = "reached_destination"
+                        orderStatus = "reached_destination"
                     }
 
                     viewModel.destinationError?.let {

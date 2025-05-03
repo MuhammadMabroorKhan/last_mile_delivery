@@ -1,6 +1,7 @@
 package com.example.lastmiledelivery.data.repository.admin
 
 import android.util.Log
+import com.example.lastmiledelivery.data.models.admin.ApiVendorRegisterWebsite
 import com.example.lastmiledelivery.data.models.admin.CorrectRejectionRequest
 import com.example.lastmiledelivery.data.models.admin.PendingBranch
 import com.example.lastmiledelivery.data.models.admin.RejectBranchRequest
@@ -140,4 +141,25 @@ class VendorApprovalRepository @Inject constructor(
     }
 
 
+
+
+    ///////// REISTER WENSITE FOR API VENDOR
+    suspend fun getApiVendors(): List<ApiVendorRegisterWebsite> {
+        val response = apiService.getApiVendors()
+        if (response.isSuccessful) {
+            return response.body() ?: emptyList()
+        } else {
+            throw Exception("Failed to fetch vendors")
+        }
+    }
 }
+
+
+
+
+
+
+
+
+
+

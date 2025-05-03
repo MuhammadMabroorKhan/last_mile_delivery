@@ -86,7 +86,7 @@ fun CartScreen(
     val customerData by viewModel.customerData.collectAsState()
     val errorMessage by viewModel.errorMessages.collectAsState()
 
-    val context= LocalContext.current
+    val context = LocalContext.current
 
     // Trigger data fetch when the composable enters composition
     LaunchedEffect(key1 = user.id) {
@@ -412,43 +412,131 @@ fun OrderConfirmationScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Box(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = selectedText,
-                    onValueChange = {},
-                    readOnly = true,
+
+//                Row(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(horizontal = 8.dp),
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//
+//                    OutlinedTextField(
+//                        value = selectedText,
+//                        onValueChange = {},
+//                        readOnly = true,
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .clickable { expanded = true }, // ✅ Ensures full field is clickable
+//                        label = { Text("Delivery Address") },
+//                        trailingIcon = {
+//                            Icon(
+//                                imageVector = if (expanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+//                                contentDescription = "Dropdown Icon",
+//                                modifier = Modifier.clickable {
+//                                    expanded = !expanded
+//                                } // ✅ Ensures arrow is clickable
+//                            )
+//                        }
+//                    )
+//
+//
+//
+//
+//
+//                    Spacer(modifier = Modifier.width(8.dp))
+//
+//                    Button(
+//                        onClick = {
+//                            navController.navigate("add_address/${customerId.toInt()}")
+//                        },
+//                        colors = ButtonDefaults.buttonColors(Color.Gray),
+//                        shape = RoundedCornerShape(8.dp),
+//                        modifier = Modifier.height(56.dp)
+//                    ) {
+//                        Text(text = "+ Add", color = Color.White)
+//                    }
+//
+//
+//
+//                    DropdownMenu(
+//                        expanded = expanded,
+//                        onDismissRequest = { expanded = false },
+//                        modifier = Modifier.fillMaxWidth()
+//                    ) {
+//                        addressList.forEach { address ->
+//                            DropdownMenuItem(
+//                                text = { Text(address.street) },
+//                                onClick = {
+//                                    selectedText = address.street
+//                                    customerViewModel.selectAddress(address)
+//                                    expanded = false
+//                                }
+//                            )
+//                        }
+//                    }
+//                }
+
+
+
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { expanded = true }, // ✅ Ensures full field is clickable
-                    label = { Text("Delivery Address") },
-                    trailingIcon = {
-                        Icon(
-                            imageVector = if (expanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
-                            contentDescription = "Dropdown Icon",
-                            modifier = Modifier.clickable {
-                                expanded = !expanded
-                            } // ✅ Ensures arrow is clickable
-                        )
-                    }
-                )
-
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    modifier = Modifier.fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    addressList.forEach { address ->
-                        DropdownMenuItem(
-                            text = { Text(address.street) },
-                            onClick = {
-                                selectedText = address.street
-                                customerViewModel.selectAddress(address)
-                                expanded = false
+                    Box(modifier = Modifier.weight(1f)) {
+                        OutlinedTextField(
+                            value = selectedText,
+                            onValueChange = {},
+                            readOnly = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { expanded = true },
+                            label = { Text("Delivery Address") },
+                            trailingIcon = {
+                                Icon(
+                                    imageVector = if (expanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+                                    contentDescription = "Dropdown Icon",
+                                    modifier = Modifier.clickable { expanded = !expanded }
+                                )
                             }
                         )
+
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                        ) {
+                            addressList.forEach { address ->
+                                DropdownMenuItem(
+                                    text = { Text(address.street) },
+                                    onClick = {
+                                        selectedText = address.street
+                                        customerViewModel.selectAddress(address)
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Button(
+                        onClick = {
+                            navController.navigate("add_address/${userId.toInt()}")
+                        },
+                        colors = ButtonDefaults.buttonColors(Color.Gray),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .height(56.dp)
+                    ) {
+                        Text(text = "+ Add", color = Color.White)
                     }
                 }
-            }
 
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
             LazyColumn(modifier = Modifier.weight(1f)) {

@@ -15,6 +15,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.lastmiledelivery.data.models.customer.AddAddressRequest
 import com.example.lastmiledelivery.data.models.customer.AddCartResponse
 import com.example.lastmiledelivery.data.models.customer.AddToCartRequest
 import com.example.lastmiledelivery.data.models.customer.Address
@@ -549,6 +550,30 @@ class CustomerViewModel @Inject constructor(
             }
         }
     }
+
+
+    var addAddressResponse by mutableStateOf<String?>(null)
+    var errorMessageAddress by mutableStateOf<String?>(null)
+    var isLoadingAddress by mutableStateOf(false)
+
+    fun addAddress(customerId: Int, request: AddAddressRequest) {
+        viewModelScope.launch {
+            isLoadingAddress = true
+            try {
+                val response = repository.addAddress(customerId, request)
+                if (response.isSuccessful) {
+                    addAddressResponse = response.body()?.message
+                } else {
+                    errorMessageAddress = response.errorBody()?.string()
+                }
+            } catch (e: Exception) {
+                errorMessageAddress = e.message
+            } finally {
+                isLoadingAddress = false
+            }
+        }
+    }
+
 }
 
 sealed class OrderUiState {

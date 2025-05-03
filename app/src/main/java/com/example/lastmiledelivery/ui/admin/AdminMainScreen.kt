@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Api
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
@@ -185,7 +186,7 @@ fun AdminMainScreen(navController: NavHostController) {
 //    }
 //}
 @Composable
-fun DrawerContent(
+private fun DrawerContent(
     navController: NavHostController,
     drawerState: DrawerState,
     scope: CoroutineScope,
@@ -237,6 +238,15 @@ fun DrawerContent(
             scope = scope
         )
 
+        DrawerItem(
+            text = "Vendor Website",
+            icon = Icons.Filled.Api,
+            navController = navController,
+            route = "vendorWebsiteConnection",
+            drawerState = drawerState,
+            scope = scope
+        )
+
         // 🔹 **Logout (Same Design as Other Items)**
         DrawerItem(
             text = "Logout",
@@ -252,7 +262,7 @@ fun DrawerContent(
 }
 
 @Composable
-fun DrawerItem(
+private fun DrawerItem(
     text: String,
     icon: ImageVector,
     navController: NavHostController,

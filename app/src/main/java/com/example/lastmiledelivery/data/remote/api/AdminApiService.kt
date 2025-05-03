@@ -1,6 +1,7 @@
 package com.example.lastmiledelivery.data.remote.api
 
 import com.example.lastmiledelivery.data.models.Cities
+import com.example.lastmiledelivery.data.models.admin.ApiVendorRegisterWebsite
 import com.example.lastmiledelivery.data.models.admin.CorrectRejectionRequest
 import com.example.lastmiledelivery.data.models.admin.MessageResponse
 import com.example.lastmiledelivery.data.models.admin.PendingBranchesResponse
@@ -62,4 +63,11 @@ interface AdminApiService {
 
     @GET("api/cities")
     suspend fun getAllCities():Response<List<Cities>>
+
+    @GET("api/admin/api-vendors")
+    suspend fun getApiVendors(): Response<List<ApiVendorRegisterWebsite>>
 }
+
+
+
+

@@ -957,6 +957,13 @@ fun TrackOrderScreen(
 
 
 
+//    LaunchedEffect(suborderId) {
+//        while (true) {
+//            delay(15_000)
+//            vendorViewModel.loadSuborderDetails(vendor_ID, shop_ID, branch_ID, suborderId)
+//            viewModel.getLatestLocation(suborderId)
+//        }
+//    }
 
     Scaffold(
         topBar = {
@@ -1094,19 +1101,6 @@ fun TrackOrderScreen(
 
 
 
-
-                                // Static route
-//                                Polyline(points = listOf(pickupLatLng, dropLatLng), color = Color.Blue, width = 5f)
-
-                                // Live path points (dotted)
-//                                if (routePoints.isNotEmpty()) {
-//                                    Polyline(
-//                                        points = routePoints,
-//                                        color = Color.Green,
-//                                        width = 5f,
-//                                        pattern = listOf(Dot(), Gap(20f)) // dotted pattern
-//                                    )
-//                                }
                                 if (routePoints.isNotEmpty()) {
                                     Polyline(
                                         points = routePoints,

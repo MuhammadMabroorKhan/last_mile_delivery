@@ -2,6 +2,8 @@ package com.example.lastmiledelivery.data.repository.customer
 
 import android.util.Log
 import com.example.lastmiledelivery.data.models.StatusesResponse
+import com.example.lastmiledelivery.data.models.customer.AddAddressRequest
+import com.example.lastmiledelivery.data.models.customer.AddAddressResponse
 import com.example.lastmiledelivery.data.models.customer.AddCartResponse
 import com.example.lastmiledelivery.data.models.customer.AddToCartRequest
 import com.example.lastmiledelivery.data.models.customer.Address
@@ -393,6 +395,11 @@ class CustomerRepository @Inject constructor(private val api: CustomerApiService
         } catch (e: Exception) {
             null
         }
+    }
+
+
+    suspend fun addAddress(customerId: Int, address: AddAddressRequest): Response<AddAddressResponse> {
+        return api.addAddress(customerId, address)
     }
 }
 

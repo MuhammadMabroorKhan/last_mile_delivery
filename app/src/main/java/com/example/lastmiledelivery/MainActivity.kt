@@ -16,6 +16,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.lastmiledelivery.data.models.deliveryboy.AssignedSuborder
 import com.example.lastmiledelivery.ui.admin.AdminMainScreen
+import com.example.lastmiledelivery.ui.admin.ApiVendorWebsiteMappingInfo
+import com.example.lastmiledelivery.ui.admin.ApiVendorsConnectionScreen
 import com.example.lastmiledelivery.ui.admin.BranchDetailScreen
 import com.example.lastmiledelivery.ui.admin.PendingBranchesScreen
 import com.example.lastmiledelivery.ui.admin.VendorApprovalScreen
@@ -24,6 +26,7 @@ import com.example.lastmiledelivery.ui.common.LoginScreen
 import com.example.lastmiledelivery.ui.common.MapPickerScreen
 import com.example.lastmiledelivery.ui.common.RoleSelectionScreen
 import com.example.lastmiledelivery.ui.common.SplashScreen
+import com.example.lastmiledelivery.ui.customer.AddAddressScreen
 import com.example.lastmiledelivery.ui.customer.CartScreen
 import com.example.lastmiledelivery.ui.customer.CustomerMainScreen
 import com.example.lastmiledelivery.ui.customer.CustomerOrders
@@ -60,6 +63,7 @@ import com.example.lastmiledelivery.ui.vendor.VendorSignupScreen
 import com.example.lastmiledelivery.viewmodels.AuthViewModel
 import com.example.lastmiledelivery.viewmodels.admin.VendorApprovalViewModel
 import com.example.lastmiledelivery.viewmodels.customer.CustomerViewModel
+import com.example.lastmiledelivery.viewmodels.vendor.VendorViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -170,6 +174,42 @@ fun AppNavigation() {
 
 //Admin Functionality ROUTES
         composable("vendorApproval") { VendorApprovalScreen(navController) }
+
+        //Website Connectivity
+        composable("vendorWebsiteConnection") { ApiVendorsConnectionScreen(navController) }
+        composable(
+            "apiVendorWebsiteDetail/{vendorId}/{lmdUserId}",
+            arguments = listOf(
+                navArgument("vendorId") { type = NavType.IntType },
+                navArgument("lmdUserId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val vendorId = backStackEntry.arguments?.getInt("vendorId") ?: 0
+            val lmdUserId = backStackEntry.arguments?.getInt("lmdUserId") ?: 0
+            VendorDetailScreen(navController,vendorId, lmdUserId)
+        }
+        composable(
+            "apiVendorWebsiteMappingInfo/{vendorID}/{shopID}/{branchID}",
+            arguments = listOf(
+                navArgument("vendorID") { type = NavType.IntType },
+                navArgument("shopID") { type = NavType.IntType },
+                navArgument("branchID") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val vendorId = backStackEntry.arguments?.getInt("vendorID") ?: 0
+            val shopID = backStackEntry.arguments?.getInt("shopID") ?: 0
+            val branchID = backStackEntry.arguments?.getInt("branchID") ?: 0
+            ApiVendorWebsiteMappingInfo(navController,vendorId, shopID,branchID)
+        }
+
+
+
+
+
+
+
+
+
         composable("vendorDetail") { backStackEntry ->
             val parentEntry = remember(backStackEntry) {
                 navController.getBackStackEntry("vendorApproval")
@@ -409,11 +449,20 @@ fun AppNavigation() {
                 suborderId = suborderId,
                 customerId = customerId,
                 addressId = addressId,
-                vendor_ID=vendor_ID,
+                vendor_ID = vendor_ID,
                 shop_ID = shop_ID,
                 branch_ID = branch_ID,
                 navController = navController
             )
+        }
+
+
+        composable(
+            "add_address/{customerId}",
+            arguments = listOf(navArgument("customerId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val customerId = backStackEntry.arguments?.getInt("customerId") ?: 0
+            AddAddressScreen(navController = navController, customerId = customerId)
         }
 
 
@@ -479,8 +528,10 @@ fun AppNavigation() {
 //        }
         composable("tracking_screenDeliveryBoy") {
             val previousEntry = navController.previousBackStackEntry
-            val order = remember { previousEntry?.savedStateHandle?.get<AssignedSuborder>("assigned_order") }
-            val deliveryBoyId = remember { previousEntry?.savedStateHandle?.get<Int>("delivery_boy_id") }
+            val order =
+                remember { previousEntry?.savedStateHandle?.get<AssignedSuborder>("assigned_order") }
+            val deliveryBoyId =
+                remember { previousEntry?.savedStateHandle?.get<Int>("delivery_boy_id") }
 
             if (order != null && deliveryBoyId != null) {
                 SuborderTrackingDeliveryBoyScreen(
@@ -496,6 +547,7 @@ fun AppNavigation() {
 
 
 }
+
 
 
 
