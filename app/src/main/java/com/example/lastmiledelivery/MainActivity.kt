@@ -15,10 +15,13 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.lastmiledelivery.data.models.deliveryboy.AssignedSuborder
+import com.example.lastmiledelivery.ui.admin.AddIntegrationScreen
 import com.example.lastmiledelivery.ui.admin.AdminMainScreen
 import com.example.lastmiledelivery.ui.admin.ApiVendorWebsiteMappingInfo
 import com.example.lastmiledelivery.ui.admin.ApiVendorsConnectionScreen
 import com.example.lastmiledelivery.ui.admin.BranchDetailScreen
+import com.example.lastmiledelivery.ui.admin.IntegrationDetailScreen
+import com.example.lastmiledelivery.ui.admin.MappingScreen
 import com.example.lastmiledelivery.ui.admin.PendingBranchesScreen
 import com.example.lastmiledelivery.ui.admin.VendorApprovalScreen
 import com.example.lastmiledelivery.ui.admin.VendorDetailScreen
@@ -186,7 +189,7 @@ fun AppNavigation() {
         ) { backStackEntry ->
             val vendorId = backStackEntry.arguments?.getInt("vendorId") ?: 0
             val lmdUserId = backStackEntry.arguments?.getInt("lmdUserId") ?: 0
-            VendorDetailScreen(navController,vendorId, lmdUserId)
+            VendorDetailScreen(navController, vendorId, lmdUserId)
         }
         composable(
             "apiVendorWebsiteMappingInfo/{vendorID}/{shopID}/{branchID}",
@@ -199,12 +202,46 @@ fun AppNavigation() {
             val vendorId = backStackEntry.arguments?.getInt("vendorID") ?: 0
             val shopID = backStackEntry.arguments?.getInt("shopID") ?: 0
             val branchID = backStackEntry.arguments?.getInt("branchID") ?: 0
-            ApiVendorWebsiteMappingInfo(navController,vendorId, shopID,branchID)
+            ApiVendorWebsiteMappingInfo(navController, vendorId, shopID, branchID)
         }
 
+        composable(
+            route = "add_integration/{vendorId}/{shopId}/{branchId}",
+            arguments = listOf(
+                navArgument("vendorId") { type = NavType.IntType },
+                navArgument("shopId") { type = NavType.IntType },
+                navArgument("branchId") { type = NavType.IntType },
+            )
+        ) { backStackEntry ->
+            val vendorId = backStackEntry.arguments?.getInt("vendorId") ?: 0
+            val shopId = backStackEntry.arguments?.getInt("shopId") ?: 0
+            val branchId = backStackEntry.arguments?.getInt("branchId") ?: 0
 
+            AddIntegrationScreen(
+                navController = navController,
+                vendorId = vendorId,
+                shopID = shopId,
+                branchID = branchId
+            )
+        }
 
+        composable(
+            "integration_detail_api_methods/{apiVendorId}/{branchId}",
+            arguments = listOf(
+                navArgument("apiVendorId") { type = NavType.IntType },
+                navArgument("branchId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val apiVendorId = backStackEntry.arguments?.getInt("apiVendorId") ?: 0
+            val branchId = backStackEntry.arguments?.getInt("branchId") ?: 0
+            IntegrationDetailScreen(apiVendorId, branchId, navController)
+        }
 
+        composable("variable_mapping_screen/{branchId}/{vendorId}") { backStackEntry ->
+            val branchId = backStackEntry.arguments?.getString("branchId")?.toIntOrNull() ?: 0
+            val vendorId = backStackEntry.arguments?.getString("vendorId")?.toIntOrNull() ?: 0
+            MappingScreen(branchId = branchId, vendorId = vendorId,navController=navController)
+        }
 
 
 

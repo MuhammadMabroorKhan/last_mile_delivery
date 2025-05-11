@@ -446,13 +446,13 @@ private fun ShopCard(
                 .fillMaxWidth()
                 .padding(vertical = 8.dp)
                 .clickable {
-                    Toast
-                        .makeText(
-                            context,
-                            "${shop.vendorId} and ${shop.branchId}and  ${shop.shopId}",
-                            Toast.LENGTH_SHORT
-                        )
-                        .show()
+//                    Toast
+//                        .makeText(
+//                            context,
+//                            "${shop.vendorId} and ${shop.branchId}and  ${shop.shopId}",
+//                            Toast.LENGTH_SHORT
+//                        )
+//                        .show()
 //                customerViewModel.setSelectedShop(shop) // Store Selected Shop in ViewModel
 //                navController.navigate("shop_details") // Navigate to Details Screen
                 navController.navigate("apiVendorWebsiteMappingInfo/${vendorId}/${shop.shopId}/${shop.branchId}") // Navigate to Details Screen

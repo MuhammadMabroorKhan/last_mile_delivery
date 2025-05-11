@@ -1,14 +1,26 @@
 package com.example.lastmiledelivery.data.remote.api
 
 import com.example.lastmiledelivery.data.models.Cities
+import com.example.lastmiledelivery.data.models.admin.AddMapping
+import com.example.lastmiledelivery.data.models.admin.AddVariable
+import com.example.lastmiledelivery.data.models.admin.ApiResponse
 import com.example.lastmiledelivery.data.models.admin.ApiVendorRegisterWebsite
+import com.example.lastmiledelivery.data.models.admin.ApiVendorRequest
+import com.example.lastmiledelivery.data.models.admin.ApiVendorResponse
 import com.example.lastmiledelivery.data.models.admin.CorrectRejectionRequest
+import com.example.lastmiledelivery.data.models.admin.GetApiVendorResponse
+import com.example.lastmiledelivery.data.models.admin.IntegrationResponse
 import com.example.lastmiledelivery.data.models.admin.MessageResponse
+import com.example.lastmiledelivery.data.models.admin.MethodsTemplateResponse
 import com.example.lastmiledelivery.data.models.admin.PendingBranchesResponse
 import com.example.lastmiledelivery.data.models.admin.RejectBranchRequest
 import com.example.lastmiledelivery.data.models.admin.RejectVendorRequest
 import com.example.lastmiledelivery.data.models.admin.RejectionReason
+import com.example.lastmiledelivery.data.models.admin.SaveApiMethodResponse
+import com.example.lastmiledelivery.data.models.admin.SaveApiMethodsRequest
+import com.example.lastmiledelivery.data.models.admin.SaveMappingRequest
 import com.example.lastmiledelivery.data.models.admin.VendorApproval
+import com.example.lastmiledelivery.data.models.admin.VendorMethodResponse
 import retrofit2.http.GET
 import retrofit2.http.PUT
 import retrofit2.Response
@@ -62,10 +74,53 @@ interface AdminApiService {
     ): Response<MessageResponse>
 
     @GET("api/cities")
-    suspend fun getAllCities():Response<List<Cities>>
+    suspend fun getAllCities(): Response<List<Cities>>
 
     @GET("api/admin/api-vendors")
     suspend fun getApiVendors(): Response<List<ApiVendorRegisterWebsite>>
+
+    @GET("api/integration-details/{branchId}")
+    suspend fun getIntegrationDetails(@Path("branchId") branchId: Int): IntegrationResponse
+
+    @POST("api/admin/apivendor/store")
+    suspend fun storeApiVendor(
+        @Body request: ApiVendorRequest
+    ): Response<ApiVendorResponse>
+
+    @GET("api/admin/api-vendor/{branchId}")
+    suspend fun getApiVendorByBranch(
+        @Path("branchId") branchId: Int
+    ): Response<GetApiVendorResponse>
+
+
+    @GET("api/admin/apimethod-templates")
+    suspend fun getStandardApiMethods(): Response<MethodsTemplateResponse>
+
+    @POST("api/admin/apivendor/{apivendorId}/methods")
+    suspend fun saveApiMethods(
+        @Path("apivendorId") apiVendorId: Int,
+        @Body request: SaveApiMethodsRequest
+    ): Response<SaveApiMethodResponse>
+
+    @GET("api/admin/apivendor/{apivendorId}/methods")
+    suspend fun getMethodsByVendor(
+        @Path("apivendorId") vendorId: Int
+    ): Response<VendorMethodResponse>
+
+    @GET("api/mappings/{branchId}/{apivendorId}")
+    suspend fun getMappings(
+        @Path("branchId") branchId: Int,
+        @Path("apivendorId") apivendorId: Int
+    ): Response<ApiResponse<List<AddMapping>>>
+
+    @GET("api/variables")
+    suspend fun getAllVariables(): Response<ApiResponse<List<AddVariable>>>
+
+    @POST("api/admin/mappings/save")
+    suspend fun saveVariableMappings(
+        @Body request: SaveMappingRequest
+    ): Response<ApiResponse<List<AddMapping>>>
+
 }
 
 

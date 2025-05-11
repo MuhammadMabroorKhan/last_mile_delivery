@@ -1,14 +1,27 @@
 package com.example.lastmiledelivery.data.repository.admin
 
 import android.util.Log
+import com.example.lastmiledelivery.data.models.admin.AddMapping
+import com.example.lastmiledelivery.data.models.admin.AddVariable
+import com.example.lastmiledelivery.data.models.admin.ApiResponse
 import com.example.lastmiledelivery.data.models.admin.ApiVendorRegisterWebsite
+import com.example.lastmiledelivery.data.models.admin.ApiVendorRequest
+import com.example.lastmiledelivery.data.models.admin.ApiVendorResponse
 import com.example.lastmiledelivery.data.models.admin.CorrectRejectionRequest
+import com.example.lastmiledelivery.data.models.admin.GetApiVendorResponse
+import com.example.lastmiledelivery.data.models.admin.IntegrationResponse
+import com.example.lastmiledelivery.data.models.admin.MethodsTemplateResponse
 import com.example.lastmiledelivery.data.models.admin.PendingBranch
 import com.example.lastmiledelivery.data.models.admin.RejectBranchRequest
 import com.example.lastmiledelivery.data.models.admin.RejectVendorRequest
 import com.example.lastmiledelivery.data.models.admin.RejectionReason
+import com.example.lastmiledelivery.data.models.admin.SaveApiMethodResponse
+import com.example.lastmiledelivery.data.models.admin.SaveApiMethodsRequest
+import com.example.lastmiledelivery.data.models.admin.SaveMappingRequest
 import com.example.lastmiledelivery.data.models.admin.VendorApproval
+import com.example.lastmiledelivery.data.models.admin.VendorMethodResponse
 import com.example.lastmiledelivery.data.remote.api.AdminApiService
+import retrofit2.Response
 import javax.inject.Inject
 
 class VendorApprovalRepository @Inject constructor(
@@ -50,7 +63,11 @@ class VendorApprovalRepository @Inject constructor(
             if (response.isSuccessful) {
                 Result.success(response.body() ?: emptyList())
             } else {
-                Result.failure(Exception(response.errorBody()?.string() ?: "Failed to fetch reasons"))
+                Result.failure(
+                    Exception(
+                        response.errorBody()?.string() ?: "Failed to fetch reasons"
+                    )
+                )
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -59,11 +76,16 @@ class VendorApprovalRepository @Inject constructor(
 
     suspend fun correctRejectionReason(vendorId: Int, reasonId: Int): Result<String> {
         return try {
-            val response = apiService.correctRejectionReason(vendorId, CorrectRejectionRequest(reasonId))
+            val response =
+                apiService.correctRejectionReason(vendorId, CorrectRejectionRequest(reasonId))
             if (response.isSuccessful) {
                 Result.success(response.body()?.message ?: "Rejection corrected successfully!")
             } else {
-                Result.failure(Exception(response.errorBody()?.string() ?: "Failed to correct reason"))
+                Result.failure(
+                    Exception(
+                        response.errorBody()?.string() ?: "Failed to correct reason"
+                    )
+                )
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -83,7 +105,7 @@ class VendorApprovalRepository @Inject constructor(
         }
     }
 
-     suspend fun approveBranch(branchId: Int): Result<String> {
+    suspend fun approveBranch(branchId: Int): Result<String> {
         return try {
             val response = apiService.approveBranch(branchId)
             if (response.isSuccessful) {
@@ -125,10 +147,10 @@ class VendorApprovalRepository @Inject constructor(
     }
 
 
-
     suspend fun correctBranchRejectionReason(branchId: Int, reasonId: Int): Result<String> {
         return try {
-            val response = apiService.correctBranchRejectionReason(branchId, CorrectRejectionRequest(reasonId))
+            val response =
+                apiService.correctBranchRejectionReason(branchId, CorrectRejectionRequest(reasonId))
             Log.d("RejectionReasonsINREpo", "Fetched Reasons: ${response.body()}")
             if (response.isSuccessful) {
                 Result.success(response.body()?.message ?: "Correction successful")
@@ -141,8 +163,6 @@ class VendorApprovalRepository @Inject constructor(
     }
 
 
-
-
     ///////// REISTER WENSITE FOR API VENDOR
     suspend fun getApiVendors(): List<ApiVendorRegisterWebsite> {
         val response = apiService.getApiVendors()
@@ -151,6 +171,70 @@ class VendorApprovalRepository @Inject constructor(
         } else {
             throw Exception("Failed to fetch vendors")
         }
+    }
+
+    suspend fun fetchIntegrationDetails(branchId: Int): IntegrationResponse {
+        return apiService.getIntegrationDetails(branchId)
+    }
+
+
+    suspend fun addApiVendor(request: ApiVendorRequest): Result<ApiVendorResponse> {
+        return try {
+            val response = apiService.storeApiVendor(request)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception(response.errorBody()?.string() ?: "Unknown error"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+
+    suspend fun getApiVendor(branchId: Int): GetApiVendorResponse? {
+        return try {
+            val response = apiService.getApiVendorByBranch(branchId)
+            if (response.isSuccessful) {
+                response.body()
+            } else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    suspend fun getStandardApiMethods(): Response<MethodsTemplateResponse> {
+        return apiService.getStandardApiMethods()
+    }
+
+    suspend fun saveApiMethods(
+        apiVendorId: Int,
+        request: SaveApiMethodsRequest
+    ): Response<SaveApiMethodResponse> {
+        return apiService.saveApiMethods(apiVendorId, request)
+    }
+
+
+    suspend fun getMethodsByVendor(vendorId: Int): VendorMethodResponse? {
+        return try {
+            val response = apiService.getMethodsByVendor(vendorId)
+            if (response.isSuccessful) response.body() else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+
+    suspend fun getMappings(branchId: Int, vendorId: Int): ApiResponse<List<AddMapping>> {
+        return apiService.getMappings(branchId, vendorId).body() ?: ApiResponse(false, "Error", null)
+    }
+
+    suspend fun getVariables(): ApiResponse<List<AddVariable>> {
+        return apiService.getAllVariables().body() ?: ApiResponse(false, "Error", null)
+    }
+
+    suspend fun saveMappings(request: SaveMappingRequest): ApiResponse<List<AddMapping>> {
+        return apiService.saveVariableMappings(request).body() ?: ApiResponse(false, "Error", null)
     }
 }
 
