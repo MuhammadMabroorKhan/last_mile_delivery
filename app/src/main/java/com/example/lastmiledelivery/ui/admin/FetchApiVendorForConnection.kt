@@ -23,9 +23,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -35,6 +37,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,6 +68,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -88,6 +93,7 @@ fun ApiVendorsConnectionScreen(
     val isLoading = viewModel.isLoading
     var selectedVendor by remember { mutableStateOf<ApiVendorRegisterWebsite?>(null) }
 
+    val context = LocalContext.current
     AdminScaffold(navController, title = "API Vendor Connection") { // ✅ Pass title
 
         Column(
@@ -96,14 +102,49 @@ fun ApiVendorsConnectionScreen(
                 .padding(16.dp)
         ) {
 
-            OutlinedTextField(
-                value = viewModel.searchQuery,
+            OutlinedTextField(value = viewModel.searchQuery,
                 onValueChange = { viewModel.searchQuery = it },
                 label = { Text("Search by Email or CNIC") },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { viewModel.showAddVariableDialog = true },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Add Variable")
+                }
+
+                Button(
+                    onClick = { viewModel.isDialogVisible = true }, modifier = Modifier.weight(1f)
+                ) {
+                    Text("Add Method")
+                }
+
+                viewModel.addVariableMessage?.let { message ->
+                    LaunchedEffect(message) {
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        viewModel.addVariableMessage = null
+                    }
+                }
+
+                viewModel.saveResult?.let { message ->
+                    LaunchedEffect(message) {
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        viewModel.saveResult = null
+                    }
+                }
+
+
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -120,46 +161,6 @@ fun ApiVendorsConnectionScreen(
                                     navController.navigate("apiVendorWebsiteDetail/${vendor.vendor_ID}/${vendor.lmd_users_ID}")
                                 }, elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                         ) {
-//                            Row(modifier = Modifier.padding(8.dp)) {
-//                                // Left: Profile Image
-//                                vendor.profile_picture?.let {
-//                                    AsyncImage(
-//                                        model = it,
-//                                        contentDescription = null,
-//                                        modifier = Modifier
-//                                            .size(64.dp)
-//                                            .clip(CircleShape),
-//                                        contentScale = ContentScale.Crop
-//                                    )
-//                                } ?: Box(
-//                                    modifier = Modifier
-//                                        .size(64.dp)
-//                                        .clip(CircleShape)
-//                                        .background(Color.Gray)
-//                                )
-//
-//                                Spacer(modifier = Modifier.width(8.dp))
-//
-//                                // Right: Info
-//                                Column {
-//                                    Text(
-//                                        text = vendor.name,
-//                                        style = MaterialTheme.typography.titleMedium
-//                                    )
-//                                    Text(
-//                                        text = "Status: ${vendor.approval_status}",
-//                                        style = MaterialTheme.typography.bodySmall
-//                                    )
-//                                    Text(
-//                                        text = "CNIC: ${vendor.cnic}",
-//                                        style = MaterialTheme.typography.bodySmall
-//                                    )
-//                                }
-//
-//                                Button(onClick = { selectedVendor = vendor }) {
-//                                    Text("Details")
-//                                }
-//                            }
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -209,8 +210,7 @@ fun ApiVendorsConnectionScreen(
                                 Button(
                                     onClick = { selectedVendor = vendor },
                                     contentPadding = PaddingValues(
-                                        horizontal = 12.dp,
-                                        vertical = 8.dp
+                                        horizontal = 12.dp, vertical = 8.dp
                                     )
                                 ) {
                                     Text("Details", maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -244,15 +244,122 @@ fun ApiVendorsConnectionScreen(
                 }
 
             }
+
+
+
+
+            if (viewModel.showAddVariableDialog) {
+                AddVariableDialog(tagValue = viewModel.newVariableTag,
+                    onValueChange = { viewModel.newVariableTag = it },
+                    onDismiss = { viewModel.showAddVariableDialog = false },
+                    onSave = {
+                        viewModel.addVariable {
+                            Toast.makeText(context, "Variable added!", Toast.LENGTH_SHORT).show()
+                        }
+                    })
+            }
+
+            AddNewApiMethodDialog(
+                viewModel = viewModel,
+                onDismiss = { viewModel.isDialogVisible = false })
+
         }
     }
 }
 
+@Composable
+fun AddNewApiMethodDialog(
+    viewModel: AdminViewModel, onDismiss: () -> Unit
+) {
+    if (viewModel.isDialogVisible) {
+        AlertDialog(onDismissRequest = onDismiss, title = { Text("Add New API Method") }, text = {
+            Column {
+                OutlinedTextField(
+                    value = viewModel.apiVendorIdInput,
+                    onValueChange = { viewModel.apiVendorIdInput = it },
+                    label = { Text("API Vendor ID (optional)") },
+                    placeholder = { Text("Defaults to 0 if empty") },
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(value = viewModel.methodName,
+                    onValueChange = { viewModel.methodName = it },
+                    label = { Text("Method Name") })
+
+                Spacer(modifier = Modifier.height(8.dp))
+                var expanded by remember { mutableStateOf(false) }
+                val httpMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH")
+                Box {
+                    OutlinedTextField(value = viewModel.httpMethod,
+                        onValueChange = {},
+                        label = { Text("HTTP Method") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { expanded = true },
+                        enabled = false,
+                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) })
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        httpMethods.forEach {
+                            DropdownMenuItem(text = { Text(it) }, onClick = {
+                                viewModel.httpMethod = it
+                                expanded = false
+                            })
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(value = viewModel.endpoint,
+                    onValueChange = { viewModel.endpoint = it },
+                    label = { Text("Endpoint (optional)") })
+
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(value = viewModel.description,
+                    onValueChange = { viewModel.description = it },
+                    label = { Text("Description (optional)") })
+            }
+        }, confirmButton = {
+            Button(onClick = { viewModel.saveNewApiMethod() }) {
+                Text("Save")
+            }
+        }, dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        })
+    }
+}
+
+
+@Composable
+fun AddVariableDialog(
+    tagValue: String, onValueChange: (String) -> Unit, onDismiss: () -> Unit, onSave: () -> Unit
+) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Add New Variable") }, text = {
+        OutlinedTextField(
+            value = tagValue,
+            onValueChange = onValueChange,
+            label = { Text("Variable Tag") },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }, confirmButton = {
+        Button(onClick = onSave) {
+            Text("Save")
+        }
+    }, dismissButton = {
+        TextButton(onClick = onDismiss) {
+            Text("Cancel")
+        }
+    })
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VendorDetailScreen(
-    navController: NavHostController, vendorId: Int, lmdUserId: Int,
+    navController: NavHostController,
+    vendorId: Int,
+    lmdUserId: Int,
     authViewModel: AuthViewModel = hiltViewModel(),
     categoryViewModel: ShopCategoryViewModel = hiltViewModel(), // ✅ Multiple ViewModels can be used
     customerViewModel: CustomerViewModel = hiltViewModel()
@@ -278,25 +385,20 @@ fun VendorDetailScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Vendor SHOPS", color = Color.White) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorResource(id = R.color.pink)
+    Scaffold(topBar = {
+        TopAppBar(title = { Text("Vendor SHOPS", color = Color.White) }, navigationIcon = {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White
                 )
-            )
-        }
-    ) { paddingValues ->
+            }
+        }, colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = colorResource(id = R.color.pink)
+        )
+        )
+    }) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -311,30 +413,24 @@ fun VendorDetailScreen(
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                TextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = {
-                        Text(
-                            "Search Here",
-                            color = Color.Gray
-                        )
-                    }, // Gray placeholder text
+                TextField(value = searchQuery, onValueChange = { searchQuery = it }, placeholder = {
+                    Text(
+                        "Search Here", color = Color.Gray
+                    )
+                }, // Gray placeholder text
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search Icon",
                             tint = Color.Gray // Gray icon
                         )
-                    },
-                    textStyle = TextStyle(color = Color.Black), // Input text color black
+                    }, textStyle = TextStyle(color = Color.Black), // Input text color black
                     colors = TextFieldDefaults.textFieldColors(
                         cursorColor = Color.Black, // Cursor color black
                         focusedIndicatorColor = Color.Transparent, // Remove bottom border
                         unfocusedIndicatorColor = Color.Transparent, // Remove bottom border
                         containerColor = Color.White // White background for the field
-                    ),
-                    shape = RoundedCornerShape(20.dp), // Fully rounded field
+                    ), shape = RoundedCornerShape(20.dp), // Fully rounded field
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 10.dp)
@@ -346,15 +442,13 @@ fun VendorDetailScreen(
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
                     items(categories) { category ->
-                        com.example.lastmiledelivery.ui.admin.CategoryButton(
-                            name = category.name,
+                        com.example.lastmiledelivery.ui.admin.CategoryButton(name = category.name,
                             id = category.id,
                             isSelected = selectedCategoryId == category.id,
                             onClick = {
                                 selectedCategoryId =
                                     if (selectedCategoryId == category.id) null else category.id
-                            }
-                        )
+                            })
                     }
                 }
 
@@ -364,8 +458,7 @@ fun VendorDetailScreen(
                         .fillMaxSize()
                         .clip(
                             RoundedCornerShape(
-                                topStart = 40.dp,
-                                topEnd = 40.dp
+                                topStart = 40.dp, topEnd = 40.dp
                             )
                         ) // Top curve for transition
                         .background(Color.White)
@@ -389,10 +482,7 @@ fun VendorDetailScreen(
 // Display filtered shops
                         filteredShops?.forEach { shop ->
                             com.example.lastmiledelivery.ui.admin.ShopCard(
-                                shop,
-                                customerViewModel,
-                                navController,
-                                vendorId
+                                shop, customerViewModel, navController, vendorId
                             )
                         }
 
@@ -422,8 +512,7 @@ private fun CategoryButton(name: String, id: Int, isSelected: Boolean, onClick: 
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = backgroundColor),
         border = if (isSelected) BorderStroke(2.dp, Color.White) else BorderStroke(
-            2.dp,
-            Color.Black
+            2.dp, Color.Black
         ), // Add a thin border
         modifier = Modifier.padding(horizontal = 4.dp)
     ) {
@@ -455,7 +544,7 @@ private fun ShopCard(
 //                        .show()
 //                customerViewModel.setSelectedShop(shop) // Store Selected Shop in ViewModel
 //                navController.navigate("shop_details") // Navigate to Details Screen
-                navController.navigate("apiVendorWebsiteMappingInfo/${vendorId}/${shop.shopId}/${shop.branchId}") // Navigate to Details Screen
+                    navController.navigate("apiVendorWebsiteMappingInfo/${vendorId}/${shop.shopId}/${shop.branchId}") // Navigate to Details Screen
                 }, // Added Clickable Action
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(4.dp)

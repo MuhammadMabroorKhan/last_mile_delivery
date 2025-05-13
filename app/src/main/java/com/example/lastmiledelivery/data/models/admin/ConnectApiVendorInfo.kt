@@ -10,6 +10,7 @@ data class ApiVendorRequest(
     val response_format: String?,
     val branches_ID: Int
 )
+
 //Response
 data class ApiVendorResponse(
     val status: Boolean,
@@ -69,6 +70,15 @@ data class MethodInputForApiVendor(
     val endpoint: String,
     val description: String
 )
+
+
+data class UpdateApiMethodRequest(
+    val method_name: String,
+    val http_method: String,
+    val endpoint: String,
+    val description: String
+)
+
 data class SaveApiMethodResponse(
     val status: Boolean,
     val message: String
@@ -97,6 +107,10 @@ data class AddMapping(
     val apivendor_ID: Int,
     val branch_ID: Int
 )
+// --- 2. Update Request Data Class ---
+data class UpdateMappingRequest(
+    val api_values: String
+)
 
 data class AddVariable(
     val id: Int,
@@ -118,4 +132,31 @@ data class ApiResponse<T>(
     val success: Boolean,
     val message: String,
     val data: T?
+)
+
+
+
+//////////////////////////
+//Add New Variable by Admin
+data class AddVariableRequest(
+    val tags: String
+)
+
+data class GenericResponse(
+    val message: String
+)
+//add new methods
+data class ApiMethodRequest(
+    val method_name: String,
+    val http_method: String,
+    val endpoint: String? = null,
+    val description: String? = null,
+    val apivendor_ID: Int = 0
+)
+data class ApiMethodResponse(
+    val status: Boolean,
+    val message: String
+)
+data class ApiMethodRequestWrapper(
+    val methods: List<ApiMethodRequest>
 )

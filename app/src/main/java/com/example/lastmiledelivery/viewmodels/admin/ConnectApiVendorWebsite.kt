@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lastmiledelivery.data.models.admin.AddMapping
 import com.example.lastmiledelivery.data.models.admin.AddVariable
+import com.example.lastmiledelivery.data.models.admin.ApiMethodRequest
 import com.example.lastmiledelivery.data.models.admin.ApiVendorRegisterWebsite
 import com.example.lastmiledelivery.data.models.admin.ApiVendorRequest
 import com.example.lastmiledelivery.data.models.admin.ApiVendorResponse
@@ -17,6 +18,7 @@ import com.example.lastmiledelivery.data.models.admin.MethodInputForApiVendor
 import com.example.lastmiledelivery.data.models.admin.MethodTemplate
 import com.example.lastmiledelivery.data.models.admin.SaveApiMethodsRequest
 import com.example.lastmiledelivery.data.models.admin.SaveMappingRequest
+import com.example.lastmiledelivery.data.models.admin.UpdateApiMethodRequest
 import com.example.lastmiledelivery.data.models.admin.VendorMethod
 import com.example.lastmiledelivery.data.repository.admin.VendorApprovalRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -106,6 +108,28 @@ class AdminViewModel @Inject constructor(
         integrationResponse = null
     }
 
+
+    var isUpdatingIntegration by mutableStateOf(false)
+    var updateIntegrationMessage by mutableStateOf<String?>(null)
+
+    fun updateApiVendor(id: Int, request: ApiVendorRequest) {
+        viewModelScope.launch {
+            isUpdatingIntegration = true
+            updateIntegrationMessage = null
+            try {
+                val response = repository.updateApiVendor(id, request)
+                updateIntegrationMessage = response.message
+                getVendorIntegration(request.branches_ID) // refresh updated data
+            } catch (e: Exception) {
+                updateIntegrationMessage = e.message
+            } finally {
+                isUpdatingIntegration = false
+            }
+        }
+    }
+
+
+
     var vendorIntegrationDetails by mutableStateOf<GetApiVendorData?>(null)
         private set
 
@@ -154,25 +178,34 @@ class AdminViewModel @Inject constructor(
         }
     }
 
+    var updateStatus by mutableStateOf<String?>(null)
+    var isUpdatingMethod by mutableStateOf(false)
+
+    fun updateApiMethodById(methodId: Int, request: UpdateApiMethodRequest, apiVendorId: Int) {
+        viewModelScope.launch {
+            isUpdatingMethod = true
+            try {
+                val response = repository.updateApiMethod(methodId, request)
+                updateStatus = response.message
+                // Refresh after update
+                loadSavedMethods(apiVendorId)
+            } catch (e: Exception) {
+                updateStatus = "Update failed: ${e.message}"
+            } finally {
+                isUpdatingMethod = false
+            }
+        }
+    }
+
+
+
+
 
     var savedVendorMethods by mutableStateOf<List<VendorMethod>>(emptyList())
     var isLoadingSavedMethods by mutableStateOf(false)
     var methodLoadError by mutableStateOf<String?>(null)
 
-    //    fun loadSavedMethods(apivendorId: Int) {
-//        viewModelScope.launch {
-//            isLoadingSavedMethods = true
-//            methodLoadError = null
-//            val response = repository.getMethodsByVendor(apivendorId)
-//            if (response != null && response.status) {
-//                savedVendorMethods = response.methods
-//            } else {
-//                savedVendorMethods = emptyList()
-//                methodLoadError = response?.message ?: "Something went wrong"
-//            }
-//            isLoadingSavedMethods = false
-//        }
-//    }
+
     fun loadSavedMethods(apiVendorId: Int) {
         viewModelScope.launch {
             isLoadingSavedMethods = true
@@ -270,4 +303,83 @@ class AdminViewModel @Inject constructor(
     }
 
 
+
+    fun updateMapping(id: Int, newValue: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                val response = repository.updateMapping(id, newValue)
+                if (response.success) {
+                    onSuccess()
+                } else {
+                    errorMessageMapping = response.message
+                }
+            } catch (e: Exception) {
+                errorMessageMapping = e.message
+            }
+        }
+    }
+
+
+    //Add New Variable By Admin
+    var showAddVariableDialog by mutableStateOf(false)
+    var newVariableTag by mutableStateOf("")
+    var addVariableMessage by mutableStateOf<String?>(null)
+
+    fun addVariable(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                val response = repository.addVariable(newVariableTag)
+                if (response.isSuccessful) {
+                    addVariableMessage = response.body()?.message
+                    newVariableTag = ""
+                    showAddVariableDialog = false
+                    onSuccess()
+                } else {
+                    addVariableMessage = "Failed: ${response.errorBody()?.string()}"
+                }
+            } catch (e: Exception) {
+                addVariableMessage = "Error: ${e.message}"
+            }
+        }
+    }
+
+
+    //Add New Methods
+    var isDialogVisible by mutableStateOf(false)
+    var methodName by mutableStateOf("")
+    var httpMethod by mutableStateOf("GET")
+    var endpoint by mutableStateOf("")
+    var description by mutableStateOf("")
+    var saveResult by mutableStateOf<String?>(null)
+    var apiVendorIdInput by mutableStateOf("")
+
+    fun saveNewApiMethod() {
+        viewModelScope.launch {
+            try {
+                val vendorId = apiVendorIdInput.toIntOrNull() ?: 0
+
+                val method = ApiMethodRequest(
+                    method_name = methodName,
+                    http_method = httpMethod,
+                    endpoint = if (endpoint.isNotBlank()) endpoint else null,
+                    description = if (description.isNotBlank()) description else null,
+                    apivendor_ID = vendorId
+                )
+                val response = repository.saveNewApiMethods(vendorId, listOf(method))
+                saveResult = response.message
+                isDialogVisible = false
+                clearForm()
+            } catch (e: Exception) {
+                saveResult = e.localizedMessage
+            }
+        }
+    }
+
+
+    private fun clearForm() {
+        methodName = ""
+        httpMethod = "GET"
+        endpoint = ""
+        description = ""
+    }
 }

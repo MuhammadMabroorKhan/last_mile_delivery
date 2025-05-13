@@ -3,11 +3,16 @@ package com.example.lastmiledelivery.data.remote.api
 import com.example.lastmiledelivery.data.models.Cities
 import com.example.lastmiledelivery.data.models.admin.AddMapping
 import com.example.lastmiledelivery.data.models.admin.AddVariable
+import com.example.lastmiledelivery.data.models.admin.AddVariableRequest
+import com.example.lastmiledelivery.data.models.admin.ApiMethodRequest
+import com.example.lastmiledelivery.data.models.admin.ApiMethodRequestWrapper
+import com.example.lastmiledelivery.data.models.admin.ApiMethodResponse
 import com.example.lastmiledelivery.data.models.admin.ApiResponse
 import com.example.lastmiledelivery.data.models.admin.ApiVendorRegisterWebsite
 import com.example.lastmiledelivery.data.models.admin.ApiVendorRequest
 import com.example.lastmiledelivery.data.models.admin.ApiVendorResponse
 import com.example.lastmiledelivery.data.models.admin.CorrectRejectionRequest
+import com.example.lastmiledelivery.data.models.admin.GenericResponse
 import com.example.lastmiledelivery.data.models.admin.GetApiVendorResponse
 import com.example.lastmiledelivery.data.models.admin.IntegrationResponse
 import com.example.lastmiledelivery.data.models.admin.MessageResponse
@@ -19,6 +24,8 @@ import com.example.lastmiledelivery.data.models.admin.RejectionReason
 import com.example.lastmiledelivery.data.models.admin.SaveApiMethodResponse
 import com.example.lastmiledelivery.data.models.admin.SaveApiMethodsRequest
 import com.example.lastmiledelivery.data.models.admin.SaveMappingRequest
+import com.example.lastmiledelivery.data.models.admin.UpdateApiMethodRequest
+import com.example.lastmiledelivery.data.models.admin.UpdateMappingRequest
 import com.example.lastmiledelivery.data.models.admin.VendorApproval
 import com.example.lastmiledelivery.data.models.admin.VendorMethodResponse
 import retrofit2.http.GET
@@ -87,6 +94,12 @@ interface AdminApiService {
         @Body request: ApiVendorRequest
     ): Response<ApiVendorResponse>
 
+    @PUT("api/admin/apivendor/{id}")
+    suspend fun updateApiVendor(
+        @Path("id") id: Int,
+        @Body request: ApiVendorRequest
+    ): Response<ApiVendorResponse>
+
     @GET("api/admin/api-vendor/{branchId}")
     suspend fun getApiVendorByBranch(
         @Path("branchId") branchId: Int
@@ -101,6 +114,13 @@ interface AdminApiService {
         @Path("apivendorId") apiVendorId: Int,
         @Body request: SaveApiMethodsRequest
     ): Response<SaveApiMethodResponse>
+
+    @PUT("api/admin/apimethods/{id}")
+    suspend fun updateApiMethod(
+        @Path("id") methodId: Int,
+        @Body request: UpdateApiMethodRequest
+    ): Response<SaveApiMethodResponse>
+
 
     @GET("api/admin/apivendor/{apivendorId}/methods")
     suspend fun getMethodsByVendor(
@@ -120,6 +140,25 @@ interface AdminApiService {
     suspend fun saveVariableMappings(
         @Body request: SaveMappingRequest
     ): Response<ApiResponse<List<AddMapping>>>
+
+    @PUT("api/admin/mapping/{id}")
+    suspend fun updateMapping(
+        @Path("id") id: Int,
+        @Body request: UpdateMappingRequest
+    ): ApiResponse<AddMapping>
+
+    //Add Variable by Admin
+    @POST("api/admin/add-variable")
+    suspend fun addVariable(
+        @Body request: AddVariableRequest
+    ): Response<GenericResponse>
+
+    //Add Method by Admin
+    @POST("api/admin/save-new-api-methods/{apivendorId}")
+    suspend fun saveNewApiMethods(
+        @Path("apivendorId") apivendorId: Int,
+        @Body body: ApiMethodRequestWrapper
+    ): Response<ApiMethodResponse>
 
 }
 

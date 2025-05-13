@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -60,9 +61,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.lastmiledelivery.R
+import com.example.lastmiledelivery.data.models.admin.AddMapping
+import com.example.lastmiledelivery.data.models.admin.ApiVendorData
 import com.example.lastmiledelivery.data.models.admin.ApiVendorRequest
+import com.example.lastmiledelivery.data.models.admin.GetApiVendorData
 import com.example.lastmiledelivery.data.models.admin.MappingInput
 import com.example.lastmiledelivery.data.models.admin.MethodInputForApiVendor
+import com.example.lastmiledelivery.data.models.admin.UpdateApiMethodRequest
+import com.example.lastmiledelivery.data.models.admin.VendorMethod
 import com.example.lastmiledelivery.viewmodels.admin.AdminViewModel
 
 
@@ -90,8 +96,7 @@ fun ApiVendorWebsiteMappingInfo(
     }
 
     Scaffold(topBar = {
-        TopAppBar(
-            title = { Text("Branch Integration Mapping", color = Color.White) },
+        TopAppBar(title = { Text("Branch Integration Mapping", color = Color.White) },
             navigationIcon = {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(
@@ -120,12 +125,12 @@ fun ApiVendorWebsiteMappingInfo(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Integration not available", color = Color.Red)
+                Text("Integration", color = Color.Red)
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(onClick = { /* Navigate to add form */
                     navController.navigate("add_integration/$vendorId/$shopID/$branchID")
                 }) {
-                    Text("Add Integration")
+                    Text("Integration")
                 }
             }
 
@@ -229,15 +234,21 @@ fun AddIntegrationScreen(
     val integrationData = viewModel.vendorIntegrationDetails
     val message = viewModel.vendorIntegrationMessage
     val loading = viewModel.isLoadingIntegration
-
+    var shouldRefresh by remember { mutableStateOf(false) }
     // Trigger API on first composition
     LaunchedEffect(Unit) {
         viewModel.getVendorIntegration(branchID)
     }
 
+    LaunchedEffect(shouldRefresh) {
+        if (shouldRefresh && !viewModel.isUpdatingIntegration) {
+            viewModel.getVendorIntegration(branchID)
+            shouldRefresh = false
+        }
+    }
+
     Scaffold(topBar = {
-        TopAppBar(
-            title = { Text("Branch Integration Mapping", color = Color.White) },
+        TopAppBar(title = { Text("Branch Integration Mapping", color = Color.White) },
             navigationIcon = {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
@@ -263,7 +274,7 @@ fun AddIntegrationScreen(
                 }
 
                 integrationData != null -> {
-                    // Show existing integration in a card
+
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -277,24 +288,43 @@ fun AddIntegrationScreen(
                                     .show()
 
                                 navController.navigate("integration_detail_api_methods/${integrationData.id}/${branchID}")
-                            },
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFE1F5FE))
+                            }, colors = CardDefaults.cardColors(containerColor = Color(0xFFE1F5FE))
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text("API Key: ${integrationData.api_key}")
-                            Text("Base URL: ${integrationData.api_base_url}")
-                            Text("Version: ${integrationData.api_version}")
-                            Text("Status: ${integrationData.vendor_integration_status}")
+                        var showDialog by remember { mutableStateOf(false) }
+
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text("API Key: ${integrationData.api_key}")
+                                Text("Base URL: ${integrationData.api_base_url}")
+                                Text("Version: ${integrationData.api_version}")
+                                Text("Status: ${integrationData.vendor_integration_status}")
+                            }
+
+                            IconButton(
+                                onClick = { showDialog = true },
+                                modifier = Modifier.align(Alignment.TopEnd)
+                            ) {
+                                Icon(Icons.Default.Edit, contentDescription = "Edit")
+                            }
+                        }
+
+                        if (showDialog) {
+                            EditApiVendorDialog(navController = navController,
+                                viewModel = viewModel,
+                                existingData = integrationData,
+                                onDismiss = {
+                                    showDialog = false
+                                    shouldRefresh = true // mark to refresh after dismiss
+                                })
                         }
                     }
+
                 }
 
                 else -> {
                     // If no integration found, show form
                     AddApiVendorForm(
-                        navController = navController,
-                        viewModel = viewModel,
-                        branchID = branchID
+                        navController = navController, viewModel = viewModel, branchID = branchID
                     )
                 }
             }
@@ -303,10 +333,99 @@ fun AddIntegrationScreen(
 }
 
 @Composable
-fun AddApiVendorForm(
+fun EditApiVendorDialog(
     navController: NavHostController,
     viewModel: AdminViewModel,
-    branchID: Int
+    existingData: GetApiVendorData,
+    onDismiss: () -> Unit
+) {
+    var apiKey by remember { mutableStateOf(existingData.api_key) }
+    var apiBaseUrl by remember { mutableStateOf(existingData.api_base_url ?: "") }
+    var responseFormat by remember { mutableStateOf(existingData.response_format ?: "JSON") }
+
+    val isUpdating = viewModel.isUpdatingIntegration
+    val updateMsg = viewModel.updateIntegrationMessage
+
+    AlertDialog(onDismissRequest = { onDismiss() },
+        title = { Text("Edit API Integration") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(value = apiKey,
+                    onValueChange = { apiKey = it },
+                    label = { Text("API Key") },
+                    singleLine = true
+                )
+                OutlinedTextField(value = apiBaseUrl,
+                    onValueChange = { apiBaseUrl = it },
+                    label = { Text("API Base URL") },
+                    singleLine = true
+                )
+                OutlinedTextField(value = "Bearer",
+                    onValueChange = {},
+                    label = { Text("Auth Method") },
+                    readOnly = true,
+                    enabled = false
+                )
+                OutlinedTextField(value = "v1",
+                    onValueChange = {},
+                    label = { Text("API Version") },
+                    readOnly = true,
+                    enabled = false
+                )
+                OutlinedTextField(value = "Active",
+                    onValueChange = {},
+                    label = { Text("Status") },
+                    readOnly = true,
+                    enabled = false
+                )
+
+                Text("Response Format")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = responseFormat == "JSON", onClick = {}, // Fixed to JSON
+                        enabled = false
+                    )
+                    Text("JSON")
+                }
+
+                updateMsg?.let {
+                    Text(
+                        "Message: $it",
+                        color = if (viewModel.integrationResponse?.status == true) Color.Green else Color.Red
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val request = ApiVendorRequest(
+                        api_key = apiKey,
+                        api_base_url = apiBaseUrl.ifBlank { null },
+                        api_auth_method = "Bearer",
+                        api_version = "v1",
+                        vendor_integration_status = "Active",
+                        response_format = responseFormat,
+                        branches_ID = existingData.branches_ID
+                    )
+                    viewModel.updateApiVendor(existingData.id, request)
+                    onDismiss()
+                }, enabled = !isUpdating
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        })
+}
+
+
+@Composable
+fun AddApiVendorForm(
+    navController: NavHostController, viewModel: AdminViewModel, branchID: Int
 ) {
     var apiKey by remember { mutableStateOf("") }
     var apiBaseUrl by remember { mutableStateOf("") }
@@ -317,36 +436,31 @@ fun AddApiVendorForm(
     val response = viewModel.integrationResponse
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        OutlinedTextField(
-            value = apiKey,
+        OutlinedTextField(value = apiKey,
             onValueChange = { apiKey = it },
             label = { Text("API Key") },
             singleLine = true
         )
 
-        OutlinedTextField(
-            value = apiBaseUrl,
+        OutlinedTextField(value = apiBaseUrl,
             onValueChange = { apiBaseUrl = it },
             label = { Text("API Base URL") },
             singleLine = true
         )
 
-        OutlinedTextField(
-            value = "Bearer",
+        OutlinedTextField(value = "Bearer",
             onValueChange = {},
             label = { Text("Auth Method") },
             readOnly = true,
             enabled = false
         )
-        OutlinedTextField(
-            value = "v1",
+        OutlinedTextField(value = "v1",
             onValueChange = {},
             label = { Text("API Version") },
             readOnly = true,
             enabled = false
         )
-        OutlinedTextField(
-            value = "Active",
+        OutlinedTextField(value = "Active",
             onValueChange = {},
             label = { Text("Status") },
             readOnly = true,
@@ -356,8 +470,7 @@ fun AddApiVendorForm(
         Text("Response Format")
         Row(verticalAlignment = Alignment.CenterVertically) {
             RadioButton(
-                selected = responseFormat == "JSON",
-                onClick = {}, // Prevent changes for now
+                selected = responseFormat == "JSON", onClick = {}, // Prevent changes for now
                 enabled = false // Visually indicates it's fixed
             )
             Text("JSON")
@@ -395,8 +508,7 @@ fun AddApiVendorForm(
                     branches_ID = branchID
                 )
                 viewModel.addApiVendor(request)
-            },
-            enabled = !loading
+            }, enabled = !loading
         ) {
             Text(if (loading) "Saving..." else "Submit")
         }
@@ -641,48 +753,42 @@ fun IntegrationDetailScreen(
     val isLoading = viewModel.isLoadingSavedMethods || viewModel.isLoadingMethod
     val error = viewModel.methodLoadError
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Method & Variables", color = Color.White) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = colorResource(id = R.color.pink))
-            )
-        },
-        bottomBar = {
-            Button(
-                onClick = {
-                    navController.navigate("variable_mapping_screen/$branchId/$apiVendorId")
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Text("Variable")
-            }
+
+    var editDialogVisible by remember { mutableStateOf(false) }
+    var methodToEdit by remember { mutableStateOf<VendorMethod?>(null) }
+
+    var editEndpoint by remember { mutableStateOf("") }
+    var editDescription by remember { mutableStateOf("") }
+
+
+    Scaffold(topBar = {
+        TopAppBar(title = { Text("Method & Variables", color = Color.White) },
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(
+                        Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White
+                    )
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = colorResource(id = R.color.pink))
+        )
+    }, bottomBar = {
+        Button(
+            onClick = {
+                navController.navigate("variable_mapping_screen/$branchId/$apiVendorId")
+            }, modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text("Variable")
         }
-    ) { padding ->
+    }) { padding ->
         Box(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-//            Button(
-//                onClick = {
-//                    navController.navigate("variable_mapping_screen/$branchId/$apiVendorId")
-//                }
-//            ) {
-//                Text("Variable")
-//            }
 
             when {
                 isLoading -> {
@@ -699,6 +805,35 @@ fun IntegrationDetailScreen(
 
                 savedMethods.isNotEmpty() -> {
                     // Show existing saved methods
+//                    LazyColumn {
+//                        items(savedMethods) { method ->
+//                            Card(
+//                                modifier = Modifier
+//                                    .fillMaxWidth()
+//                                    .padding(vertical = 8.dp)
+//                                    .clickable {
+//                                        Toast
+//                                            .makeText(
+//                                                context,
+//                                                "Clicked: ${method.id} && ${method.method_name}",
+//                                                Toast.LENGTH_SHORT
+//                                            )
+//                                            .show()
+//                                    }, elevation = CardDefaults.cardElevation(4.dp)
+//                            ) {
+//                                Column(modifier = Modifier.padding(16.dp)) {
+//                                    Text(
+//                                        "Method Name: ${method.method_name}",
+//                                        fontWeight = FontWeight.Bold
+//                                    )
+//                                    Text("HTTP Method: ${method.http_method}")
+//                                    Text("Endpoint: ${method.endpoint}")
+//                                    Text("Description: ${method.description}")
+//                                }
+//                            }
+//                        }
+//                    }
+
                     LazyColumn {
                         items(savedMethods) { method ->
                             Card(
@@ -709,33 +844,53 @@ fun IntegrationDetailScreen(
                                         Toast
                                             .makeText(
                                                 context,
-                                                "Clicked: ${method.method_name}",
+                                                "Clicked: ${method.id} && ${method.method_name}",
                                                 Toast.LENGTH_SHORT
                                             )
                                             .show()
-                                    },
-                                elevation = CardDefaults.cardElevation(4.dp)
+                                    }, elevation = CardDefaults.cardElevation(4.dp)
                             ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(
-                                        "Method Name: ${method.method_name}",
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text("HTTP Method: ${method.http_method}")
-                                    Text("Endpoint: ${method.endpoint}")
-                                    Text("Description: ${method.description}")
+                                Box(modifier = Modifier.fillMaxWidth()) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text(
+                                            "Method Name: ${method.method_name}",
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text("HTTP Method: ${method.http_method}")
+                                        Text("Endpoint: ${method.endpoint}")
+                                        Text("Description: ${method.description}")
+                                    }
+
+                                    // ✏️ Edit icon in top-right corner
+                                    IconButton(
+                                        onClick = {
+                                            methodToEdit = method
+                                            editEndpoint = method.endpoint
+                                            editDescription = method.description
+                                            editDialogVisible = true
+                                        }, modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Edit Method",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
+
+
                 }
 
                 else -> {
                     // Show form to input new methods
                     Column(modifier = Modifier.verticalScroll(scrollState)) {
                         Button(
-                            onClick = { showDialog = true },
-                            modifier = Modifier.fillMaxWidth()
+                            onClick = { showDialog = true }, modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("View Added Methods")
                         }
@@ -747,15 +902,13 @@ fun IntegrationDetailScreen(
                             Column(modifier = Modifier.padding(8.dp)) {
                                 Text("Method: ${template.method_name} (${template.http_method})")
 
-                                OutlinedTextField(
-                                    value = endpoint,
+                                OutlinedTextField(value = endpoint,
                                     onValueChange = { endpoint = it },
                                     label = { Text("Endpoint") },
                                     modifier = Modifier.fillMaxWidth()
                                 )
 
-                                OutlinedTextField(
-                                    value = description,
+                                OutlinedTextField(value = description,
                                     onValueChange = { description = it },
                                     label = { Text("Description") },
                                     modifier = Modifier.fillMaxWidth()
@@ -787,8 +940,7 @@ fun IntegrationDetailScreen(
                         Button(
                             onClick = {
                                 viewModel.saveApiMethods(apiVendorId, selectedMethods)
-                            },
-                            modifier = Modifier.fillMaxWidth()
+                            }, modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Save All Methods")
                         }
@@ -801,43 +953,83 @@ fun IntegrationDetailScreen(
             }
 
             if (showDialog) {
-                AlertDialog(
-                    onDismissRequest = { showDialog = false },
-                    confirmButton = {
-                        TextButton(onClick = { showDialog = false }) {
-                            Text("Close")
-                        }
-                    },
-                    title = { Text("Added Methods") },
-                    text = {
-                        if (selectedMethods.isEmpty()) {
-                            Text("No methods added yet.")
-                        } else {
-                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                                selectedMethods.forEachIndexed { index, method ->
-                                    Card(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 4.dp),
-                                        elevation = CardDefaults.cardElevation(4.dp)
-                                    ) {
-                                        Column(modifier = Modifier.padding(8.dp)) {
-                                            Text(
-                                                "Method ${index + 1}",
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            Text("Method Name: ${method.method_name}")
-                                            Text("HTTP Method: ${method.http_method}")
-                                            Text("Endpoint: ${method.endpoint}")
-                                            Text("Description: ${method.description}")
-                                        }
+                AlertDialog(onDismissRequest = { showDialog = false }, confirmButton = {
+                    TextButton(onClick = { showDialog = false }) {
+                        Text("Close")
+                    }
+                }, title = { Text("Added Methods") }, text = {
+                    if (selectedMethods.isEmpty()) {
+                        Text("No methods added yet.")
+                    } else {
+                        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                            selectedMethods.forEachIndexed { index, method ->
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    elevation = CardDefaults.cardElevation(4.dp)
+                                ) {
+                                    Column(modifier = Modifier.padding(8.dp)) {
+                                        Text(
+                                            "Method ${index + 1}", fontWeight = FontWeight.Bold
+                                        )
+                                        Text("Method Name: ${method.method_name}")
+                                        Text("HTTP Method: ${method.http_method}")
+                                        Text("Endpoint: ${method.endpoint}")
+                                        Text("Description: ${method.description}")
                                     }
                                 }
                             }
                         }
                     }
-                )
+                })
             }
+
+
+
+            if (editDialogVisible && methodToEdit != null) {
+                AlertDialog(onDismissRequest = { editDialogVisible = false },
+                    title = { Text("Edit Method") },
+                    text = {
+                        Column {
+                            Text("Method: ${methodToEdit!!.method_name} (${methodToEdit!!.http_method})")
+
+                            OutlinedTextField(value = editEndpoint,
+                                onValueChange = { editEndpoint = it },
+                                label = { Text("Endpoint") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            OutlinedTextField(value = editDescription,
+                                onValueChange = { editDescription = it },
+                                label = { Text("Description") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            val updatedRequest = UpdateApiMethodRequest(
+                                method_name = methodToEdit!!.method_name,
+                                http_method = methodToEdit!!.http_method,
+                                endpoint = editEndpoint,
+                                description = editDescription
+                            )
+                            viewModel.updateApiMethodById(
+                                methodToEdit!!.id, updatedRequest, apiVendorId
+                            )
+                            editDialogVisible = false
+                        }) {
+                            Text("Save")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { editDialogVisible = false }) {
+                            Text("Cancel")
+                        }
+                    })
+            }
+
         }
     }
 }
@@ -957,29 +1149,35 @@ fun MappingScreen(
     val isMappingsLoaded by remember { derivedStateOf { viewModel.isMappingsLoaded } }
     val isVariablesLoaded by remember { derivedStateOf { viewModel.isVariablesLoaded } }
 
+    val context = LocalContext.current
+
     LaunchedEffect(Unit) {
         Log.d("MappingScreen", "Fetching mappings for branchId=$branchId, vendorId=$vendorId")
         viewModel.fetchMappings(branchId, vendorId)
         viewModel.fetchVariables()
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Variable Mapping", color = Color.White) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = colorResource(id = R.color.pink))
-            )
-        }
-    ) { padding ->
+
+    var editingMapping by remember { mutableStateOf<AddMapping?>(null) }
+
+
+
+
+
+
+
+    Scaffold(topBar = {
+        TopAppBar(title = { Text("Variable Mapping", color = Color.White) },
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(
+                        Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White
+                    )
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = colorResource(id = R.color.pink))
+        )
+    }) { padding ->
 
         Column(
             modifier = Modifier
@@ -998,11 +1196,75 @@ fun MappingScreen(
 //                    }
                     Text("Existing Mappings", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(8.dp))
-                    mappings.forEach {
-                        val variableTag = variables.find { v -> v.id == it.variable_ID }?.tags ?: "Unknown"
-                        Text("$variableTag: ${it.api_values}")
-                        Spacer(Modifier.height(4.dp))
+//                    mappings.forEach {
+//                        val variableTag =
+//                            variables.find { v -> v.id == it.variable_ID }?.tags ?: "Unknown"
+//                        Text("$variableTag: ${it.api_values}")
+//                        Spacer(Modifier.height(4.dp))
+//                    }
+
+
+                    mappings.forEach { mapping ->
+                        val variableTag =
+                            variables.find { it.id == mapping.variable_ID }?.tags ?: "Unknown"
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp)
+                                .clickable {
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "Clicked: $variableTag → ${mapping.api_values}",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                        .show()
+                                }, elevation = CardDefaults.cardElevation(4.dp)
+                        ) {
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        text = variableTag,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Mapped to: ${mapping.api_values}",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        Toast.makeText(
+                                            context,
+                                            "Edit clicked for $variableTag  ${mapping.id}",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        // Later: Show edit dialog or navigate to edit screen
+
+
+// In the IconButton click listener inside your Card
+                                        editingMapping = mapping
+
+
+                                    }, modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Edit Mapping",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
                     }
+
+
                 }
 
                 isMappingsLoaded && isVariablesLoaded && mappings.isEmpty() && variables.isNotEmpty() -> {
@@ -1022,18 +1284,18 @@ fun MappingScreen(
                                 maxLines = 1
                             )
                             TextField(
-                                value = mappingInputs[variable.id] ?: "",
-                                onValueChange = {
+                                value = mappingInputs[variable.id] ?: "", onValueChange = {
                                     mappingInputs = mappingInputs.toMutableMap().apply {
                                         put(variable.id, it)
                                     }
-                                    Log.d("MappingInput", "Variable ${variable.id} (${variable.tags}) = $it")
-                                },
-                                modifier = Modifier
+                                    Log.d(
+                                        "MappingInput",
+                                        "Variable ${variable.id} (${variable.tags}) = $it"
+                                    )
+                                }, modifier = Modifier
                                     .weight(1f)
                                     .height(48.dp), // reduced height
-                                singleLine = true,
-                                colors = TextFieldDefaults.textFieldColors(
+                                singleLine = true, colors = TextFieldDefaults.textFieldColors(
                                     containerColor = Color.Transparent
                                 )
                             )
@@ -1046,12 +1308,14 @@ fun MappingScreen(
                             val inputs = mappingInputs.mapNotNull { (variableId, value) ->
                                 if (value.isNotBlank()) MappingInput(variableId, value) else null
                             }
-                            Log.d("SaveMappings", "Saving ${inputs.size} mappings for branchId=$branchId vendorId=$vendorId")
+                            Log.d(
+                                "SaveMappings",
+                                "Saving ${inputs.size} mappings for branchId=$branchId vendorId=$vendorId"
+                            )
                             viewModel.saveMappings(branchId, vendorId, inputs) {
                                 viewModel.fetchMappings(branchId, vendorId) // Refresh
                             }
-                        },
-                        modifier = Modifier.align(Alignment.End)
+                        }, modifier = Modifier.align(Alignment.End)
                     ) {
                         Text("Save Mappings")
                     }
@@ -1066,9 +1330,58 @@ fun MappingScreen(
                 }
             }
 
+
+
+            if (editingMapping != null) {
+                val variableTag =
+                    variables.find { it.id == editingMapping!!.variable_ID }?.tags ?: "Unknown"
+
+                EditMappingDialog(mapping = editingMapping!!,
+                    variableTag = variableTag,
+                    onDismiss = { editingMapping = null },
+                    onSave = { newValue ->
+                        viewModel.updateMapping(editingMapping!!.id, newValue) {
+                            editingMapping = null
+                            viewModel.fetchMappings(branchId, vendorId)
+                            viewModel.fetchVariables()
+                        }
+                    })
+            }
+
         }
     }
 }
+
+
+@Composable
+fun EditMappingDialog(
+    mapping: AddMapping, variableTag: String, onDismiss: () -> Unit, onSave: (String) -> Unit
+) {
+    var newValue by remember { mutableStateOf(mapping.api_values) }
+
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Edit Mapping") }, text = {
+        Column {
+            Text("Variable: $variableTag")
+            Spacer(modifier = Modifier.height(8.dp))
+            TextField(value = newValue,
+                onValueChange = { newValue = it },
+                label = { Text("API Value") },
+                singleLine = true
+            )
+        }
+    }, confirmButton = {
+        TextButton(onClick = { onSave(newValue) }) {
+            Text("Save")
+        }
+    }, dismissButton = {
+        TextButton(onClick = onDismiss) {
+            Text("Cancel")
+        }
+    })
+}
+
+
+
 
 
 

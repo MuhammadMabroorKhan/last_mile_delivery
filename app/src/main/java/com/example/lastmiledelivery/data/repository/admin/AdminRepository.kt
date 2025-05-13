@@ -3,11 +3,16 @@ package com.example.lastmiledelivery.data.repository.admin
 import android.util.Log
 import com.example.lastmiledelivery.data.models.admin.AddMapping
 import com.example.lastmiledelivery.data.models.admin.AddVariable
+import com.example.lastmiledelivery.data.models.admin.AddVariableRequest
+import com.example.lastmiledelivery.data.models.admin.ApiMethodRequest
+import com.example.lastmiledelivery.data.models.admin.ApiMethodRequestWrapper
+import com.example.lastmiledelivery.data.models.admin.ApiMethodResponse
 import com.example.lastmiledelivery.data.models.admin.ApiResponse
 import com.example.lastmiledelivery.data.models.admin.ApiVendorRegisterWebsite
 import com.example.lastmiledelivery.data.models.admin.ApiVendorRequest
 import com.example.lastmiledelivery.data.models.admin.ApiVendorResponse
 import com.example.lastmiledelivery.data.models.admin.CorrectRejectionRequest
+import com.example.lastmiledelivery.data.models.admin.GenericResponse
 import com.example.lastmiledelivery.data.models.admin.GetApiVendorResponse
 import com.example.lastmiledelivery.data.models.admin.IntegrationResponse
 import com.example.lastmiledelivery.data.models.admin.MethodsTemplateResponse
@@ -18,6 +23,8 @@ import com.example.lastmiledelivery.data.models.admin.RejectionReason
 import com.example.lastmiledelivery.data.models.admin.SaveApiMethodResponse
 import com.example.lastmiledelivery.data.models.admin.SaveApiMethodsRequest
 import com.example.lastmiledelivery.data.models.admin.SaveMappingRequest
+import com.example.lastmiledelivery.data.models.admin.UpdateApiMethodRequest
+import com.example.lastmiledelivery.data.models.admin.UpdateMappingRequest
 import com.example.lastmiledelivery.data.models.admin.VendorApproval
 import com.example.lastmiledelivery.data.models.admin.VendorMethodResponse
 import com.example.lastmiledelivery.data.remote.api.AdminApiService
@@ -191,6 +198,14 @@ class VendorApprovalRepository @Inject constructor(
         }
     }
 
+    suspend fun updateApiVendor(id: Int, request: ApiVendorRequest): ApiVendorResponse {
+        val response = apiService.updateApiVendor(id, request)
+        if (response.isSuccessful) {
+            return response.body() ?: throw Exception("Empty response")
+        } else {
+            throw Exception(response.errorBody()?.string() ?: "Unknown error")
+        }
+    }
 
     suspend fun getApiVendor(branchId: Int): GetApiVendorResponse? {
         return try {
@@ -215,6 +230,16 @@ class VendorApprovalRepository @Inject constructor(
     }
 
 
+    suspend fun updateApiMethod(methodId: Int, request: UpdateApiMethodRequest): SaveApiMethodResponse {
+        val response = apiService.updateApiMethod(methodId, request)
+        if (response.isSuccessful) {
+            return response.body() ?: throw Exception("Empty response from server")
+        } else {
+            throw Exception(response.errorBody()?.string() ?: "Unknown error")
+        }
+    }
+
+
     suspend fun getMethodsByVendor(vendorId: Int): VendorMethodResponse? {
         return try {
             val response = apiService.getMethodsByVendor(vendorId)
@@ -236,6 +261,28 @@ class VendorApprovalRepository @Inject constructor(
     suspend fun saveMappings(request: SaveMappingRequest): ApiResponse<List<AddMapping>> {
         return apiService.saveVariableMappings(request).body() ?: ApiResponse(false, "Error", null)
     }
+
+    suspend fun updateMapping(id: Int, newValue: String): ApiResponse<AddMapping> {
+        return apiService.updateMapping(id, UpdateMappingRequest(newValue))
+    }
+
+    //Add New Variable by Admin
+    suspend fun addVariable(tag: String): Response<GenericResponse> {
+        return apiService.addVariable(AddVariableRequest(tag))
+    }
+
+
+    //Add new methods by Admin
+    suspend fun saveNewApiMethods(apivendorId: Int, methods: List<ApiMethodRequest>): ApiMethodResponse {
+        val body = ApiMethodRequestWrapper(methods = methods)
+        val response = apiService.saveNewApiMethods(apivendorId, body)
+        if (response.isSuccessful) {
+            return response.body() ?: throw Exception("Empty response")
+        } else {
+            throw Exception(response.errorBody()?.string() ?: "Unknown error")
+        }
+    }
+
 }
 
 
