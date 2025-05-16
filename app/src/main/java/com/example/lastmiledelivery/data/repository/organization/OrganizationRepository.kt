@@ -1,11 +1,13 @@
 package com.example.lastmiledelivery.data.repository.organization
 
+import android.util.Log
 import com.example.lastmiledelivery.data.models.customer.ApiException
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
 import com.example.lastmiledelivery.data.models.organization.DeliveryBoy
 import com.example.lastmiledelivery.data.models.organization.DeliveryBoySignupResponse
 import com.example.lastmiledelivery.data.models.organization.OrganizationData
 import com.example.lastmiledelivery.data.models.organization.OrganizationSignupResponse
+import com.example.lastmiledelivery.data.models.organization.OrganizationStats
 import com.example.lastmiledelivery.data.models.organization.RejectVendorRequestBody
 import com.example.lastmiledelivery.data.models.organization.SimpleResponse
 import com.example.lastmiledelivery.data.models.organization.VendorOrganizationRejectionReason
@@ -226,5 +228,42 @@ class OrganizationRepository @Inject constructor(private val api: OrganizationAp
             Result.failure(e)
         }
     }
+
+
+    //Summary stats
+//    suspend fun fetchOrganizationStats(orgId: Int): Result<OrganizationStats> {
+//        return try {
+//            val response = api.getOrganizationStats(orgId)
+//            if (response.isSuccessful) {
+//                Result.success(response.body()!!)
+//            } else {
+//                Result.failure(Exception("Failed to load stats"))
+//            }
+//        } catch (e: Exception) {
+//            Result.failure(e)
+//        }
+//    }
+
+    suspend fun fetchOrganizationStats(orgId: Int): Result<OrganizationStats> {
+        val response = api.getOrganizationStats(orgId)
+        if (response.isSuccessful) {
+            val body = response.body()
+            if (body != null) {
+                return Result.success(body)
+            } else {
+                Log.e("fetchStats", "Response body is null!")
+                throw Exception("Failed to load stats: Body is null")
+            }
+        } else {
+            Log.e(
+                "fetchStats",
+                "Response not successful: code=${response.code()}, error=${
+                    response.errorBody()?.string()
+                }"
+            )
+            throw Exception("Failed to load stats: HTTP ${response.code()}")
+        }
+    }
+
 
 }

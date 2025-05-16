@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lastmiledelivery.data.models.admin.AddMapping
 import com.example.lastmiledelivery.data.models.admin.AddVariable
+import com.example.lastmiledelivery.data.models.admin.AdminStatsResponse
 import com.example.lastmiledelivery.data.models.admin.ApiMethodRequest
 import com.example.lastmiledelivery.data.models.admin.ApiVendorRegisterWebsite
 import com.example.lastmiledelivery.data.models.admin.ApiVendorRequest
@@ -381,5 +382,37 @@ class AdminViewModel @Inject constructor(
         httpMethod = "GET"
         endpoint = ""
         description = ""
+    }
+
+
+
+
+
+    //Admin summary and stats
+    var stats by mutableStateOf<AdminStatsResponse?>(null)
+        private set
+
+    var isLoadingStats by mutableStateOf(false)
+        private set
+
+    var error by mutableStateOf<String?>(null)
+        private set
+
+    init {
+        fetchStats()
+    }
+
+    fun fetchStats() {
+        viewModelScope.launch {
+            isLoadingStats = true
+            val result = repository.getAdminStats()
+            if (result != null) {
+                stats = result
+                error = null
+            } else {
+                error = "Failed to load admin stats"
+            }
+            isLoadingStats = false
+        }
     }
 }

@@ -94,3 +94,21 @@ data class Branch(
 data class BranchesResponse(
     val branches: List<Branch>?
 )
+
+//
+// 1. Data Class
+
+data class VendorSummaryResponse(
+    @SerializedName("total_shops") val totalShops: Int,
+    @SerializedName("total_branches") val totalBranches: Int,
+    @SerializedName("total_approved_branches") val totalApprovedBranches: Int,
+    @SerializedName("total_suborders") val totalSuborders: Int,
+    @SerializedName("delivered_suborders") val deliveredSuborders: Int,
+    @SerializedName("pending_suborders") val pendingSuborders: Int,
+    @SerializedName("total_orders") val totalOrders: Int,
+    @SerializedName("total_revenue") val totalRevenue: Double,
+    @SerializedName("avg_revenue_per_order") val avgRevenuePerOrder: Double,
+    @SerializedName("total_linked_organizations") val totalLinkedOrganizations: Int
+)
+
+

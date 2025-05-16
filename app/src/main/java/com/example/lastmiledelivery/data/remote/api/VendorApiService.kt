@@ -22,6 +22,7 @@ import com.example.lastmiledelivery.data.models.vendor.VendorOrdersResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorSignupResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorSuborderDetailResponse
+import com.example.lastmiledelivery.data.models.vendor.VendorSummaryResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
@@ -106,12 +107,11 @@ interface VendorApiService {
     ): Response<UpdateBranchResponse>
 
 
-
     //getItemCategories by shop id
-        @GET("api/itemcategories/{shopCategoryId}")
-        suspend fun getItemCategories(@Path("shopCategoryId") shopCategoryId: Int): Response<ItemCategoryResponse>
+    @GET("api/itemcategories/{shopCategoryId}")
+    suspend fun getItemCategories(@Path("shopCategoryId") shopCategoryId: Int): Response<ItemCategoryResponse>
 
-        //get item variations wen item category is selected
+    //get item variations wen item category is selected
     @GET("api/item-variations/{itemCategoryId}")
     suspend fun getItemVariations(@Path("itemCategoryId") itemCategoryId: Int): Response<ItemVariationResponse>
 
@@ -182,4 +182,9 @@ interface VendorApiService {
         @Path("suborderId") suborderId: Int,
         @Body request: SuborderStatusUpdateRequest
     ): Response<SuborderStatusUpdateResponse>
+
+    // 2. API Interface
+    @GET("api/vendor/{vendorId}/summary")
+    suspend fun getVendorSummary(@Path("vendorId") vendorId: Int): Response<VendorSummaryResponse>
+
 }

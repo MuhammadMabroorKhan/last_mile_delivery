@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.lastmiledelivery.data.models.admin.AddMapping
 import com.example.lastmiledelivery.data.models.admin.AddVariable
 import com.example.lastmiledelivery.data.models.admin.AddVariableRequest
+import com.example.lastmiledelivery.data.models.admin.AdminStatsResponse
 import com.example.lastmiledelivery.data.models.admin.ApiMethodRequest
 import com.example.lastmiledelivery.data.models.admin.ApiMethodRequestWrapper
 import com.example.lastmiledelivery.data.models.admin.ApiMethodResponse
@@ -280,6 +281,16 @@ class VendorApprovalRepository @Inject constructor(
             return response.body() ?: throw Exception("Empty response")
         } else {
             throw Exception(response.errorBody()?.string() ?: "Unknown error")
+        }
+    }
+
+    //Summary and STats
+    suspend fun getAdminStats(): AdminStatsResponse? {
+        return try {
+            val response = apiService.getAdminStats()
+            if (response.isSuccessful) response.body() else null
+        } catch (e: Exception) {
+            null
         }
     }
 

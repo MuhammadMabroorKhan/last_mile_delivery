@@ -14,6 +14,7 @@ import com.example.lastmiledelivery.data.models.vendor.VendorResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorSignupResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorSuborderDetailInfo
 import com.example.lastmiledelivery.data.models.vendor.VendorSuborderDetailResponse
+import com.example.lastmiledelivery.data.models.vendor.VendorSummaryResponse
 import com.example.lastmiledelivery.data.remote.api.VendorApiService
 import com.google.gson.Gson
 import okhttp3.MultipartBody
@@ -173,5 +174,16 @@ class VendorRepository @Inject constructor(private val vendorApiService: VendorA
     }
 
 
-
+    suspend fun fetchVendorSummary(vendorId: Int): Result<VendorSummaryResponse> = try {
+        val response = vendorApiService.getVendorSummary(vendorId)
+        if (response.isSuccessful) {
+            response.body()?.let {
+                Result.success(it)
+            } ?: Result.failure(Exception("Empty Response"))
+        } else {
+            Result.failure(Exception("API Error: ${response.code()}"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 }

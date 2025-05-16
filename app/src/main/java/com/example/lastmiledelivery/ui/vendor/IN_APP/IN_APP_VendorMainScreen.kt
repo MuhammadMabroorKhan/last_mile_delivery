@@ -28,6 +28,7 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.lastmiledelivery.R
 import com.example.lastmiledelivery.ui.vendor.VendorScaffold
+import com.example.lastmiledelivery.ui.vendor.VendorSummaryScreen
 import com.example.lastmiledelivery.viewmodels.vendor.VendorViewModel
 
 @Composable
@@ -67,33 +68,34 @@ fun IN_APP_VendorMainScreen(navController: NavHostController, vendorId: Int) {
                 vendorState?.let { result ->
                     result.fold(
                         onSuccess = { vendor ->
-                            Text("Welcome ${vendor.name}", style = MaterialTheme.typography.headlineMedium)
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(text = "ID: ${vendor.lmdUserId}", fontSize = 18.sp)
-                            Text(text = "Vendor ID: ${vendor.vendorId}", fontSize = 18.sp)
-                            Text(text = "Email: ${vendor.email}", fontSize = 18.sp)
-                            Text(text = "Phone: ${vendor.phoneNo}", fontSize = 18.sp)
-                            Text(text = "CNIC: ${vendor.cnic}", fontSize = 18.sp)
-                            Text(text = "Vendor Type: ${vendor.vendorType}", fontSize = 18.sp)
-
-
-                            if (vendor.profilePicture.isNullOrEmpty()) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.account_circle),
-                                    contentDescription = "Default Profile Picture",
-                                    modifier = Modifier
-                                        .size(100.dp)
-                                        .clip(CircleShape)
-                                )
-                            } else {
-                                AsyncImage(
-                                    model = vendor.profilePicture,
-                                    contentDescription = "Vendor Profile Picture",
-                                    modifier = Modifier
-                                        .size(100.dp)
-                                        .clip(CircleShape)
-                                )
-                            }
+//                            Text("Welcome ${vendor.name}", style = MaterialTheme.typography.headlineMedium)
+//                            Spacer(modifier = Modifier.height(16.dp))
+//                            Text(text = "ID: ${vendor.lmdUserId}", fontSize = 18.sp)
+//                            Text(text = "Vendor ID: ${vendor.vendorId}", fontSize = 18.sp)
+//                            Text(text = "Email: ${vendor.email}", fontSize = 18.sp)
+//                            Text(text = "Phone: ${vendor.phoneNo}", fontSize = 18.sp)
+//                            Text(text = "CNIC: ${vendor.cnic}", fontSize = 18.sp)
+//                            Text(text = "Vendor Type: ${vendor.vendorType}", fontSize = 18.sp)
+//
+//
+//                            if (vendor.profilePicture.isNullOrEmpty()) {
+//                                Image(
+//                                    painter = painterResource(id = R.drawable.account_circle),
+//                                    contentDescription = "Default Profile Picture",
+//                                    modifier = Modifier
+//                                        .size(100.dp)
+//                                        .clip(CircleShape)
+//                                )
+//                            } else {
+//                                AsyncImage(
+//                                    model = vendor.profilePicture,
+//                                    contentDescription = "Vendor Profile Picture",
+//                                    modifier = Modifier
+//                                        .size(100.dp)
+//                                        .clip(CircleShape)
+//                                )
+//                            }
+                            VendorSummaryScreen(vendor.vendorId)
                         },
                         onFailure = { exception ->
                             Text("Error: E ${exception.message}", color = Color.Red)

@@ -14,15 +14,35 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Api
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.DirectionsBike
+import androidx.compose.material.icons.filled.Domain
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Pending
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Store
+import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,12 +67,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.lastmiledelivery.R
 import com.example.lastmiledelivery.viewmodels.AuthViewModel
+import com.example.lastmiledelivery.viewmodels.admin.AdminViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -110,19 +132,139 @@ fun AdminMainScreen(navController: NavHostController) {
     val user = remember { authViewModel.getUserDetails() }
 
     AdminScaffold(navController, title = "Admin Dashboard") { // ✅ Pass title
-        Column(
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text("Welcome ${user.name}", style = MaterialTheme.typography.headlineMedium)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(text = "Name: ${user.name}", fontSize = 18.sp)
-            Text(text = "Email: ${user.email}", fontSize = 18.sp)
-            Text(text = "Role: ${user.role}", fontSize = 18.sp)
+//        Column(
+//            verticalArrangement = Arrangement.Center,
+//            horizontalAlignment = Alignment.CenterHorizontally
+//        ) {
+//            Text("Welcome ${user.name}", style = MaterialTheme.typography.headlineMedium)
+//            Spacer(modifier = Modifier.height(16.dp))
+//            Text(text = "Name: ${user.name}", fontSize = 18.sp)
+//            Text(text = "Email: ${user.email}", fontSize = 18.sp)
+//            Text(text = "Role: ${user.role}", fontSize = 18.sp)
+//        }
+        AdminStatsScreen()
+    }
+}
+
+
+
+
+
+@Composable
+fun AdminStatsScreen(viewModel: AdminViewModel = hiltViewModel()) {
+    val stats = viewModel.stats
+    val isLoading = viewModel.isLoadingStats
+    val error = viewModel.error
+
+    Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+        } else if (error != null) {
+            Text(text = error, color = Color.Red, modifier = Modifier.align(Alignment.CenterHorizontally))
+        } else if (stats != null) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                item {
+                    SummaryBox("Total Users", stats.total_users.toString(), Icons.Default.Group)
+                }
+                item {
+                    SummaryBox("Customers", stats.users_by_role.customer.toString(), Icons.Default.Person)
+                }
+                item {
+                    SummaryBox("Vendors", stats.users_by_role.vendor.toString(), Icons.Default.Store)
+                }
+                item {
+                    SummaryBox("Delivery Boys", stats.users_by_role.deliveryboy.toString(), Icons.Default.DirectionsBike)
+                }
+                item {
+                    SummaryBox("Organizations", stats.users_by_role.organization.toString(), Icons.Default.Domain)
+                }
+                item {
+                    SummaryBox("Admins", stats.users_by_role.admin.toString(), Icons.Default.AdminPanelSettings)
+                }
+                item {
+                    SummaryBox("Total Orders", stats.total_orders.toString(), Icons.Default.ShoppingCart)
+                }
+                item {
+                    SummaryBox("Pending Orders", stats.orders_by_status.pending.toString(), Icons.Default.Pending)
+                }
+                item {
+                    SummaryBox("Confirmed Orders", stats.orders_by_status.confirmed.toString(), Icons.Default.Check)
+                }
+                item {
+                    SummaryBox("Cancelled Orders", stats.orders_by_status.cancelled.toString(), Icons.Default.Cancel)
+                }
+                item {
+                    SummaryBox("Shops", stats.total_shops.toString(), Icons.Default.Storefront)
+                }
+                item {
+                    SummaryBox("Branches", stats.total_branches.toString(), Icons.Default.LocationCity)
+                }
+                item {
+                    SummaryBox("Approved Branches", stats.branches_by_approval.approved.toString(), Icons.Default.CheckCircle)
+                }
+                item {
+                    SummaryBox("Pending Branches", stats.branches_by_approval.pending.toString(), Icons.Default.HourglassEmpty)
+                }
+                item {
+                    SummaryBox("Rejected Branches", stats.branches_by_approval.rejected.toString(), Icons.Default.Block)
+                }
+            }
         }
     }
 }
 
+//@Preview
+//@Composable
+//fun PrevSummary(){
+//    LazyVerticalGrid(
+//        columns = GridCells.Fixed(2),
+//        verticalArrangement = Arrangement.spacedBy(12.dp),
+//        horizontalArrangement = Arrangement.spacedBy(12.dp),
+//        modifier = Modifier.fillMaxSize()
+//    ) {
+//        item {
+//            SummaryBox("Total Users", "toString()", Icons.Default.Group)
+//        }
+//        item {
+//            SummaryBox("Customers", "toString()", Icons.Default.Person)
+//        }
+//    }
+//}
+@Composable
+private fun SummaryBox(title: String, value: String, icon: ImageVector) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(110.dp),
+        elevation = CardDefaults.cardElevation(6.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Icon(icon, contentDescription = title, modifier = Modifier.size(30.dp), tint = Color(0xFFEC407A))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = title, style = MaterialTheme.typography.bodyMedium)
+            }
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+        }
+    }
+}
 
 //@Composable
 //fun DrawerContent(navController: NavHostController, drawerState: DrawerState, scope: CoroutineScope, authViewModel: AuthViewModel = hiltViewModel()) {

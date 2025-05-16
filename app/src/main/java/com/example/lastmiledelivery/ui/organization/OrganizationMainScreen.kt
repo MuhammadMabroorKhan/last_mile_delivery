@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,18 +16,27 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeliveryDining
+import androidx.compose.material.icons.filled.DirectionsBike
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Pending
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Store
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,7 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.lastmiledelivery.R
-import com.example.lastmiledelivery.ui.organization.DrawerContent
+import com.example.lastmiledelivery.data.models.organization.OrganizationStats
 import com.example.lastmiledelivery.viewmodels.AuthViewModel
 import com.example.lastmiledelivery.viewmodels.common.ShopCategoryViewModel
 import com.example.lastmiledelivery.viewmodels.customer.CustomerViewModel
@@ -97,7 +107,17 @@ fun OrganizationMainScreen(
     LaunchedEffect(organizationViewModel.organizationState) {
         val storedOrgId = organizationViewModel.getOrganizationId()
         Log.d("OrganizationMainScreen", "Stored Organization ID: $storedOrgId")
+
     }
+
+LaunchedEffect(organization?.organizationId) {
+    if (organization != null) {
+        organizationViewModel.fetchStats(organization.organizationId)
+    } // fetch stats also
+}
+
+    val stats = organizationViewModel.statsState
+    val statsError = organizationViewModel.errorMessageStats
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -125,45 +145,52 @@ fun OrganizationMainScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 8.dp)
-                        .verticalScroll(rememberScrollState()),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Welcome Organization ${user.name}",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = Color.Black,
-                        modifier = Modifier
-                            .align(Alignment.Start)
-                            .padding(start = 16.dp)
-                    )
-                    Text(
-                        text = "ID ${user.id}",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = Color.Black,
-                        modifier = Modifier
-                            .align(Alignment.Start)
-                            .padding(start = 16.dp)
-                    )
-                    Text(
-                        text = organization?.name ?: "",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = Color.Black,
-                        modifier = Modifier
-                            .align(Alignment.Start)
-                            .padding(start = 16.dp)
-                    )
-                    Text(
-                        text = " ${organization?.organizationId.toString()}" ?: "",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = Color.Black,
-                        modifier = Modifier
-                            .align(Alignment.Start)
-                            .padding(start = 16.dp)
-                    )
+//                Column(
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .padding(top = 8.dp)
+//                        .verticalScroll(rememberScrollState()),
+//                    horizontalAlignment = Alignment.CenterHorizontally
+//                ) {
+//                    Text(
+//                        text = "Welcome Organization ${user.name}",
+//                        style = MaterialTheme.typography.headlineMedium,
+//                        color = Color.Black,
+//                        modifier = Modifier
+//                            .align(Alignment.Start)
+//                            .padding(start = 16.dp)
+//                    )
+//                    Text(
+//                        text = "ID ${user.id}",
+//                        style = MaterialTheme.typography.headlineMedium,
+//                        color = Color.Black,
+//                        modifier = Modifier
+//                            .align(Alignment.Start)
+//                            .padding(start = 16.dp)
+//                    )
+//                    Text(
+//                        text = organization?.name ?: "",
+//                        style = MaterialTheme.typography.headlineMedium,
+//                        color = Color.Black,
+//                        modifier = Modifier
+//                            .align(Alignment.Start)
+//                            .padding(start = 16.dp)
+//                    )
+//                    Text(
+//                        text = " ${organization?.organizationId.toString()}" ?: "",
+//                        style = MaterialTheme.typography.headlineMedium,
+//                        color = Color.Black,
+//                        modifier = Modifier
+//                            .align(Alignment.Start)
+//                            .padding(start = 16.dp)
+//                    )
+                    stats?.let {
+                        OrganizationStatsCard(it)
+                    }
+
+                    statsError?.let {
+                        Text(text = it, color = Color.Red)
+                    }
                     error?.let {
                         Text(
                             text = it,
@@ -171,7 +198,7 @@ fun OrganizationMainScreen(
                             modifier = Modifier.padding(top = 16.dp)
                         )
                     }
-                }
+//                }
             }
         }
     }
@@ -179,6 +206,126 @@ fun OrganizationMainScreen(
 
 
 
+
+
+
+
+
+//
+//@Composable
+//fun OrganizationStatsCard(stats: OrganizationStats) {
+//    Card(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .padding(16.dp),
+//        elevation = CardDefaults.cardElevation(6.dp)
+//    ) {
+//        Column(modifier = Modifier.padding(16.dp)) {
+//            Text("Organization Summary", style = MaterialTheme.typography.titleLarge)
+//            Spacer(modifier = Modifier.height(8.dp))
+//            Text("Total Delivery Boys: ${stats.totalDeliveryBoys}")
+//            Text("Total Vendors: ${stats.totalVendors}")
+//            Text("Approved Vendors: ${stats.vendorApprovalStatus.approved}")
+//            Text("Pending Vendors: ${stats.vendorApprovalStatus.pending}")
+//            Text("Rejected Vendors: ${stats.vendorApprovalStatus.rejected}")
+//            Text("Delivered Orders: ${stats.totalDeliveredOrders}")
+//        }
+//    }
+//}
+//
+
+
+@Composable
+fun OrganizationStatsCard(stats: OrganizationStats) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            SummaryBox(
+                title = "Delivery Boys",
+                value = stats.totalDeliveryBoys.toString(),
+                icon = Icons.Default.DirectionsBike
+            )
+        }
+        item {
+            SummaryBox(
+                title = "Total Vendors",
+                value = stats.totalVendors.toString(),
+                icon = Icons.Default.Store
+            )
+        }
+        item {
+            SummaryBox(
+                title = "Approved Vendors",
+                value = stats.vendorApprovalStatus.approved.toString(),
+                icon = Icons.Default.CheckCircle
+            )
+        }
+        item {
+            SummaryBox(
+                title = "Pending Vendors",
+                value = stats.vendorApprovalStatus.pending.toString(),
+                icon = Icons.Default.Pending
+            )
+        }
+        item {
+            SummaryBox(
+                title = "Rejected Vendors",
+                value = stats.vendorApprovalStatus.rejected.toString(),
+                icon = Icons.Default.Cancel
+            )
+        }
+        item {
+            SummaryBox(
+                title = "Delivered Orders",
+                value = stats.totalDeliveredOrders.toString(),
+                icon = Icons.Default.LocalShipping
+            )
+        }
+    }
+}
+
+@Composable
+private fun SummaryBox(title: String, value: String, icon: ImageVector) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(155.dp), // Optional: Set a consistent height
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize() // Fill the card size
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = Color(0xFFEC407A),
+                modifier = Modifier.size(36.dp)
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
 
 @Composable
 private fun DrawerContent(

@@ -15,6 +15,7 @@ import com.example.lastmiledelivery.data.models.organization.DeliveryBoy
 import com.example.lastmiledelivery.data.models.organization.DeliveryBoySignupResponse
 import com.example.lastmiledelivery.data.models.organization.OrganizationData
 import com.example.lastmiledelivery.data.models.organization.OrganizationSignupResponse
+import com.example.lastmiledelivery.data.models.organization.OrganizationStats
 import com.example.lastmiledelivery.data.models.organization.VendorOrganizationRejectionReason
 import com.example.lastmiledelivery.data.models.organization.VendorRequestOrganizationResponse
 import com.example.lastmiledelivery.data.repository.customer.CustomerRepository
@@ -277,5 +278,52 @@ class OrganizationViewModel @Inject constructor(
             }
         }
     }
+
+
+    //Summary STats
+    var statsState by mutableStateOf<OrganizationStats?>(null)
+        private set
+
+    var errorMessageStats by mutableStateOf<String?>(null)
+        private set
+
+//    fun fetchStats(orgId: Int) {
+//        viewModelScope.launch {
+//            val result = repository.fetchOrganizationStats(orgId)
+//            result.onSuccess {
+//                statsState = it
+//            }.onFailure {
+//                errorMessageStats = it.message
+//            }
+//        }
+//    }
+
+    fun fetchStats(orgId: Int) {
+        Log.d("fetchStats", "Fetching stats for organization ID: $orgId")
+
+        viewModelScope.launch {
+            val result = repository.fetchOrganizationStats(orgId)
+
+            result.onSuccess { stats ->
+                Log.d("fetchStats", "Stats fetch successful")
+                Log.d("fetchStats", "Total Users: ${stats.totalVendors}")
+//                Log.d("fetchStats", "Users by Role: ${stats.totalDeliveryBoys}")
+//                Log.d("fetchStats", "Total Orders: ${stats.totalDeliveredOrders}")
+//                Log.d("fetchStats", "Orders by Status: ${stats.vendorApprovalStatus}")
+
+                statsState = stats
+            }.onFailure { exception ->
+                Log.e("fetchStats", "Failed to fetch stats: ${exception.message}", exception)
+                errorMessageStats = exception.message
+            }
+
+
+        }
+    }
+
+
+
+
+
 
 }

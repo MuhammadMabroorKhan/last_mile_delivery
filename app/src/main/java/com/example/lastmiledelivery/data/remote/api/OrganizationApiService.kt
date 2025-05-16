@@ -6,6 +6,7 @@ import com.example.lastmiledelivery.data.models.organization.DeliveryBoySignupRe
 import com.example.lastmiledelivery.data.models.organization.MessageResponse
 import com.example.lastmiledelivery.data.models.organization.OrganizationData
 import com.example.lastmiledelivery.data.models.organization.OrganizationSignupResponse
+import com.example.lastmiledelivery.data.models.organization.OrganizationStats
 import com.example.lastmiledelivery.data.models.organization.RejectVendorRequestBody
 import com.example.lastmiledelivery.data.models.organization.RejectionReasonResponse
 import com.example.lastmiledelivery.data.models.organization.SimpleResponse
@@ -96,6 +97,13 @@ suspend fun rejectVendorRequest(
     @Body body: RejectVendorRequestBody
 ): Response<MessageResponse>
 
+
+
+//SUmmary
+    @GET("api/organizations/{id}/organization-stats")
+    suspend fun getOrganizationStats(
+        @Path("id") organizationId: Int
+    ): Response<OrganizationStats>
 
 
 }

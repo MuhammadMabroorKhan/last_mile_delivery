@@ -4,6 +4,7 @@ import com.example.lastmiledelivery.data.models.Cities
 import com.example.lastmiledelivery.data.models.admin.AddMapping
 import com.example.lastmiledelivery.data.models.admin.AddVariable
 import com.example.lastmiledelivery.data.models.admin.AddVariableRequest
+import com.example.lastmiledelivery.data.models.admin.AdminStatsResponse
 import com.example.lastmiledelivery.data.models.admin.ApiMethodRequest
 import com.example.lastmiledelivery.data.models.admin.ApiMethodRequestWrapper
 import com.example.lastmiledelivery.data.models.admin.ApiMethodResponse
@@ -160,6 +161,10 @@ interface AdminApiService {
         @Body body: ApiMethodRequestWrapper
     ): Response<ApiMethodResponse>
 
+
+    //Admin Stats and summary
+    @GET("api/admin/admin-stats")
+    suspend fun getAdminStats(): Response<AdminStatsResponse>
 }
 
 

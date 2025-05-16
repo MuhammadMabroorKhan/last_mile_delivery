@@ -20,6 +20,7 @@ import com.example.lastmiledelivery.data.models.vendor.VendorResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorSignupResponse
 import com.example.lastmiledelivery.data.models.vendor.VendorSuborderDetailInfo
 import com.example.lastmiledelivery.data.models.vendor.VendorSuborderDetailResponse
+import com.example.lastmiledelivery.data.models.vendor.VendorSummaryResponse
 import com.example.lastmiledelivery.data.repository.vendor.VendorRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -251,6 +252,15 @@ class VendorViewModel @Inject constructor(
         }
     }
 
+
+    private val _summary = MutableLiveData<Result<VendorSummaryResponse>>()
+    val summary: LiveData<Result<VendorSummaryResponse>> = _summary
+
+    fun loadSummary(vendorId: Int) {
+        viewModelScope.launch {
+            _summary.value = repository.fetchVendorSummary(vendorId)
+        }
+    }
 
 
 }

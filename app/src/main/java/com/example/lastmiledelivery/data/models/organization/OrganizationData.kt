@@ -13,3 +13,18 @@ data class OrganizationData(
     @SerializedName("profile_picture") val profilePicture: String
 )
 
+
+//SUmmary
+data class OrganizationStats(
+    @SerializedName("total_delivery_boys") val totalDeliveryBoys: Int,
+    @SerializedName("total_vendors") val totalVendors: Int,
+    @SerializedName("vendor_approval_status") val vendorApprovalStatus: VendorApprovalStatus,
+    @SerializedName("total_delivered_orders") val totalDeliveredOrders: Int
+)
+
+data class VendorApprovalStatus(
+    val pending: Int,
+    val approved: Int,
+    val rejected: Int
+)
+
