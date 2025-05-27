@@ -58,3 +58,28 @@ data class ClearCartResponse(
     @SerializedName("message") val message: String
 )
 
+
+//Remove Cart Item
+data class RemoveCartItemRequest(
+    val cart_item_id: Int
+)
+
+data class RemoveCartItemResponse(
+    val message: String? = null,
+    val error: String? = null
+)
+
+
+//Increase and decrease item quantity in cart
+//data class IncreaseDecreaseQuantityRequest(
+//    val cart_item_id: Int
+//)
+data class IncreaseDecreaseQuantityRequest(
+    @SerializedName("cart_item_id") val cart_item_id: Int
+)
+
+data class GenericResponseIncreaseDecrease(
+    val message: String? = null,
+    val error: String? = null
+)
+

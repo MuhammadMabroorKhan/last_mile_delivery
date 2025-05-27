@@ -36,9 +36,12 @@ import com.example.lastmiledelivery.viewmodels.customer.CartState
 import com.example.lastmiledelivery.viewmodels.customer.CustomerViewModel
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -193,9 +196,103 @@ fun CartScreen(
                         }
 
                         // Scrollable Suborders List
-                        LazyColumn(
-                            modifier = Modifier.weight(1f) // Takes remaining space
-                        ) {
+//                        LazyColumn(
+//                            modifier = Modifier.weight(1f) // Takes remaining space
+//                        ) {
+//                            if (cartData.suborders.isNotEmpty()) {
+//                                items(cartData.suborders) { suborder ->
+//                                    Card(
+//                                        modifier = Modifier
+//                                            .fillMaxWidth()
+//                                            .padding(vertical = 8.dp)
+//                                    ) {
+//                                        Column(modifier = Modifier.padding(16.dp)) {
+//                                            val shopName =
+//                                                customerData?.find { it.shopId == suborder.shop_ID }?.shopName
+//                                                    ?: "Unknown Shop"
+//
+//                                            Text(
+//                                                "Shop Name: $shopName",
+//                                                fontWeight = FontWeight.Bold
+//                                            )
+//                                            Text(
+//                                                "Vendor Type: ${suborder.vendor_type}",
+//                                                fontWeight = FontWeight.Bold
+//                                            )
+//                                            Text("Total Amount: ${suborder.total_amount}")
+//                                            Divider()
+//
+//                                            if (suborder.items.isNotEmpty()) {
+//                                                suborder.items.forEach { item ->
+//                                                    Row(
+//                                                        modifier = Modifier
+//                                                            .fillMaxWidth()
+//                                                            .padding(vertical = 8.dp),
+//                                                        verticalAlignment = Alignment.CenterVertically
+//                                                    ) {
+//                                                        // Item Image
+//                                                        AsyncImage(
+//                                                            model = item.itemPicture,
+//                                                            contentDescription = "Item Image",
+//                                                            modifier = Modifier
+//                                                                .size(60.dp)
+//                                                                .clip(RoundedCornerShape(8.dp))
+//                                                                .background(Color.Gray),
+//                                                            contentScale = ContentScale.Crop
+//                                                        )
+//
+//                                                        // Item Name and Description
+//                                                        Column(
+//                                                            modifier = Modifier
+//                                                                .weight(1f)
+//                                                                .padding(start = 8.dp)
+//                                                        ) {
+//
+//                                                            Text(
+//                                                                text = item.item_name,
+//                                                                fontWeight = FontWeight.Bold,
+//                                                                fontSize = 16.sp
+//                                                            )
+//                                                            Text(
+//                                                                text = item.id.toString(),
+//                                                                fontWeight = FontWeight.Bold,
+//                                                                fontSize = 16.sp
+//                                                            )
+//                                                            Text(
+//                                                                text = item.item_description,
+//                                                                fontSize = 14.sp,
+//                                                                color = Color.Gray,
+//                                                                maxLines = 2,
+//                                                                overflow = TextOverflow.Ellipsis
+//                                                            )
+//                                                            Text(
+//                                                                text = "RS.${item.price}",
+//                                                                fontSize = 14.sp,
+//                                                                color = Color.Green
+//                                                            )
+//                                                        }
+//
+//                                                        // Quantity
+//                                                        Text(
+//                                                            text = "x${item.quantity}",
+//                                                            fontWeight = FontWeight.Bold,
+//                                                            fontSize = 16.sp,
+//                                                            modifier = Modifier.padding(start = 8.dp)
+//                                                        )
+//                                                    }
+//                                                    Divider()
+//                                                }
+//                                            } else {
+//                                                Text("No items in this suborder")
+//                                            }
+//                                        }
+//                                    }
+//                                }
+//                            } else {
+//                                item { Text("No suborders found") }
+//                            }
+//                        }
+                        LazyColumn(modifier = Modifier.weight(1f)) {
                             if (cartData.suborders.isNotEmpty()) {
                                 items(cartData.suborders) { suborder ->
                                     Card(
@@ -204,18 +301,10 @@ fun CartScreen(
                                             .padding(vertical = 8.dp)
                                     ) {
                                         Column(modifier = Modifier.padding(16.dp)) {
-                                            val shopName =
-                                                customerData?.find { it.shopId == suborder.shop_ID }?.shopName
-                                                    ?: "Unknown Shop"
+                                            val shopName = customerData?.find { it.shopId == suborder.shop_ID }?.shopName ?: "Unknown Shop"
 
-                                            Text(
-                                                "Shop Name: $shopName",
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            Text(
-                                                "Vendor Type: ${suborder.vendor_type}",
-                                                fontWeight = FontWeight.Bold
-                                            )
+                                            Text("Shop Name: $shopName", fontWeight = FontWeight.Bold)
+                                            Text("Vendor Type: ${suborder.vendor_type}", fontWeight = FontWeight.Bold)
                                             Text("Total Amount: ${suborder.total_amount}")
                                             Divider()
 
@@ -227,7 +316,6 @@ fun CartScreen(
                                                             .padding(vertical = 8.dp),
                                                         verticalAlignment = Alignment.CenterVertically
                                                     ) {
-                                                        // Item Image
                                                         AsyncImage(
                                                             model = item.itemPicture,
                                                             contentDescription = "Item Image",
@@ -238,38 +326,55 @@ fun CartScreen(
                                                             contentScale = ContentScale.Crop
                                                         )
 
-                                                        // Item Name and Description
                                                         Column(
                                                             modifier = Modifier
                                                                 .weight(1f)
                                                                 .padding(start = 8.dp)
                                                         ) {
-                                                            Text(
-                                                                text = item.item_name,
-                                                                fontWeight = FontWeight.Bold,
-                                                                fontSize = 16.sp
-                                                            )
-                                                            Text(
-                                                                text = item.item_description,
-                                                                fontSize = 14.sp,
-                                                                color = Color.Gray,
-                                                                maxLines = 2,
-                                                                overflow = TextOverflow.Ellipsis
-                                                            )
-                                                            Text(
-                                                                text = "RS.${item.price}",
-                                                                fontSize = 14.sp,
-                                                                color = Color.Green
-                                                            )
+                                                            Text(text = item.item_name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                                            Text(text = item.item_description, fontSize = 14.sp, color = Color.Gray)
+                                                            Text(text = "RS.${item.price}", fontSize = 14.sp, color = Color.Green)
+//                                                            Text(text = "Qty: ${item.quantity}", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+
+                                                            Row(
+                                                                verticalAlignment = Alignment.CenterVertically
+                                                            ) {
+                                                                IconButton(
+                                                                    onClick = {
+                                                                        val storedCustomerId = viewModel.getCustomerId()
+                                                                        if (storedCustomerId != null) {
+                                                                            viewModel.decreaseItemQuantity(item.id, item.quantity, storedCustomerId)
+                                                                        }
+                                                                    }
+                                                                ) {
+                                                                    Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                                                                }
+
+                                                                Text("${item.quantity}", fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp))
+
+                                                                IconButton(
+
+                                                                    onClick = {
+                                                                        val storedCustomerId = viewModel.getCustomerId()
+                                                                        if (storedCustomerId != null) {
+                                                                            viewModel.increaseItemQuantity(item.id, storedCustomerId)
+                                                                        }
+                                                                    }
+                                                                ) {
+                                                                    Icon(Icons.Default.Add, contentDescription = "Increase")
+                                                                }
+                                                            }
+
+
                                                         }
 
-                                                        // Quantity
-                                                        Text(
-                                                            text = "x${item.quantity}",
-                                                            fontWeight = FontWeight.Bold,
-                                                            fontSize = 16.sp,
-                                                            modifier = Modifier.padding(start = 8.dp)
-                                                        )
+                                                        IconButton(onClick = { viewModel.removeItem(item.id) }) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.Close,
+                                                                contentDescription = "Remove Item",
+                                                                tint = Color.Red
+                                                            )
+                                                        }
                                                     }
                                                     Divider()
                                                 }
@@ -283,6 +388,42 @@ fun CartScreen(
                                 item { Text("No suborders found") }
                             }
                         }
+                        //Increase anD decrease
+                        LaunchedEffect(viewModel.increaseMessage) {
+                            viewModel.increaseMessage?.let {
+                                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                                viewModel.increaseMessage = null
+                            }
+                        }
+
+                        LaunchedEffect(viewModel.decreaseMessage) {
+                            viewModel.decreaseMessage?.let {
+                                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                                viewModel.decreaseMessage = null
+                            }
+                        }
+// ✅ Reactively observe and trigger cart refresh when item is removed
+                        LaunchedEffect(viewModel.removeStatus) {
+                            viewModel.removeStatus?.let {
+                                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                                val storedCustomerId = viewModel.getCustomerId()
+                                // ✅ Re-fetch the cart after successful item removal
+                                if (storedCustomerId != null) {
+                                    viewModel.fetchCartDetails(customerId = storedCustomerId)
+                                }
+                                // ✅ Reset the status so it doesn't re-trigger
+                                viewModel.removeStatus = null
+                            }
+                        }
+
+// ✅ Similarly handle remove error
+                        LaunchedEffect(viewModel.errorMessageRemoveItemCart) {
+                            viewModel.errorMessageRemoveItemCart?.let {
+                                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                                viewModel.errorMessageRemoveItemCart = null
+                            }
+                        }
+
 
                         Column(
                             modifier = Modifier

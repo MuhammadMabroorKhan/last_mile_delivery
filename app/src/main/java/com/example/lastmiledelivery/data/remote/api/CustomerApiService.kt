@@ -18,6 +18,8 @@ import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenRespo
 import com.example.lastmiledelivery.data.models.customer.CustomerOrdersResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
 import com.example.lastmiledelivery.data.models.customer.GenericResponse
+import com.example.lastmiledelivery.data.models.customer.GenericResponseIncreaseDecrease
+import com.example.lastmiledelivery.data.models.customer.IncreaseDecreaseQuantityRequest
 import com.example.lastmiledelivery.data.models.customer.LiveRouteTrackingResponse
 import com.example.lastmiledelivery.data.models.customer.LiveTrackingResponse
 import com.example.lastmiledelivery.data.models.customer.MenuResponse
@@ -25,6 +27,8 @@ import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
 import com.example.lastmiledelivery.data.models.customer.OrderResponse
 import com.example.lastmiledelivery.data.models.customer.PaymentStatusResponse
+import com.example.lastmiledelivery.data.models.customer.RemoveCartItemRequest
+import com.example.lastmiledelivery.data.models.customer.RemoveCartItemResponse
 import com.example.lastmiledelivery.data.models.customer.RouteInfoResponse
 import com.google.gson.JsonElement
 import okhttp3.MultipartBody
@@ -112,6 +116,22 @@ interface CustomerApiService {
 
     @POST("api/cart/clear")
     suspend fun clearCart(@Body request: ClearCartRequest): Response<ClearCartResponse>
+
+
+    @POST("api/cart/remove-item")
+    suspend fun removeItemFromCart(
+        @Body request: RemoveCartItemRequest
+    ): Response<RemoveCartItemResponse>
+
+    @POST("api/cart/increase-quantity")
+    suspend fun increaseCartItemQuantity(
+        @Body request: IncreaseDecreaseQuantityRequest
+    ): Response<GenericResponseIncreaseDecrease>
+
+    @POST("api/cart/decrease-quantity")
+    suspend fun decreaseCartItemQuantity(
+        @Body request: IncreaseDecreaseQuantityRequest
+    ): Response<GenericResponseIncreaseDecrease>
 
     @GET("api/customers/{id}/orders")
     suspend fun getCustomerOrders(@Path("id") customerId: Int): Response<CustomerOrdersResponse>

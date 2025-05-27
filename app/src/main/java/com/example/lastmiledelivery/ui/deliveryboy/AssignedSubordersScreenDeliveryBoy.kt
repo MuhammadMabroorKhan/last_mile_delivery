@@ -130,12 +130,118 @@ import com.google.maps.android.compose.*
 import kotlin.coroutines.suspendCoroutine
 
 import android.location.Location
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.lazy.LazyRow
 import kotlinx.coroutines.delay
 
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun AssignedOrdersScreen(
+//    deliveryBoyID: Int,
+//    lmdUserID: Int,
+//    navController: NavHostController,
+//    viewModel: DeliveryBoyViewModel = hiltViewModel()
+//) {
+//    val assignedOrders = viewModel.assignedOrders
+//    val isLoading = viewModel.isLoadingassignedOrders
+//    val error = viewModel.errorMessageassignedOrders
+//
+//    var activeStatus by remember { mutableStateOf<String?>(null) }
+//
+//    // Filtered list based on activeStatus
+//    val filteredOrders = if (activeStatus == null) {
+//        assignedOrders
+//    } else {
+//        assignedOrders.filter { it.status == activeStatus }
+//    }
+//
+//    // Unique statuses from assigned orders
+//    val uniqueStatuses = assignedOrders.mapNotNull { it.status }.distinct()
+//
+//    LaunchedEffect(Unit) {
+//        viewModel.fetchAssignedSuborders(deliveryBoyId = lmdUserID)
+//    }
+//
+//    Scaffold(
+//        topBar = {
+//            TopAppBar(
+//                title = { Text("Suborders", color = Color.White) },
+//                navigationIcon = {
+//                    IconButton(onClick = { navController.popBackStack() }) {
+//                        Icon(
+//                            imageVector = Icons.Default.ArrowBack,
+//                            contentDescription = "Back",
+//                            tint = Color.White
+//                        )
+//                    }
+//                },
+//                colors = TopAppBarDefaults.topAppBarColors(
+//                    containerColor = colorResource(id = R.color.pink)
+//                )
+//            )
+//        }
+//    ) { paddingValues ->
+//        Column(
+//            modifier = Modifier
+//                .padding(paddingValues)
+//                .fillMaxSize()
+//        ) {
+//
+//            // Filter Buttons
+//            LazyRow(
+//                modifier = Modifier
+//                    .padding(8.dp)
+//                    .fillMaxWidth(),
+//                horizontalArrangement = Arrangement.spacedBy(8.dp)
+//            ) {
+//                items(uniqueStatuses) { status ->
+//                    val isActive = activeStatus == status
+//
+//                    OutlinedButton(
+//                        onClick = {
+//                            activeStatus = if (isActive) null else status
+//                        },
+//                        colors = ButtonDefaults.outlinedButtonColors(
+//                            containerColor = if (isActive) colorResource(id = R.color.pink) else Color.Transparent,
+//                            contentColor = if (isActive) Color.White else Color.Black
+//                        ),
+//                        border = BorderStroke(1.dp, if (isActive) colorResource(id = R.color.pink) else Color.Black)
+//                    ) {
+//                        Text(status)
+//                    }
+//                }
+//            }
+//
+//            when {
+//                isLoading -> {
+//                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+//                        CircularProgressIndicator()
+//                    }
+//                }
+//
+//                error != null -> {
+//                    Text("Error: $error", color = Color.Red, modifier = Modifier.padding(16.dp))
+//                }
+//
+//                filteredOrders.isEmpty() -> {
+//                    Text("No assigned orders.", modifier = Modifier.padding(16.dp))
+//                }
+//
+//                else -> {
+//                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+//                        items(filteredOrders) { order ->
+//                            AssignedOrderCard(lmdUserID, order, navController = navController)
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AssignedOrdersScreen(
@@ -147,6 +253,20 @@ fun AssignedOrdersScreen(
     val assignedOrders = viewModel.assignedOrders
     val isLoading = viewModel.isLoadingassignedOrders
     val error = viewModel.errorMessageassignedOrders
+
+    // States for filters
+    var activeStatus by remember { mutableStateOf<String?>(null) }
+    var activePaymentStatus by remember { mutableStateOf<String?>(null) }
+
+    // Unique statuses
+    val uniqueStatuses = assignedOrders.mapNotNull { it.status }.distinct()
+    val uniquePaymentStatuses = assignedOrders.mapNotNull { it.payment_status }.distinct()
+
+    // Filtered orders
+    val filteredOrders = assignedOrders.filter { order ->
+        (activeStatus == null || order.status == activeStatus) &&
+                (activePaymentStatus == null || order.payment_status == activePaymentStatus)
+    }
 
     LaunchedEffect(Unit) {
         viewModel.fetchAssignedSuborders(deliveryBoyId = lmdUserID)
@@ -171,11 +291,36 @@ fun AssignedOrdersScreen(
             )
         }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
         ) {
+            // Status Filter Row
+            if (uniqueStatuses.isNotEmpty()) {
+                FilterRow(
+                    title = "Status",
+                    options = uniqueStatuses,
+                    activeValue = activeStatus,
+                    onSelect = { selected ->
+                        activeStatus = if (activeStatus == selected) null else selected
+                    }
+                )
+            }
+
+            // Payment Status Filter Row
+            if (uniquePaymentStatuses.isNotEmpty()) {
+                FilterRow(
+                    title = "Payment",
+                    options = uniquePaymentStatuses,
+                    activeValue = activePaymentStatus,
+                    onSelect = { selected ->
+                        activePaymentStatus = if (activePaymentStatus == selected) null else selected
+                    }
+                )
+            }
+
+            // Content
             when {
                 isLoading -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -187,16 +332,44 @@ fun AssignedOrdersScreen(
                     Text("Error: $error", color = Color.Red, modifier = Modifier.padding(16.dp))
                 }
 
-                assignedOrders.isEmpty() -> {
+                filteredOrders.isEmpty() -> {
                     Text("No assigned orders.", modifier = Modifier.padding(16.dp))
                 }
 
                 else -> {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(assignedOrders) { order ->
+                        items(filteredOrders) { order ->
                             AssignedOrderCard(lmdUserID, order, navController = navController)
                         }
                     }
+                }
+            }
+        }
+    }
+}
+@Composable
+private fun FilterRow(
+    title: String,
+    options: List<String>,
+    activeValue: String?,
+    onSelect: (String) -> Unit
+) {
+    Column(modifier = Modifier.padding(start = 8.dp, top = 8.dp)) {
+        Text(title, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 4.dp))
+
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(options) { value ->
+                val isActive = activeValue == value
+
+                OutlinedButton(
+                    onClick = { onSelect(value) },
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = if (isActive) colorResource(id = R.color.pink) else Color.Transparent,
+                        contentColor = if (isActive) Color.White else Color.Black
+                    ),
+                    border = BorderStroke(1.dp, if (isActive) colorResource(id = R.color.pink) else Color.Black)
+                ) {
+                    Text(value)
                 }
             }
         }

@@ -17,6 +17,8 @@ import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenRespo
 import com.example.lastmiledelivery.data.models.customer.CustomerOrdersResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
 import com.example.lastmiledelivery.data.models.customer.GenericResponse
+import com.example.lastmiledelivery.data.models.customer.GenericResponseIncreaseDecrease
+import com.example.lastmiledelivery.data.models.customer.IncreaseDecreaseQuantityRequest
 import com.example.lastmiledelivery.data.models.customer.LiveRouteTrackingResponse
 import com.example.lastmiledelivery.data.models.customer.LiveTrackingResponse
 import com.example.lastmiledelivery.data.models.customer.MenuItem
@@ -25,6 +27,7 @@ import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
 import com.example.lastmiledelivery.data.models.customer.OrderResponse
 import com.example.lastmiledelivery.data.models.customer.PaymentStatusResponse
+import com.example.lastmiledelivery.data.models.customer.RemoveCartItemRequest
 import com.example.lastmiledelivery.data.models.customer.RouteInfoResponse
 import com.example.lastmiledelivery.data.remote.api.CustomerApiService
 import com.google.gson.Gson
@@ -124,7 +127,6 @@ class CustomerRepository @Inject constructor(private val api: CustomerApiService
             Result.failure(e)
         }
     }
-
 
 
     suspend fun getVendorMenu(vendorId: Int, shopId: Int, branchId: Int): Result<MenuResponse> {
@@ -274,6 +276,34 @@ class CustomerRepository @Inject constructor(private val api: CustomerApiService
         }
     }
 
+    suspend fun removeItemFromCart(cartItemId: Int): Result<String> {
+        return try {
+            val response = api.removeItemFromCart(RemoveCartItemRequest(cartItemId))
+            if (response.isSuccessful) {
+                val body = response.body()
+                if (body?.message != null) {
+                    Result.success(body.message)
+                } else {
+                    Result.failure(Exception(body?.error ?: "Unknown error"))
+                }
+            } else {
+                Result.failure(Exception("Failed with code ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun increaseQuantity(cartItemId: Int): GenericResponseIncreaseDecrease {
+        val response = api.increaseCartItemQuantity(IncreaseDecreaseQuantityRequest(cartItemId))
+        return response.body() ?: GenericResponseIncreaseDecrease(error = "Unknown error")
+    }
+
+    suspend fun decreaseQuantity(cartItemId: Int): GenericResponseIncreaseDecrease {
+        val response = api.decreaseCartItemQuantity(IncreaseDecreaseQuantityRequest(cartItemId))
+        return response.body() ?: GenericResponseIncreaseDecrease(error = "Unknown error")
+    }
+
     suspend fun getCustomerOrders(customerId: Int): Response<CustomerOrdersResponse> {
         return api.getCustomerOrders(customerId)
     }
@@ -398,7 +428,10 @@ class CustomerRepository @Inject constructor(private val api: CustomerApiService
     }
 
 
-    suspend fun addAddress(customerId: Int, address: AddAddressRequest): Response<AddAddressResponse> {
+    suspend fun addAddress(
+        customerId: Int,
+        address: AddAddressRequest
+    ): Response<AddAddressResponse> {
         return api.addAddress(customerId, address)
     }
 }

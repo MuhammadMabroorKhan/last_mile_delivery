@@ -6,8 +6,10 @@ import android.graphics.Canvas
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -41,6 +44,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -111,6 +115,84 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun CustomerOrders(
+//    navController: NavHostController,
+//    authViewModel: AuthViewModel = hiltViewModel(),
+//    customerViewModel: CustomerViewModel = hiltViewModel(),
+//) {
+//    val user = remember { authViewModel.getUserDetails() }
+//    val customerData by customerViewModel.customerData.collectAsState()
+//    val errorMessage by customerViewModel.errorMessages.collectAsState()
+//
+//    val context = LocalContext.current
+//
+//    // Trigger data fetch when the composable enters composition
+//    LaunchedEffect(key1 = user.id) {
+//        customerViewModel.fetchCustomerData(user.id)
+//    }
+//
+//    LaunchedEffect(customerViewModel.customerState) {
+//        val storedCustomerId = customerViewModel.getCustomerId()
+//        Log.d("CustomerMainScreen", "Stored Customer ID: $storedCustomerId")
+//
+//        if (storedCustomerId != null) {
+//            customerViewModel.fetchCustomerOrders(customerId = storedCustomerId)
+//        }
+//    }
+//    // Observe customer data and error messages
+//    val customer = customerViewModel.customerState
+//
+//
+//    val orderState = customerViewModel.orderState
+//
+//    Scaffold(
+//        topBar = {
+//            TopAppBar(
+//                title = { Text("Orders", color = Color.White) },
+//                navigationIcon = {
+//                    IconButton(onClick = { navController.popBackStack() }) {
+//                        Icon(
+//                            imageVector = Icons.Default.ArrowBack,
+//                            contentDescription = "Back",
+//                            tint = Color.White
+//                        )
+//                    }
+//                },
+//                colors = TopAppBarDefaults.topAppBarColors(
+//                    containerColor = colorResource(id = R.color.pink)
+//                )
+//            )
+//        }
+//    ) { padding ->
+//        Box(modifier = Modifier.padding(padding)) {
+//            when (orderState) {
+//                is OrderUiState.Loading -> {
+//                    CircularProgressIndicator()
+//                }
+//
+//                is OrderUiState.Success -> {
+//                    val orders = orderState.orders
+//                    if (orders.isEmpty()) {
+//                        Text("No orders found.")
+//                    } else {
+//                        LazyColumn {
+//                            items(orders) { order ->
+//                                OrderCard(order, navController = navController)
+//                            }
+//                        }
+//                    }
+//                }
+//
+//                is OrderUiState.Error -> {
+//                    //Text("Error: ${orderState.message}")
+//                    Text("No Orders Found")
+//                }
+//            }
+//        }
+//    }
+//}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomerOrders(
@@ -119,29 +201,21 @@ fun CustomerOrders(
     customerViewModel: CustomerViewModel = hiltViewModel(),
 ) {
     val user = remember { authViewModel.getUserDetails() }
-    val customerData by customerViewModel.customerData.collectAsState()
-    val errorMessage by customerViewModel.errorMessages.collectAsState()
+    val orderState = customerViewModel.orderState
 
-    val context = LocalContext.current
+    var selectedStatus by remember { mutableStateOf<String?>(null) }
+    var selectedPaymentStatus by remember { mutableStateOf<String?>(null) }
 
-    // Trigger data fetch when the composable enters composition
     LaunchedEffect(key1 = user.id) {
         customerViewModel.fetchCustomerData(user.id)
     }
 
     LaunchedEffect(customerViewModel.customerState) {
         val storedCustomerId = customerViewModel.getCustomerId()
-        Log.d("CustomerMainScreen", "Stored Customer ID: $storedCustomerId")
-
         if (storedCustomerId != null) {
-            customerViewModel.fetchCustomerOrders(customerId = storedCustomerId)
+            customerViewModel.fetchCustomerOrders(storedCustomerId)
         }
     }
-    // Observe customer data and error messages
-    val customer = customerViewModel.customerState
-
-
-    val orderState = customerViewModel.orderState
 
     Scaffold(
         topBar = {
@@ -162,28 +236,95 @@ fun CustomerOrders(
             )
         }
     ) { padding ->
+
         Box(modifier = Modifier.padding(padding)) {
             when (orderState) {
                 is OrderUiState.Loading -> {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
 
                 is OrderUiState.Success -> {
                     val orders = orderState.orders
-                    if (orders.isEmpty()) {
-                        Text("No orders found.")
-                    } else {
-                        LazyColumn {
-                            items(orders) { order ->
-                                OrderCard(order, navController = navController)
+
+                    // Unique values for filters
+                    val uniqueStatuses = orders.mapNotNull { it.order_status }.distinct()
+                    val uniquePaymentStatuses = orders.mapNotNull { it.payment_status }.distinct()
+
+                    // Apply filters
+                    val filteredOrders = orders.filter {
+                        (selectedStatus == null || it.order_status == selectedStatus) &&
+                                (selectedPaymentStatus == null || it.payment_status == selectedPaymentStatus)
+                    }
+
+                    Column {
+                        // Order Status Filter Row
+                        Text("Status", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp, start = 8.dp))
+                        LazyRow(
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(uniqueStatuses) { status ->
+                                val isSelected = selectedStatus == status
+                                OutlinedButton(
+                                    onClick = {
+                                        selectedStatus = if (isSelected) null else status
+                                    },
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        containerColor = if (isSelected) colorResource(id = R.color.pink) else Color.Transparent,
+                                        contentColor = if (isSelected) Color.White else Color.Black
+                                    ),
+                                    border = BorderStroke(1.dp, if (isSelected) colorResource(id = R.color.pink) else Color.Gray)
+                                ) {
+                                    Text(status)
+                                }
+                            }
+                        }
+
+                        // Payment Status Filter Row
+                        Text("Payment Status", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp, start = 8.dp))
+                        LazyRow(
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(uniquePaymentStatuses) { paymentStatus ->
+
+                                val isSelected = selectedPaymentStatus == paymentStatus
+                                OutlinedButton(
+                                    onClick = {
+                                        selectedPaymentStatus = if (isSelected) null else paymentStatus
+                                    },
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        containerColor = if (isSelected) colorResource(id = R.color.pink) else Color.Transparent,
+                                        contentColor = if (isSelected) Color.White else Color.Black
+                                    ),
+                                    border = BorderStroke(1.dp, if (isSelected) colorResource(id = R.color.pink) else Color.Gray)
+                                ) {
+                                    Text(paymentStatus)
+                                }
+                            }
+                        }
+
+                        if (filteredOrders.isEmpty()) {
+                            Text(
+                                "No orders match the selected filters.",
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        } else {
+                            LazyColumn {
+                                items(filteredOrders) { order ->
+                                    OrderCard(order, navController = navController)
+                                }
                             }
                         }
                     }
                 }
 
                 is OrderUiState.Error -> {
-                    //Text("Error: ${orderState.message}")
-                    Text("No Orders Found")
+                    Text("No Orders Found", modifier = Modifier.padding(16.dp))
                 }
             }
         }
@@ -327,6 +468,76 @@ fun OrderCard(
 }
 
 
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun OrderDetailScreen(
+//    navController: NavHostController,
+//    orderId: Int,
+//    customerId: Int,
+//    addressId: Int,
+//    viewModel: CustomerViewModel = hiltViewModel()
+//) {
+//    // Fetch the order details when the screen is loaded
+//    LaunchedEffect(orderId) {
+//        viewModel.fetchOrderDetails(orderId)
+//    }
+//
+//    // Observe the orderDetails state
+//    val orderDetailsState = viewModel.orderDetails.value
+//
+//    Scaffold(
+//        topBar = {
+//            TopAppBar(
+//                title = { Text("SubOrders", color = Color.White) },
+//                navigationIcon = {
+//                    IconButton(onClick = { navController.popBackStack() }) {
+//                        Icon(
+//                            imageVector = Icons.Default.ArrowBack,
+//                            contentDescription = "Back",
+//                            tint = Color.White
+//                        )
+//                    }
+//                },
+//                colors = TopAppBarDefaults.topAppBarColors(
+//                    containerColor = colorResource(id = R.color.pink)
+//                )
+//            )
+//        }
+//    ) { padding ->
+//        Box(modifier = Modifier.padding(padding)) {
+//            // Show loading or data
+//            if (orderDetailsState == null) {
+//                // Loading state
+//                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+//            } else {
+//                Column(
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .padding(16.dp)
+//                ) {
+//                    Text("Order Details", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+//
+//                    // Display the order details if available
+//                    orderDetailsState?.let { details ->
+//                        Text("Order ID: ${details.order_id}")
+//                        Text("Order Date: ${details.order_date}")
+//                        Text("Order Status: ${details.order_status}")
+//                        Text("Total Amount: ${details.order_total_amount}")
+//
+//                        // Display suborders in a list
+//                        details.suborders?.let { suborders ->
+//                            LazyColumn {
+//                                items(suborders) { suborder ->
+//                                    SubOrderCard(suborder, customerId, addressId, navController)
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderDetailScreen(
@@ -336,13 +547,20 @@ fun OrderDetailScreen(
     addressId: Int,
     viewModel: CustomerViewModel = hiltViewModel()
 ) {
-    // Fetch the order details when the screen is loaded
     LaunchedEffect(orderId) {
         viewModel.fetchOrderDetails(orderId)
     }
 
-    // Observe the orderDetails state
+    val PinkColor = colorResource(id = R.color.pink)
+    val DefaultBorderColor = Color.Black
+    val DefaultTextColor = Color.Black
+    val SelectedTextColor = Color.White
+
     val orderDetailsState = viewModel.orderDetails.value
+
+    // Filter state
+    var selectedStatus by remember { mutableStateOf<String?>(null) }
+    var selectedPaymentStatus by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -350,11 +568,7 @@ fun OrderDetailScreen(
                 title = { Text("SubOrders", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -364,9 +578,7 @@ fun OrderDetailScreen(
         }
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
-            // Show loading or data
             if (orderDetailsState == null) {
-                // Loading state
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
                 Column(
@@ -376,19 +588,79 @@ fun OrderDetailScreen(
                 ) {
                     Text("Order Details", fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
-                    // Display the order details if available
                     orderDetailsState?.let { details ->
                         Text("Order ID: ${details.order_id}")
                         Text("Order Date: ${details.order_date}")
                         Text("Order Status: ${details.order_status}")
                         Text("Total Amount: ${details.order_total_amount}")
 
-                        // Display suborders in a list
-                        details.suborders?.let { suborders ->
-                            LazyColumn {
-                                items(suborders) { suborder ->
-                                    SubOrderCard(suborder, customerId, addressId, navController)
+                        val suborders = details.suborders.orEmpty()
+
+                        // 🔴 Extract unique statuses
+                        val uniqueStatuses = suborders.mapNotNull { it.suborder_status }.distinct()
+                        val uniquePaymentStatuses = suborders.mapNotNull { it.suborder_payment_status }.distinct()
+
+                        // 🔴 Status filter row
+                        Text("Status", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier
+                                .horizontalScroll(rememberScrollState())
+                                .padding(vertical = 4.dp)
+                        ) {
+
+                            uniqueStatuses.forEach { status ->
+                                val isSelected = selectedStatus == status
+                                OutlinedButton(
+                                    onClick = {
+                                        selectedStatus = if (isSelected) null else status
+                                    },
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        containerColor = if (isSelected) PinkColor else Color.White,
+                                        contentColor = if (isSelected) SelectedTextColor else DefaultTextColor
+                                    ),
+                                    border = BorderStroke(1.dp, DefaultBorderColor)
+                                ) {
+                                    Text(status)
                                 }
+                            }
+                        }
+                        // 🔴 Payment filter row
+                        Text("Payment Status", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier
+                                .horizontalScroll(rememberScrollState())
+                                .padding(bottom = 8.dp)
+                        ) {
+
+                            uniquePaymentStatuses.forEach { paymentStatus ->
+                                val isSelected = selectedPaymentStatus == paymentStatus
+                                OutlinedButton(
+                                    onClick = {
+                                        selectedPaymentStatus = if (isSelected) null else paymentStatus
+                                    },
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        containerColor = if (isSelected) PinkColor else Color.White,
+                                        contentColor = if (isSelected) SelectedTextColor else DefaultTextColor
+                                    ),
+                                    border = BorderStroke(1.dp, DefaultBorderColor)
+                                ) {
+                                    Text(paymentStatus)
+                                }
+                            }
+                        }
+
+
+                        // 🔴 Filtered suborders list
+                        val filteredSuborders = suborders.filter {
+                            (selectedStatus == null || it.suborder_status == selectedStatus) &&
+                                    (selectedPaymentStatus == null || it.suborder_payment_status == selectedPaymentStatus)
+                        }
+
+                        LazyColumn {
+                            items(filteredSuborders) { suborder ->
+                                SubOrderCard(suborder, customerId, addressId, navController)
                             }
                         }
                     }

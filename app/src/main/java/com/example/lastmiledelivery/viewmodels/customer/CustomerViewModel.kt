@@ -407,6 +407,59 @@ class CustomerViewModel @Inject constructor(
         }
     }
 
+    var removeStatus by mutableStateOf<String?>(null)
+    var errorMessageRemoveItemCart by mutableStateOf<String?>(null)
+
+    fun removeItem(cartItemId: Int) {
+        viewModelScope.launch {
+            val result = repository.removeItemFromCart(cartItemId)
+            result.onSuccess {
+                removeStatus = it
+            }.onFailure {
+                errorMessageRemoveItemCart = it.message
+            }
+        }
+    }
+
+    var increaseMessage by mutableStateOf<String?>(null)
+    var decreaseMessage by mutableStateOf<String?>(null)
+
+    fun increaseItemQuantity(cartItemId: Int, customerId: Int) {
+        viewModelScope.launch {
+            try {
+                val result = repository.increaseQuantity(cartItemId)
+                if (result.message != null) {
+                    increaseMessage = result.message
+                    fetchCartDetails(customerId)
+                } else {
+                    increaseMessage = result.error ?: "Failed to increase"
+                }
+            } catch (e: Exception) {
+                increaseMessage = e.message
+            }
+        }
+    }
+
+    fun decreaseItemQuantity(cartItemId: Int, quantity: Int, customerId: Int) {
+        if (quantity <= 1) {
+            decreaseMessage = "Quantity is already 1. Please remove the item."
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val result = repository.decreaseQuantity(cartItemId)
+                if (result.message != null) {
+                    decreaseMessage = result.message
+                    fetchCartDetails(customerId)
+                } else {
+                    decreaseMessage = result.error ?: "Failed to decrease"
+                }
+            } catch (e: Exception) {
+                decreaseMessage = e.message
+            }
+        }
+    }
     var orderState by mutableStateOf<OrderUiState>(OrderUiState.Loading)
         private set
 
