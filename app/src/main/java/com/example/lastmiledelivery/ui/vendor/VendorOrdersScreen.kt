@@ -68,11 +68,15 @@ import com.example.lastmiledelivery.data.models.vendor.ShopRequest
 import com.example.lastmiledelivery.viewmodels.common.ShopCategoryViewModel
 import com.example.lastmiledelivery.viewmodels.vendor.VendorViewModel
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import coil.request.ImageRequest
@@ -81,80 +85,147 @@ import com.example.lastmiledelivery.viewmodels.customer.CustomerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VendorOrdersScreen(
-    vendorId: Int,
-    viewModel: VendorViewModel = hiltViewModel(),
-    navController: NavController
+    vendorId: Int, viewModel: VendorViewModel = hiltViewModel(), navController: NavController
 ) {
     val orders by viewModel.orders
     val isLoading by viewModel.isLoadingOrder
     val error by viewModel.error
 
+    // State for filters
+    var selectedStatus by remember { mutableStateOf<String?>(null) }
+    var selectedPaymentStatus by remember { mutableStateOf<String?>(null) }
+
+    // Get unique statuses and payment statuses from suborders
+    val allSuborders = orders.flatMap { it.suborders }
+    val uniqueStatuses = allSuborders.map { it.status.uppercase() }.toSet()
+    val uniquePaymentStatuses = allSuborders.mapNotNull { it.payment_status?.uppercase() }.toSet()
+
+    val context = LocalContext.current
+
     LaunchedEffect(Unit) {
         viewModel.loadVendorOrders(vendorId)
     }
-    val context = LocalContext.current
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Vendor Orders") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+
+    val cardBgColor = Color(0xFFFDFDFD)
+    val suborderCardColor = Color(0xFFF0F4F8)
+
+
+    Scaffold(topBar = {
+        TopAppBar(title = { Text("Vendor Orders") }, navigationIcon = {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+            }
+        })
+    }) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            when {
-                isLoading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (error != null) {
+                Text(
+                    text = error ?: "Unknown error",
+                    color = Color.Red,
+                    modifier = Modifier.padding(8.dp)
+                )
+            } else {
+                // Status Filter Buttons
+                if (uniqueStatuses.isNotEmpty()) {
+                    Text("Filter by Suborder Status:", fontWeight = FontWeight.Bold)
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    ) {
+                        item {
+                            FilterButton(label = "All",
+                                selected = selectedStatus == null,
+                                onClick = { selectedStatus = null })
+                        }
+                        items(uniqueStatuses.toList()) { status ->
+                            FilterButton(label = status,
+                                selected = selectedStatus == status,
+                                onClick = {
+                                    selectedStatus = if (selectedStatus == status) null else status
+                                })
+                        }
                     }
                 }
 
-                error != null -> {
-                    Text(
-                        text = error ?: "Unknown error",
-                        color = Color.Red,
-                        modifier = Modifier.padding(8.dp)
-                    )
+                // Payment Status Filter Buttons
+                if (uniquePaymentStatuses.isNotEmpty()) {
+                    Text("Filter by Payment Status:", fontWeight = FontWeight.Bold)
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    ) {
+                        item {
+                            FilterButton(label = "All",
+                                selected = selectedPaymentStatus == null,
+                                onClick = { selectedPaymentStatus = null })
+                        }
+                        items(uniquePaymentStatuses.toList()) { status ->
+                            FilterButton(label = status,
+                                selected = selectedPaymentStatus == status,
+                                onClick = {
+                                    selectedPaymentStatus =
+                                        if (selectedPaymentStatus == status) null else status
+                                })
+                        }
+                    }
                 }
 
-                orders.isEmpty() -> {
-                    Text(
-                        "No orders available",
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(8.dp)
-                    )
+                val filteredOrders = orders.mapNotNull { order ->
+                    val matchingSuborders = order.suborders.filter { sub ->
+                        (selectedStatus == null || sub.status.uppercase() == selectedStatus) && (selectedPaymentStatus == null || sub.payment_status?.uppercase() == selectedPaymentStatus)
+                    }
+
+                    if (matchingSuborders.isNotEmpty()) {
+                        // Return a copy of the order with only the matching suborders
+                        order.copy(suborders = matchingSuborders)
+                    } else {
+                        null // Exclude this order entirely
+                    }
                 }
 
-                else -> {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        items(orders) { order ->
+                if (filteredOrders.isEmpty()) {
+                    Text("No orders available", style = MaterialTheme.typography.bodyLarge)
+                } else {
+//
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(12.dp)
+                    ) {
+                        items(filteredOrders) { order ->
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFDFDFD)),
                                 elevation = CardDefaults.cardElevation(4.dp)
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
-                                    Text("Date: ${order.order_date}")
-                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        "📅 Date: ${order.order_date}",
+                                        fontSize = 14.sp,
+                                        color = Color.Gray
+                                    )
+
+                                    Spacer(modifier = Modifier.height(12.dp))
 
                                     // Customer Info
                                     Text(
-                                        "Customer Info",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp
+                                        "👤 Customer", fontWeight = FontWeight.Bold, fontSize = 16.sp
                                     )
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         AsyncImage(
@@ -165,32 +236,45 @@ fun VendorOrdersScreen(
                                                 .clip(CircleShape),
                                             contentScale = ContentScale.Crop
                                         )
-                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Spacer(modifier = Modifier.width(12.dp))
                                         Column {
-                                            Text(order.customer.name)
-                                            Text(order.customer.phone_no)
-                                            Text(order.customer.address.street + " (${order.customer.address.type})")
+                                            Text(
+                                                order.customer.name, fontWeight = FontWeight.Medium
+                                            )
+                                            Text(
+                                                order.customer.phone_no,
+                                                fontSize = 13.sp,
+                                                color = Color.Gray
+                                            )
+                                            Text(
+                                                "${order.customer.address.street} (${order.customer.address.type})",
+                                                fontSize = 13.sp,
+                                                color = Color.Gray
+                                            )
                                         }
                                     }
 
-                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Spacer(modifier = Modifier.height(16.dp))
 
                                     // Suborders
                                     Text(
-                                        "Suborders",
+                                        "🧾 Suborders",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 16.sp
                                     )
                                     order.suborders.forEach { sub ->
+                                        val statusColor = when (sub.status.lowercase()) {
+                                            "pending" -> Color(0xFFFFA726)
+                                            "in_transit" -> Color(0xFF42A5F5)
+                                            "delivered" -> Color(0xFF66BB6A)
+                                            else -> Color.DarkGray
+                                        }
+
                                         Card(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(vertical = 4.dp)
+                                                .padding(vertical = 6.dp)
                                                 .clickable {
-//                                                    Toast
-//                                                        .makeText(context, "Clicked Suborder #${sub.suborder_id}", Toast.LENGTH_SHORT)
-//                                                        .show()
-
                                                     navController.navigate(
                                                         "vendor_suborder_details/${vendorId}/${sub.shop_id}/${sub.branch_id}/${sub.suborder_id}"
                                                     )
@@ -198,7 +282,7 @@ fun VendorOrdersScreen(
                                             shape = RoundedCornerShape(12.dp),
                                             colors = CardDefaults.cardColors(
                                                 containerColor = Color(
-                                                    0xFFF5F5F5
+                                                    0xFFF0F4F8
                                                 )
                                             )
                                         ) {
@@ -210,23 +294,36 @@ fun VendorOrdersScreen(
                                                 horizontalArrangement = Arrangement.SpaceBetween
                                             ) {
                                                 Column {
-                                                    // Main Line: Suborder ID + Vendor Order ID (if not null)
                                                     val suborderLine = buildString {
-                                                        append("Suborder ID: ${sub.suborder_id}")
+                                                        append("ID: ${sub.suborder_id}")
                                                         sub.vendor_order_id?.let {
-                                                            append(" | API ID: $it")
+                                                            append(" | API: $it")
                                                         }
                                                     }
+
                                                     Text(
                                                         suborderLine,
                                                         fontWeight = FontWeight.SemiBold
                                                     )
                                                     Text(
                                                         "Status: ${sub.status.uppercase()}",
-                                                        color = Color.Blue
+                                                        color = statusColor
                                                     )
-                                                    Text("Total: Rs. ${sub.total}")
-                                                    Text("Vendor Type. ${sub.vendor_type}")
+                                                    sub.payment_status?.let {
+                                                        Text(
+                                                            "Payment: ${it.uppercase()}",
+                                                            color = Color(0xFF757575)
+                                                        )
+                                                    }
+                                                    Text(
+                                                        "Total: Rs. ${sub.total}",
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                    Text(
+                                                        "Vendor Type: ${sub.vendor_type}",
+                                                        fontSize = 13.sp,
+                                                        color = Color.DarkGray
+                                                    )
                                                 }
 
                                                 Icon(
@@ -242,12 +339,28 @@ fun VendorOrdersScreen(
                         }
                     }
 
+
                 }
+
             }
         }
     }
 }
 
+@Composable
+private fun FilterButton(label: String, selected: Boolean, onClick: () -> Unit) {
+    val backgroundColor = if (selected) Color(0xFFFF69B4) else Color.White
+    val contentColor = if (selected) Color.White else Color.Black
+    val borderColor = Color.Black
+
+    OutlinedButton(
+        onClick = onClick, colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = backgroundColor, contentColor = contentColor
+        ), border = BorderStroke(1.dp, borderColor), shape = RoundedCornerShape(24.dp)
+    ) {
+        Text(label)
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -281,18 +394,13 @@ fun SuborderDetailsScreen(
     val loading = statusViewModel.isLoading.value
 
     val scrollState = rememberScrollState()
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Suborder Details") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+    Scaffold(topBar = {
+        TopAppBar(title = { Text("Suborder Details") }, navigationIcon = {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+            }
+        })
+    }) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -326,8 +434,7 @@ fun SuborderDetailsScreen(
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                "Suborder ID: ${details.suborder_id}",
-                                fontWeight = FontWeight.Bold
+                                "Suborder ID: ${details.suborder_id}", fontWeight = FontWeight.Bold
                             )
 
                             Spacer(modifier = Modifier.height(8.dp))
@@ -367,8 +474,7 @@ fun SuborderDetailsScreen(
                                 ) {
                                     AsyncImage(
                                         model = ImageRequest.Builder(LocalContext.current)
-                                            .data(orderDetail.item.item_picture)
-                                            .crossfade(true)
+                                            .data(orderDetail.item.item_picture).crossfade(true)
                                             .build(),
                                         contentDescription = "Item Image",
                                         modifier = Modifier
@@ -465,29 +571,22 @@ fun SuborderDetailsScreen(
                                 onClick = {
                                     coroutineScope.launch {
                                         viewModel.updateSuborderStatus(
-                                            details.suborder_id,
-                                            currentStatus
+                                            details.suborder_id, currentStatus
                                         )
 
                                         delay(3000) // <-- Delay of 2 seconds
 
                                         viewModel.loadSuborderDetails(
-                                            vendorId,
-                                            shopId,
-                                            branchId,
-                                            suborderId
+                                            vendorId, shopId, branchId, suborderId
                                         )
                                         statusViewModel.loadStatuses()
                                     }
 
-                                },
-                                modifier = Modifier.fillMaxWidth()
+                                }, modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(
-                                    "Update Status to ${
-                                        it.replace("_", " ").replaceFirstChar { c -> c.uppercase() }
-                                    }"
-                                )
+                                Text("Update Status to ${
+                                    it.replace("_", " ").replaceFirstChar { c -> c.uppercase() }
+                                }")
                             }
                         }
 
@@ -500,7 +599,6 @@ fun SuborderDetailsScreen(
                                 color = if (it.success) Color.Green else Color.Red
                             )
                         }
-
 
 
                         val currentPaymentStatus = details.payment_status?.lowercase()
@@ -516,28 +614,21 @@ fun SuborderDetailsScreen(
                                     coroutineScope.launch {
                                         if (currentPaymentStatus != null) {
                                             viewModel.updatePaymentStatus(
-                                                details.suborder_id,
-                                                currentPaymentStatus
+                                                details.suborder_id, currentPaymentStatus
                                             )
 
                                         }
                                         delay(2000)
                                         viewModel.loadSuborderDetails(
-                                            vendorId,
-                                            shopId,
-                                            branchId,
-                                            suborderId
+                                            vendorId, shopId, branchId, suborderId
                                         )
                                         statusViewModel.loadStatuses()
                                     }
-                                },
-                                modifier = Modifier.fillMaxWidth()
+                                }, modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(
-                                    "Update Payment Status to ${
-                                        it.replace("_", " ").replaceFirstChar { c -> c.uppercase() }
-                                    }"
-                                )
+                                Text("Update Payment Status to ${
+                                    it.replace("_", " ").replaceFirstChar { c -> c.uppercase() }
+                                }")
                             }
                         }
 

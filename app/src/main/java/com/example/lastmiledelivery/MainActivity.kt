@@ -55,6 +55,7 @@ import com.example.lastmiledelivery.ui.organization.VendorRequestDetailScreen
 import com.example.lastmiledelivery.ui.vendor.API_Vendor.API_VendorItemsScreen
 import com.example.lastmiledelivery.ui.vendor.IN_APP.IN_APP_VendorItemsScreen
 import com.example.lastmiledelivery.ui.vendor.SuborderDetailsScreen
+import com.example.lastmiledelivery.ui.vendor.VendorBranchOrdersScreen
 import com.example.lastmiledelivery.ui.vendor.VendorBranchesScreen
 //import com.example.lastmiledelivery.ui.vendor.VendorMainScreen
 import com.example.lastmiledelivery.ui.vendor.VendorMainScreenWrapper
@@ -312,6 +313,18 @@ fun AppNavigation() {
             val vendorId = backStackEntry.arguments?.getInt("vendorId") ?: 0
             VendorOrdersScreen(vendorId, navController = navController)
         }
+
+        composable(
+            "vendororderscreen/{vendorId}/{branchId}",
+            arguments = listOf(navArgument("vendorId") { type = NavType.IntType },
+                navArgument("branchId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val vendorId = backStackEntry.arguments?.getInt("vendorId") ?: 0
+            val branchId = backStackEntry.arguments?.getInt("branchId") ?: 0
+            VendorBranchOrdersScreen(vendorId, branchId , navController = navController)
+        }
+
         composable(
             "vendor_suborder_details/{vendorId}/{shopId}/{branchId}/{suborderId}",
             arguments = listOf(
@@ -375,7 +388,9 @@ fun AppNavigation() {
                 vendorId,
                 branchId,
                 shopId,
-                approvalStatus
+                approvalStatus,
+                onBackPressed = { navController.popBackStack() },
+                navController = navController
             )
         }
         //In-APP Vendor
@@ -404,7 +419,8 @@ fun AppNavigation() {
                 branchId,
                 shopId,
                 approvalStatus,
-                onBackPressed = { navController.popBackStack() })
+                onBackPressed = { navController.popBackStack() },
+                navController = navController)
         }
 
 

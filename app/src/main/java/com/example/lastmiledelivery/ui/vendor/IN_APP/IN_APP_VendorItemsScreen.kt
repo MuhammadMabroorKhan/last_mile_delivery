@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.AddBox
 import androidx.compose.material.icons.filled.AddBusiness
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateMapOf
@@ -51,6 +52,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.lastmiledelivery.R
 import com.example.lastmiledelivery.data.models.vendor.ItemAttribute
@@ -140,7 +142,8 @@ fun IN_APP_VendorItemsScreen(
     shopId: String,
     approvalStatus: String,
     onBackPressed: () -> Unit,  // Back button function
-    viewModel: IN_APPVENDORItemViewModel = hiltViewModel()
+    viewModel: IN_APPVENDORItemViewModel = hiltViewModel(),
+    navController: NavHostController
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val items by viewModel.items
@@ -183,6 +186,31 @@ fun IN_APP_VendorItemsScreen(
 //            ) {
 //                Text(text = "Create Item")
 //            }
+
+            Button(
+                onClick = { navController.navigate("vendororderscreen/${vendorId}/${branchId}") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = colorResource(id = R.color.pink)) // Pink color
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.List, // Shop-related icon
+                    contentDescription = "View Order",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp)) // Space between icon and text
+                Text(
+                    text = "View Orders",
+                    color = Color.White, // White text for contrast
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+
             Button(
                 onClick = { showDialog = true },
                 modifier = Modifier
@@ -243,7 +271,10 @@ fun VendorItemCard(item: VendorItemResponse) {
             .clickable { showDialog = true },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             // Ensuring uniform image size
             AsyncImage(
                 model = item.picture,
@@ -287,7 +318,11 @@ fun VendorItemCard(item: VendorItemResponse) {
                     Text(text = item.item_description, fontSize = 16.sp)
                     Text(text = "Time Sensitive: ${item.timesensitive}", fontSize = 14.sp)
                     Text(text = "Preparation Time: ${item.preparation_time} min", fontSize = 14.sp)
-                    Text(text = "Price: ${item.price ?: "N/A"}", fontSize = 14.sp, color = Color.Green)
+                    Text(
+                        text = "Price: ${item.price ?: "N/A"}",
+                        fontSize = 14.sp,
+                        color = Color.Green
+                    )
 
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = "Attributes:", fontWeight = FontWeight.Bold)
@@ -297,7 +332,10 @@ fun VendorItemCard(item: VendorItemResponse) {
                 }
             },
             confirmButton = {
-                Button(onClick = { showDialog = false },colors = ButtonDefaults.buttonColors(Color.Gray)) {
+                Button(
+                    onClick = { showDialog = false },
+                    colors = ButtonDefaults.buttonColors(Color.Gray)
+                ) {
                     Text("Close")
                 }
             }
@@ -386,7 +424,8 @@ fun CreateItemDialog(
                     val file = selectedUri?.let { uriToFile(it, context) }
                     file?.let {
                         val requestFile = it.asRequestBody("image/*".toMediaTypeOrNull())
-                        itemPicture = MultipartBody.Part.createFormData("itemPicture", it.name, requestFile)
+                        itemPicture =
+                            MultipartBody.Part.createFormData("itemPicture", it.name, requestFile)
 
                         // Log Multipart Data
                         Log.d("ProfilePicture", "File Name: ${it.name}, Size: ${it.length()} bytes")
@@ -446,7 +485,10 @@ fun CreateItemDialog(
                             .fillMaxWidth()
                             .menuAnchor(),
                         trailingIcon = {
-                            Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = "Dropdown Icon")
+                            Icon(
+                                imageVector = Icons.Filled.ArrowDropDown,
+                                contentDescription = "Dropdown Icon"
+                            )
                         }
                     )
                     ExposedDropdownMenu(
@@ -491,7 +533,10 @@ fun CreateItemDialog(
                                 .fillMaxWidth()
                                 .menuAnchor(),
                             trailingIcon = {
-                                Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = "Dropdown Icon")
+                                Icon(
+                                    imageVector = Icons.Filled.ArrowDropDown,
+                                    contentDescription = "Dropdown Icon"
+                                )
                             }
                         )
                         ExposedDropdownMenu(
@@ -503,7 +548,8 @@ fun CreateItemDialog(
                                     text = { Text(variation.name) },
                                     onClick = {
                                         selectedVariation = variation
-                                        manualVariation = ""  // Clear manual variation if dropdown is selected
+                                        manualVariation =
+                                            ""  // Clear manual variation if dropdown is selected
                                         expandedVariation = false
                                     }
                                 )
@@ -539,7 +585,10 @@ fun CreateItemDialog(
                             .fillMaxWidth()
                             .menuAnchor(), // Correct anchor for dropdown
                         trailingIcon = {
-                            Icon(imageVector = Icons.Filled.ArrowDropDown, contentDescription = "Dropdown Icon")
+                            Icon(
+                                imageVector = Icons.Filled.ArrowDropDown,
+                                contentDescription = "Dropdown Icon"
+                            )
                         }
                     )
 
@@ -575,9 +624,11 @@ fun CreateItemDialog(
 
 
 // Convert UI inputs to RequestBody
-                val timeSensitiveRequestBody = timeSensitive.toRequestBody("text/plain".toMediaTypeOrNull())
+                val timeSensitiveRequestBody =
+                    timeSensitive.toRequestBody("text/plain".toMediaTypeOrNull())
                 val preparationTimeRequestBody = if (preparationTime.isNotEmpty()) {
-                    preparationTime.toInt().toString().toRequestBody("text/plain".toMediaTypeOrNull())
+                    preparationTime.toInt().toString()
+                        .toRequestBody("text/plain".toMediaTypeOrNull())
                 } else {
                     null // Handle empty case
                 }
@@ -592,7 +643,8 @@ fun CreateItemDialog(
                         val splitValues = values.flatMap { it.split(",").map { v -> v.trim() } }
 
                         Row(
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
                                 .horizontalScroll(rememberScrollState()),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -627,7 +679,10 @@ fun CreateItemDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Button(onClick = onDismiss, colors = ButtonDefaults.buttonColors(Color.Gray)) { Text("Cancel") }
+                    Button(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.buttonColors(Color.Gray)
+                    ) { Text("Cancel") }
                     Button(
                         onClick = {
                             Log.d("CreateItemDialog", "Vendor ID: ${vendorId}")
@@ -635,7 +690,10 @@ fun CreateItemDialog(
                             Log.d("CreateItemDialog", "Branch ID: ${branchId}")
                             Log.d("CreateItemDialog", "Entered Name: $itemName")
                             Log.d("CreateItemDialog", "Entered Description: $itemDescription")
-                            Log.d("CreateItemDialog", "Selected Category: ${selectedCategory?.id} - ${selectedCategory?.name}")
+                            Log.d(
+                                "CreateItemDialog",
+                                "Selected Category: ${selectedCategory?.id} - ${selectedCategory?.name}"
+                            )
                             Log.d("CreateItemDialog", "Branch ID: ${branchId}")
                             Log.d("CreateItemDialog", "Final Variation: $finalVariation")
                             Log.d("CreateItemDialog", "Entered Price: $itemPrice")
@@ -649,24 +707,37 @@ fun CreateItemDialog(
                             }
 
                             selectedAttributes.forEach { (key, value) ->
-                                Log.d("CreateItemDialog", "Attribute: $key -> Selected Value: $value")
+                                Log.d(
+                                    "CreateItemDialog",
+                                    "Attribute: $key -> Selected Value: $value"
+                                )
                             }
 
                             if (itemPicture.toString().isNullOrEmpty()) {
 
-                                Toast.makeText(context, "Select Branch PIcture required!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "Select Branch PIcture required!",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                                 return@Button
                             }
 
 
                             // Convert values to RequestBody
                             val nameBody = itemName.toRequestBody("text/plain".toMediaTypeOrNull())
-                            val descriptionBody = itemDescription.toRequestBody("text/plain".toMediaTypeOrNull())
-                            val categoryIdBody = selectedCategory?.id.toString().toRequestBody("text/plain".toMediaTypeOrNull())
-                            val branchIdBody = branchId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
-                            val variationBody = finalVariation.toRequestBody("text/plain".toMediaTypeOrNull())
-                            val priceBody = itemPrice.toRequestBody("text/plain".toMediaTypeOrNull())
-                            val additionalInfoBody = additionalInfo.toRequestBody("text/plain".toMediaTypeOrNull())
+                            val descriptionBody =
+                                itemDescription.toRequestBody("text/plain".toMediaTypeOrNull())
+                            val categoryIdBody = selectedCategory?.id.toString()
+                                .toRequestBody("text/plain".toMediaTypeOrNull())
+                            val branchIdBody =
+                                branchId.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+                            val variationBody =
+                                finalVariation.toRequestBody("text/plain".toMediaTypeOrNull())
+                            val priceBody =
+                                itemPrice.toRequestBody("text/plain".toMediaTypeOrNull())
+                            val additionalInfoBody =
+                                additionalInfo.toRequestBody("text/plain".toMediaTypeOrNull())
 
 
                             val attributesList = selectedAttributes.map {
@@ -678,8 +749,8 @@ fun CreateItemDialog(
                                 shopId = shopId,
                                 branchId = branchId,
                                 name = nameBody,
-                                timesensitive=timeSensitiveRequestBody,
-                                preparationTime=preparationTimeRequestBody,
+                                timesensitive = timeSensitiveRequestBody,
+                                preparationTime = preparationTimeRequestBody,
                                 description = descriptionBody,
                                 categoryId = categoryIdBody,
                                 branchesId = branchIdBody,
@@ -691,8 +762,8 @@ fun CreateItemDialog(
                             )
 
                         },
-                        enabled = selectedCategory != null && (selectedVariation != null || manualVariation.isNotBlank())
-                    ,colors=ButtonDefaults.buttonColors(Color.Green)
+                        enabled = selectedCategory != null && (selectedVariation != null || manualVariation.isNotBlank()),
+                        colors = ButtonDefaults.buttonColors(Color.Green)
                     ) { Text("Confirm", color = Color.White) }
                 }
             }
