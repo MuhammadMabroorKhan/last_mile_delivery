@@ -180,9 +180,9 @@ fun ReadySubordersScreen(
                 Text(text = "Error: $error", color = Color.Red)
 
             } else {
-
                 LazyColumn {
-                    items(suborders) { suborder ->
+//                    items(suborders) { suborder ->
+                    items(suborders, key = { it.suborder_id }) { suborder ->
                         val pickupLat =
                             suborder.shop.branch.pickup_location.latitude.toDoubleOrNull() ?: 0.0
                         val pickupLng =

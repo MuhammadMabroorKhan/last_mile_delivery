@@ -23,6 +23,7 @@ import com.example.lastmiledelivery.data.models.vendor.VendorSuborderDetailRespo
 import com.example.lastmiledelivery.data.models.vendor.VendorSummaryResponse
 import com.example.lastmiledelivery.data.repository.vendor.VendorRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -164,6 +165,47 @@ class VendorViewModel @Inject constructor(
             }
         }
     }
+
+
+
+
+    private var lastKnownStatus: String? = null
+    private var lastKnownPaymentStatus: String? = null
+    fun startSuborderPolling(vendorId: Int, shopId: Int, branchId: Int, suborderId: Int) {
+        viewModelScope.launch {
+            while (true) {
+                delay(5000)
+
+                try {
+                    val response = repository.getSuborderDetails(vendorId, shopId, branchId, suborderId)
+
+                    val newStatus = response?.suborder_info?.status
+                    val newPaymentStatus = response?.suborder_info?.payment_status
+
+                    // Only update UI if status or payment_status changed
+                    if (newStatus != lastKnownStatus || newPaymentStatus != lastKnownPaymentStatus) {
+                        _suborderDetails.value = response?.suborder_info
+                        _orderDetails.value = response?.order_detail_info
+
+                        lastKnownStatus = newStatus
+                        lastKnownPaymentStatus = newPaymentStatus
+                    }
+                } catch (e: Exception) {
+                    errors.value = "Polling failed: ${e.message}"
+                }
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
 
 
     var availableOrganizations by mutableStateOf<List<AvailableOrganization>>(emptyList())

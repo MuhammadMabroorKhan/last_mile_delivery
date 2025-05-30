@@ -23,12 +23,14 @@ import com.example.lastmiledelivery.data.repository.deliveryboy.DeliveryBoyRepos
 import com.example.lastmiledelivery.ui.deliveryboy.interpolateLatLng
 import com.google.android.gms.maps.model.LatLng
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -115,6 +117,8 @@ class DeliveryBoyViewModel @Inject constructor(
     }
 
 
+
+
     private val _acceptOrderResponse = mutableStateOf<AcceptOrderResponse?>(null)
     val acceptOrderResponse: State<AcceptOrderResponse?> = _acceptOrderResponse
 
@@ -186,6 +190,36 @@ class DeliveryBoyViewModel @Inject constructor(
         }
     }
 
+
+    var selectedSuborderPayment by mutableStateOf<AssignedSuborder?>(null)
+        private set
+
+//    fun fetchSingleAssignedSuborder(deliveryBoyId: Int, suborderId: Int) {
+//        viewModelScope.launch {
+//            isLoadingassignedOrders = true
+//            val response = repository.getAssignedSuborders(deliveryBoyId)
+//            if (response?.status == "success") {
+//                selectedSuborderPayment = response.data?.find { it.suborder_id == suborderId }
+//            } else {
+//                selectedSuborderPayment = null
+//            }
+//            isLoadingassignedOrders = false
+//        }
+//    }
+fun fetchSingleAssignedSuborder(deliveryBoyId: Int, suborderId: Int) {
+    viewModelScope.launch(Dispatchers.IO) {
+        val response = repository.getAssignedSuborders(deliveryBoyId)
+
+        withContext(Dispatchers.Main) {
+            if (response?.status == "success") {
+                selectedSuborderPayment = response.data?.find { it.suborder_id == suborderId }
+            } else {
+                selectedSuborderPayment = null
+            }
+            isLoadingassignedOrders = false
+        }
+    }
+}
 
     var pickupResponse by mutableStateOf<String?>(null)
     var pickupError by mutableStateOf<String?>(null)

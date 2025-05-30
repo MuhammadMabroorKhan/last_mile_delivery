@@ -1140,6 +1140,40 @@ fun TrackOrderScreen(
     val isLoadingSUbOrderDetail by vendorViewModel.isLoadingSuborderDetails
     val error by vendorViewModel.errors
 
+//    var previousStatus by remember { mutableStateOf<String?>(null) }
+//    var previousPaymentStatus by remember { mutableStateOf<String?>(null) }
+//
+//    LaunchedEffect(suborderId) {
+//        while (true) {
+//            delay(5000L)
+//            vendorViewModel.loadSuborderDetails(vendor_ID, shop_ID, branch_ID, suborderId)
+//
+//            val latestSuborder = vendorViewModel.suborderDetails.value
+//
+//            val latestStatus = latestSuborder?.status
+//            val latestPaymentStatus = latestSuborder?.payment_status
+//
+//            if (latestStatus != previousStatus || latestPaymentStatus != previousPaymentStatus) {
+//                previousStatus = latestStatus
+//                previousPaymentStatus = latestPaymentStatus
+//                // Optional: trigger manual state update if needed
+//                Log.d("TRACK", "Status or payment status changed")
+//            } else {
+//                Log.d("TRACK", "No change in suborder status/payment_status")
+//            }
+//        }
+//    }
+
+
+
+
+
+
+
+
+    LaunchedEffect(suborderId) {
+        vendorViewModel.startSuborderPolling(vendor_ID, shop_ID, branch_ID, suborderId)
+    }
     // Load suborder details when the screen is launched or the suborderId changes
     LaunchedEffect(suborderId) {
         vendorViewModel.loadSuborderDetails(vendor_ID, shop_ID, branch_ID, suborderId)

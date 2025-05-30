@@ -379,8 +379,18 @@ fun SuborderDetailsScreen(
     val error by viewModel.errors
 
     // Load suborder details when the screen is launched or the suborderId changes
+//    LaunchedEffect(suborderId) {
+//        viewModel.loadSuborderDetails(vendorId, shopId, branchId, suborderId)
+//    }
     LaunchedEffect(suborderId) {
+        viewModel.startSuborderPolling(vendorId, shopId, branchId, suborderId)
+    }
+
+    var refreshKey by remember { mutableStateOf(0) }
+
+    LaunchedEffect(refreshKey) {
         viewModel.loadSuborderDetails(vendorId, shopId, branchId, suborderId)
+        viewModel.loadVendorOrders(vendorId)
     }
 
     val response = viewModel.statusUpdateResponse.value
@@ -576,9 +586,8 @@ fun SuborderDetailsScreen(
 
                                         delay(3000) // <-- Delay of 2 seconds
 
-                                        viewModel.loadSuborderDetails(
-                                            vendorId, shopId, branchId, suborderId
-                                        )
+                                        refreshKey++ // triggers LaunchedEffect to re-run and fetch data again
+
                                         statusViewModel.loadStatuses()
                                     }
 
@@ -619,9 +628,8 @@ fun SuborderDetailsScreen(
 
                                         }
                                         delay(2000)
-                                        viewModel.loadSuborderDetails(
-                                            vendorId, shopId, branchId, suborderId
-                                        )
+                                        refreshKey++ // triggers LaunchedEffect to re-run and fetch data again
+
                                         statusViewModel.loadStatuses()
                                     }
                                 }, modifier = Modifier.fillMaxWidth()

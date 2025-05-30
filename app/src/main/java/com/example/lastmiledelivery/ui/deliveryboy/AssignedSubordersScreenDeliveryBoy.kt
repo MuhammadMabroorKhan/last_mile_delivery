@@ -133,115 +133,12 @@ import android.location.Location
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.LazyRow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun AssignedOrdersScreen(
-//    deliveryBoyID: Int,
-//    lmdUserID: Int,
-//    navController: NavHostController,
-//    viewModel: DeliveryBoyViewModel = hiltViewModel()
-//) {
-//    val assignedOrders = viewModel.assignedOrders
-//    val isLoading = viewModel.isLoadingassignedOrders
-//    val error = viewModel.errorMessageassignedOrders
-//
-//    var activeStatus by remember { mutableStateOf<String?>(null) }
-//
-//    // Filtered list based on activeStatus
-//    val filteredOrders = if (activeStatus == null) {
-//        assignedOrders
-//    } else {
-//        assignedOrders.filter { it.status == activeStatus }
-//    }
-//
-//    // Unique statuses from assigned orders
-//    val uniqueStatuses = assignedOrders.mapNotNull { it.status }.distinct()
-//
-//    LaunchedEffect(Unit) {
-//        viewModel.fetchAssignedSuborders(deliveryBoyId = lmdUserID)
-//    }
-//
-//    Scaffold(
-//        topBar = {
-//            TopAppBar(
-//                title = { Text("Suborders", color = Color.White) },
-//                navigationIcon = {
-//                    IconButton(onClick = { navController.popBackStack() }) {
-//                        Icon(
-//                            imageVector = Icons.Default.ArrowBack,
-//                            contentDescription = "Back",
-//                            tint = Color.White
-//                        )
-//                    }
-//                },
-//                colors = TopAppBarDefaults.topAppBarColors(
-//                    containerColor = colorResource(id = R.color.pink)
-//                )
-//            )
-//        }
-//    ) { paddingValues ->
-//        Column(
-//            modifier = Modifier
-//                .padding(paddingValues)
-//                .fillMaxSize()
-//        ) {
-//
-//            // Filter Buttons
-//            LazyRow(
-//                modifier = Modifier
-//                    .padding(8.dp)
-//                    .fillMaxWidth(),
-//                horizontalArrangement = Arrangement.spacedBy(8.dp)
-//            ) {
-//                items(uniqueStatuses) { status ->
-//                    val isActive = activeStatus == status
-//
-//                    OutlinedButton(
-//                        onClick = {
-//                            activeStatus = if (isActive) null else status
-//                        },
-//                        colors = ButtonDefaults.outlinedButtonColors(
-//                            containerColor = if (isActive) colorResource(id = R.color.pink) else Color.Transparent,
-//                            contentColor = if (isActive) Color.White else Color.Black
-//                        ),
-//                        border = BorderStroke(1.dp, if (isActive) colorResource(id = R.color.pink) else Color.Black)
-//                    ) {
-//                        Text(status)
-//                    }
-//                }
-//            }
-//
-//            when {
-//                isLoading -> {
-//                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-//                        CircularProgressIndicator()
-//                    }
-//                }
-//
-//                error != null -> {
-//                    Text("Error: $error", color = Color.Red, modifier = Modifier.padding(16.dp))
-//                }
-//
-//                filteredOrders.isEmpty() -> {
-//                    Text("No assigned orders.", modifier = Modifier.padding(16.dp))
-//                }
-//
-//                else -> {
-//                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-//                        items(filteredOrders) { order ->
-//                            AssignedOrderCard(lmdUserID, order, navController = navController)
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AssignedOrdersScreen(
@@ -315,7 +212,8 @@ fun AssignedOrdersScreen(
                     options = uniquePaymentStatuses,
                     activeValue = activePaymentStatus,
                     onSelect = { selected ->
-                        activePaymentStatus = if (activePaymentStatus == selected) null else selected
+                        activePaymentStatus =
+                            if (activePaymentStatus == selected) null else selected
                     }
                 )
             }
@@ -339,7 +237,16 @@ fun AssignedOrdersScreen(
                 else -> {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         items(filteredOrders) { order ->
-                            AssignedOrderCard(lmdUserID, order, navController = navController)
+                            if ((order.vendor_type.equals(
+                                    "In-App Vendor",
+                                    true
+                                )) || (order.vendor_type.equals(
+                                    "API Vendor",
+                                    true
+                                ) && order.vendor_order_id != null)
+                            ) {
+                                AssignedOrderCard(lmdUserID, order, navController = navController)
+                            }
                         }
                     }
                 }
@@ -347,6 +254,7 @@ fun AssignedOrdersScreen(
         }
     }
 }
+
 @Composable
 private fun FilterRow(
     title: String,
@@ -367,7 +275,10 @@ private fun FilterRow(
                         containerColor = if (isActive) colorResource(id = R.color.pink) else Color.Transparent,
                         contentColor = if (isActive) Color.White else Color.Black
                     ),
-                    border = BorderStroke(1.dp, if (isActive) colorResource(id = R.color.pink) else Color.Black)
+                    border = BorderStroke(
+                        1.dp,
+                        if (isActive) colorResource(id = R.color.pink) else Color.Black
+                    )
                 ) {
                     Text(value)
                 }
@@ -487,11 +398,17 @@ fun SuborderTrackingDeliveryBoyScreen(
     viewModel: DeliveryBoyViewModel = hiltViewModel(),
     customerViewModel: CustomerViewModel = hiltViewModel()
 ) {
+
+
     val context = LocalContext.current
     val activity = context as? Activity
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     var currentLatLng by remember { mutableStateOf<LatLng?>(null) }
     var locationError by remember { mutableStateOf<String?>(null) }
+
+    //for payment button
+    val suborder = viewModel.selectedSuborderPayment
+    val paymentStatus = suborder?.payment_status
 
     var orderStatus by remember { mutableStateOf(order.status ?: "-") }
     var orderPaymentStatus by remember { mutableStateOf(order.payment_status ?: "-") }
@@ -510,10 +427,52 @@ fun SuborderTrackingDeliveryBoyScreen(
                 true
             )
         ) {
+
             orderStatus = it.status ?: orderStatus
             orderPaymentStatus = order.payment_status ?: orderPaymentStatus
         }
     }
+
+    LaunchedEffect(order.suborder_id) {
+        while (true) {
+            if(orderStatus.equals("delivered", true) ||
+            orderStatus.equals("reached_destination", true) ||
+                    orderStatus.equals("in_transit", true)
+            ) {
+                order.suborder_id?.let {
+                    viewModel.fetchSingleAssignedSuborder(deliveryBoyID, it)
+                    if(paymentStatus.equals("confirmed_by_customer", true)){
+                        viewModel.fetchSingleAssignedSuborder(deliveryBoyID, it)
+                    }
+                }
+            }
+            delay(5000L) // Always delay to avoid freezing
+        }
+    }
+
+
+
+//    val orderId = order.suborder_id ?: return
+
+    // Start polling every 5 seconds
+//    LaunchedEffect(key1 = order.suborder_id) {
+//        while (isActive) {
+//            delay(5000)
+//            viewModel.fetchAssignedSuborders(deliveryBoyID)
+//
+//            // Find the updated order from the list
+//            val updatedOrder = viewModel.assignedOrders.find { it.suborder_id == order.suborder_id }
+//
+//            updatedOrder?.let {
+//                if (it.status != orderStatus || it.payment_status != orderPaymentStatus) {
+//                    orderStatus = it.status ?: orderStatus
+//                    orderPaymentStatus = it.payment_status ?: orderPaymentStatus
+//                }
+//            }
+//        }
+//    }
+
+
     var deliveryBoyIcon by remember { mutableStateOf<BitmapDescriptor?>(null) }
     var pickupIcon by remember { mutableStateOf<BitmapDescriptor?>(null) }
     var dropIcon by remember { mutableStateOf<BitmapDescriptor?>(null) }
@@ -959,10 +918,11 @@ fun SuborderTrackingDeliveryBoyScreen(
                     }
                 }
 
-
 //                orderPaymentStatus = order.payment_status ?: orderPaymentStatus
 //                if (order.payment_status.equals("confirmed_by_customer", true)) {
-                if (orderPaymentStatus.equals("confirmed_by_customer", true)) {
+
+//                if (orderPaymentStatus.equals("confirmed_by_customer", true)) {
+                if (paymentStatus.equals("confirmed_by_customer", true)) {
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Button(
@@ -972,6 +932,7 @@ fun SuborderTrackingDeliveryBoyScreen(
                             }
 
                             orderPaymentStatus = "confirmed_by_deliveryboy"
+
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -986,6 +947,7 @@ fun SuborderTrackingDeliveryBoyScreen(
                             )
                         } else {
                             Text("Confirm Recieved Payment", color = Color.White)
+
                         }
                     }
 
@@ -1026,7 +988,10 @@ private fun hasLocationPermission(context: Context): Boolean {
 }
 
 
-private fun bitmapDescriptorFromVector(context: Context, @DrawableRes vectorResId: Int): BitmapDescriptor? {
+private fun bitmapDescriptorFromVector(
+    context: Context,
+    @DrawableRes vectorResId: Int
+): BitmapDescriptor? {
     return try {
         // Get the vector drawable
         val vectorDrawable = ContextCompat.getDrawable(context, vectorResId)
@@ -1094,10 +1059,6 @@ suspend fun getCurrentLocation(context: Context): Location {
             }
     }
 }
-
-
-
-
 
 
 //For Simulation
