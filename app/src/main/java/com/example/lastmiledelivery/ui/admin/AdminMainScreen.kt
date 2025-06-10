@@ -381,7 +381,7 @@ private fun DrawerContent(
         )
 
         DrawerItem(
-            text = "Vendor Website",
+            text = "Api Vendor",
             icon = Icons.Filled.Api,
             navController = navController,
             route = "vendorWebsiteConnection",

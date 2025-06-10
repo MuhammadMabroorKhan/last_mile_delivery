@@ -17,9 +17,12 @@ import com.example.lastmiledelivery.data.models.customer.CustomerData
 import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerOrdersResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
+import com.example.lastmiledelivery.data.models.customer.DeliveryBoyRatingRequest
+import com.example.lastmiledelivery.data.models.customer.DeliveryBoyRatingResponse
 import com.example.lastmiledelivery.data.models.customer.GenericResponse
 import com.example.lastmiledelivery.data.models.customer.GenericResponseIncreaseDecrease
 import com.example.lastmiledelivery.data.models.customer.IncreaseDecreaseQuantityRequest
+import com.example.lastmiledelivery.data.models.customer.ItemRatingResponse
 import com.example.lastmiledelivery.data.models.customer.LiveRouteTrackingResponse
 import com.example.lastmiledelivery.data.models.customer.LiveTrackingResponse
 import com.example.lastmiledelivery.data.models.customer.MenuResponse
@@ -27,6 +30,8 @@ import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
 import com.example.lastmiledelivery.data.models.customer.OrderResponse
 import com.example.lastmiledelivery.data.models.customer.PaymentStatusResponse
+import com.example.lastmiledelivery.data.models.customer.RatingOrderResponse
+import com.example.lastmiledelivery.data.models.customer.RatingsResponse
 import com.example.lastmiledelivery.data.models.customer.RemoveCartItemRequest
 import com.example.lastmiledelivery.data.models.customer.RemoveCartItemResponse
 import com.example.lastmiledelivery.data.models.customer.RouteInfoResponse
@@ -184,4 +189,28 @@ interface CustomerApiService {
         @Path("customerId") customerId: Int,
         @Body address: AddAddressRequest
     ): Response<AddAddressResponse>
+
+
+    @GET("api/suborders/{suborderId}/detailsForRating")
+    suspend fun getRatingOrderDetails(@Path("suborderId") suborderId: Int): RatingOrderResponse
+
+    @GET("api/suborders/{suborderId}/detailsForRatingStatus")
+    suspend fun getRatingsStatusForSuborder(@Path("suborderId") suborderId: Int): Response<RatingsResponse>
+
+    @Multipart
+    @POST("api/itemrating")
+    suspend fun submitItemRating(
+        @Part("suborders_ID") suborderId: RequestBody,
+        @Part("itemdetails_ID") itemDetailId: RequestBody,
+        @Part("rating_stars") ratingStars: RequestBody,
+        @Part("comments") comments: RequestBody?,
+        @Part images: List<MultipartBody.Part>? = null
+    ): Response<ItemRatingResponse>
+
+    @POST("api/customer/rate-delivery-boy")
+    suspend fun rateDeliveryBoy(
+        @Body request: DeliveryBoyRatingRequest
+    ): Response<DeliveryBoyRatingResponse>
+
 }
+

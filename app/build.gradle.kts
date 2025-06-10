@@ -113,6 +113,9 @@ dependencies {
     kapt("androidx.room:room-compiler:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
 
+    //Rating bar
+    implementation("com.github.a914-gowtham:compose-ratingbar:1.2.3")
+
     // Testing Dependencies
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

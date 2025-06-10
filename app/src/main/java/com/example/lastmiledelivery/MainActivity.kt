@@ -38,6 +38,7 @@ import com.example.lastmiledelivery.ui.customer.CustomerSignupScreen
 import com.example.lastmiledelivery.ui.customer.EditPersonalInfoScreen
 import com.example.lastmiledelivery.ui.customer.OrderConfirmationScreen
 import com.example.lastmiledelivery.ui.customer.OrderDetailScreen
+import com.example.lastmiledelivery.ui.customer.OrderRatingScreen
 import com.example.lastmiledelivery.ui.customer.ShopDetailsScreen
 import com.example.lastmiledelivery.ui.customer.TrackOrderScreen
 import com.example.lastmiledelivery.ui.deliveryboy.AssignedOrdersScreen
@@ -516,6 +517,15 @@ fun AppNavigation() {
         ) { backStackEntry ->
             val customerId = backStackEntry.arguments?.getInt("customerId") ?: 0
             AddAddressScreen(navController = navController, customerId = customerId)
+        }
+
+
+        composable(
+            route = "order_rating/{suborderId}",
+            arguments = listOf(navArgument("suborderId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val suborderId = backStackEntry.arguments?.getInt("suborderId") ?: 0
+            OrderRatingScreen(suborderId = suborderId)
         }
 
 

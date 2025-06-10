@@ -1,5 +1,7 @@
 package com.example.lastmiledelivery.data.repository.customer
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import com.example.lastmiledelivery.data.models.StatusesResponse
 import com.example.lastmiledelivery.data.models.customer.AddAddressRequest
@@ -16,9 +18,12 @@ import com.example.lastmiledelivery.data.models.customer.CustomerData
 import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerOrdersResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
+import com.example.lastmiledelivery.data.models.customer.DeliveryBoyRatingRequest
 import com.example.lastmiledelivery.data.models.customer.GenericResponse
 import com.example.lastmiledelivery.data.models.customer.GenericResponseIncreaseDecrease
 import com.example.lastmiledelivery.data.models.customer.IncreaseDecreaseQuantityRequest
+import com.example.lastmiledelivery.data.models.customer.ItemRatingRequest
+import com.example.lastmiledelivery.data.models.customer.ItemRatingResponse
 import com.example.lastmiledelivery.data.models.customer.LiveRouteTrackingResponse
 import com.example.lastmiledelivery.data.models.customer.LiveTrackingResponse
 import com.example.lastmiledelivery.data.models.customer.MenuItem
@@ -27,11 +32,14 @@ import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
 import com.example.lastmiledelivery.data.models.customer.OrderResponse
 import com.example.lastmiledelivery.data.models.customer.PaymentStatusResponse
+import com.example.lastmiledelivery.data.models.customer.RatingOrderResponse
+import com.example.lastmiledelivery.data.models.customer.RatingsResponse
 import com.example.lastmiledelivery.data.models.customer.RemoveCartItemRequest
 import com.example.lastmiledelivery.data.models.customer.RouteInfoResponse
 import com.example.lastmiledelivery.data.remote.api.CustomerApiService
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -41,6 +49,7 @@ import org.json.JSONObject
 import javax.inject.Inject
 import retrofit2.Response
 import java.io.File
+
 
 class CustomerRepository @Inject constructor(private val api: CustomerApiService) {
     suspend fun customerSignup(
@@ -434,6 +443,85 @@ class CustomerRepository @Inject constructor(private val api: CustomerApiService
     ): Response<AddAddressResponse> {
         return api.addAddress(customerId, address)
     }
+
+    suspend fun getRatingOrderDetails(suborderId: Int): RatingOrderResponse {
+        return api.getRatingOrderDetails(suborderId)
+    }
+
+    suspend fun fetchRatings(suborderId: Int): Result<RatingsResponse> {
+        return try {
+            val response = api.getRatingsStatusForSuborder(suborderId)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception(response.message()))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+
+    suspend fun submitItemRating(context: Context,request: ItemRatingRequest): Result<ItemRatingResponse> {
+        return try {
+            val parts = mutableListOf<MultipartBody.Part>()
+
+            val suborderId = request.suborders_ID.toString().toRequestBody("text/plain".toMediaType())
+            val itemDetailId = request.itemdetails_ID.toString().toRequestBody("text/plain".toMediaType())
+            val ratingStars = request.rating.toString().toRequestBody("text/plain".toMediaType())
+            val comments = request.comment?.toRequestBody("text/plain".toMediaType())
+            val imageParts = request.images?.mapIndexedNotNull { index, uri ->
+                val file = uriToTempFile(uri, context) ?: return@mapIndexedNotNull null
+                val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+                MultipartBody.Part.createFormData("images[$index]", file.name, requestFile)
+            }
+
+
+            val response = api.submitItemRating(
+                suborderId, itemDetailId, ratingStars, comments, imageParts
+            )
+
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Server Error: ${response.errorBody()?.string()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+
+
+    suspend fun rateDeliveryBoy(request: DeliveryBoyRatingRequest): Result<String> {
+        return try {
+            val response = api.rateDeliveryBoy(request)
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(response.body()?.message ?: "Rated successfully")
+            } else {
+                val errorMessage = response.body()?.message ?: "Something went wrong"
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun uriToTempFile(uri: Uri, context: Context): File? {
+        return try {
+            val contentResolver = context.contentResolver
+            val inputStream = contentResolver.openInputStream(uri) ?: return null
+            val tempFile = File.createTempFile("upload", ".jpg", context.cacheDir)
+            tempFile.outputStream().use { outputStream -> inputStream.copyTo(outputStream) }
+            tempFile
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+
+
+
 }
 
 

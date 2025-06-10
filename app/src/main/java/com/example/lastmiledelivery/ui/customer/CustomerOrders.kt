@@ -258,7 +258,11 @@ fun CustomerOrders(
 
                     Column {
                         // Order Status Filter Row
-                        Text("Status", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp, start = 8.dp))
+                        Text(
+                            "Status",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 8.dp, start = 8.dp)
+                        )
                         LazyRow(
                             modifier = Modifier
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -275,7 +279,10 @@ fun CustomerOrders(
                                         containerColor = if (isSelected) colorResource(id = R.color.pink) else Color.Transparent,
                                         contentColor = if (isSelected) Color.White else Color.Black
                                     ),
-                                    border = BorderStroke(1.dp, if (isSelected) colorResource(id = R.color.pink) else Color.Gray)
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (isSelected) colorResource(id = R.color.pink) else Color.Gray
+                                    )
                                 ) {
                                     Text(status)
                                 }
@@ -283,7 +290,11 @@ fun CustomerOrders(
                         }
 
                         // Payment Status Filter Row
-                        Text("Payment Status", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp, start = 8.dp))
+                        Text(
+                            "Payment Status",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 8.dp, start = 8.dp)
+                        )
                         LazyRow(
                             modifier = Modifier
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -295,13 +306,17 @@ fun CustomerOrders(
                                 val isSelected = selectedPaymentStatus == paymentStatus
                                 OutlinedButton(
                                     onClick = {
-                                        selectedPaymentStatus = if (isSelected) null else paymentStatus
+                                        selectedPaymentStatus =
+                                            if (isSelected) null else paymentStatus
                                     },
                                     colors = ButtonDefaults.outlinedButtonColors(
                                         containerColor = if (isSelected) colorResource(id = R.color.pink) else Color.Transparent,
                                         contentColor = if (isSelected) Color.White else Color.Black
                                     ),
-                                    border = BorderStroke(1.dp, if (isSelected) colorResource(id = R.color.pink) else Color.Gray)
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (isSelected) colorResource(id = R.color.pink) else Color.Gray
+                                    )
                                 ) {
                                     Text(paymentStatus)
                                 }
@@ -568,7 +583,11 @@ fun OrderDetailScreen(
                 title = { Text("SubOrders", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -598,10 +617,15 @@ fun OrderDetailScreen(
 
                         // 🔴 Extract unique statuses
                         val uniqueStatuses = suborders.mapNotNull { it.suborder_status }.distinct()
-                        val uniquePaymentStatuses = suborders.mapNotNull { it.suborder_payment_status }.distinct()
+                        val uniquePaymentStatuses =
+                            suborders.mapNotNull { it.suborder_payment_status }.distinct()
 
                         // 🔴 Status filter row
-                        Text("Status", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
+                        Text(
+                            "Status",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier
@@ -626,7 +650,11 @@ fun OrderDetailScreen(
                             }
                         }
                         // 🔴 Payment filter row
-                        Text("Payment Status", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
+                        Text(
+                            "Payment Status",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                        )
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier
@@ -638,7 +666,8 @@ fun OrderDetailScreen(
                                 val isSelected = selectedPaymentStatus == paymentStatus
                                 OutlinedButton(
                                     onClick = {
-                                        selectedPaymentStatus = if (isSelected) null else paymentStatus
+                                        selectedPaymentStatus =
+                                            if (isSelected) null else paymentStatus
                                     },
                                     colors = ButtonDefaults.outlinedButtonColors(
                                         containerColor = if (isSelected) PinkColor else Color.White,
@@ -740,6 +769,23 @@ fun SubOrderCard(
             ) {
                 Text(text = "Track Order", color = Color.White)
             }
+
+
+            if (suborder.suborder_status.equals("delivered", true)
+                || suborder.suborder_payment_status.equals("confirmed_by_customer",true)
+                ) {
+                Spacer(modifier = Modifier.height(16.dp)) // Add space before the button
+                Button(
+                    onClick = {
+                        navController.navigate("order_rating/${suborder.suborder_id}")
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(colorResource(id = R.color.pink))
+                ) {
+                    Text(text = "Rating Order", color = Color.White)
+                }
+            }
+
         }
     }
 }
@@ -1165,12 +1211,6 @@ fun TrackOrderScreen(
 //    }
 
 
-
-
-
-
-
-
     LaunchedEffect(suborderId) {
         vendorViewModel.startSuborderPolling(vendor_ID, shop_ID, branch_ID, suborderId)
     }
@@ -1260,7 +1300,6 @@ fun TrackOrderScreen(
     LaunchedEffect(Unit) {
         viewModel.startLiveRouteTracking(suborderId)
     }
-
 
 
 //    LaunchedEffect(suborderId) {
@@ -1412,7 +1451,10 @@ fun TrackOrderScreen(
                                         points = routePoints,
                                         color = Color.Green,
                                         width = 8f,
-                                        pattern = listOf(Dash(20f), Gap(10f)) // More visible dotted/dashed pattern
+                                        pattern = listOf(
+                                            Dash(20f),
+                                            Gap(10f)
+                                        ) // More visible dotted/dashed pattern
                                     )
                                 }
 

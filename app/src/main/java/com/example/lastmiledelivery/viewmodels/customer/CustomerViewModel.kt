@@ -26,13 +26,17 @@ import com.example.lastmiledelivery.data.models.customer.ClearCartResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerData
 import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
+import com.example.lastmiledelivery.data.models.customer.DeliveryBoyRatingRequest
 import com.example.lastmiledelivery.data.models.customer.GenericResponse
+import com.example.lastmiledelivery.data.models.customer.ItemRatingRequest
 import com.example.lastmiledelivery.data.models.customer.LiveLocationData
 import com.example.lastmiledelivery.data.models.customer.MenuResponse
 import com.example.lastmiledelivery.data.models.customer.Order
 import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
 import com.example.lastmiledelivery.data.models.customer.PaymentStatusResponse
+import com.example.lastmiledelivery.data.models.customer.RatingData
+import com.example.lastmiledelivery.data.models.customer.RatingOrderResponse
 import com.example.lastmiledelivery.data.models.customer.RouteInfoResponse
 import com.example.lastmiledelivery.data.repository.customer.CustomerRepository
 import com.example.lastmiledelivery.ui.common.uriToFile
@@ -627,7 +631,123 @@ class CustomerViewModel @Inject constructor(
         }
     }
 
+
+    private val _orderDetailsRating = MutableStateFlow<RatingOrderResponse?>(null)
+    val orderDetailsRating: StateFlow<RatingOrderResponse?> = _orderDetailsRating
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
+
+    fun fetchOrderDetailsRating(suborderId: Int) {
+        viewModelScope.launch {
+            try {
+                val response = repository.getRatingOrderDetails(suborderId)
+                _orderDetailsRating.value = response
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Unknown error"
+            }
+        }
+    }
+
+
+    var ratingState by mutableStateOf<RatingUiState>(RatingUiState.Loading)
+        private set
+
+
+    fun loadRatings(suborderId: Int) {
+        viewModelScope.launch {
+            ratingState = RatingUiState.Loading
+            val result = repository.fetchRatings(suborderId)
+
+            result.fold(
+                onSuccess = { response ->
+                    if (response.success && response.data != null) {
+                        ratingState = RatingUiState.Success(response.data)
+                    } else {
+                        ratingState = RatingUiState.Empty
+                    }
+                },
+                onFailure = { exception ->
+                    ratingState = RatingUiState.Error(exception.message ?: "Unknown error")
+                }
+            )
+        }
+    }
+
+
+
+
+
+
+    var giveRatingState by mutableStateOf<UiState>(UiState.Idle)
+        private set
+
+    fun submitRatingsForItems(
+        context: Context,
+        suborderId: Int,
+        groupedItems: List<ItemRatingRequest> // group of items per itemDetail
+    ) {
+        viewModelScope.launch {
+            giveRatingState = UiState.Loading
+            try {
+                groupedItems.forEach { item ->
+                    val updatedItem = item.copy(suborders_ID = suborderId)
+                    val result = repository.submitItemRating(context,updatedItem)
+                    if (result.isFailure) throw result.exceptionOrNull()!!
+                }
+                giveRatingState = UiState.Success
+            } catch (e: Exception) {
+                giveRatingState = UiState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+
+
+
+    var deliveryRatingState by mutableStateOf<DeliveryBoyRatingUiState>(DeliveryBoyRatingUiState.Idle)
+        private set
+
+    fun rateDeliveryBoy(request: DeliveryBoyRatingRequest) {
+        viewModelScope.launch {
+            deliveryRatingState = DeliveryBoyRatingUiState.Loading
+            val result = repository.rateDeliveryBoy(request)
+            deliveryRatingState = result.fold(
+                onSuccess = { DeliveryBoyRatingUiState.Success },
+                onFailure = { DeliveryBoyRatingUiState.Error(it.message ?: "Error rating delivery boy") }
+            )
+        }
+    }
+
 }
+
+
+//For rateDeliveryBoy function
+sealed class DeliveryBoyRatingUiState {
+    object Idle : DeliveryBoyRatingUiState()
+    object Loading : DeliveryBoyRatingUiState()
+    object Success : DeliveryBoyRatingUiState()
+    data class Error(val message: String) : DeliveryBoyRatingUiState()
+}
+
+
+
+//FOr submitRatingsForItems function
+sealed class UiState {
+    object Idle : UiState()
+    object Loading : UiState()
+    object Success : UiState()
+    data class Error(val message: String) : UiState()
+}
+
+//For loadRatings function
+sealed class RatingUiState {
+    object Loading : RatingUiState()
+    data class Success(val data: RatingData) : RatingUiState()
+    object Empty : RatingUiState()
+    data class Error(val message: String) : RatingUiState()
+}
+
 
 sealed class OrderUiState {
     object Loading : OrderUiState()
