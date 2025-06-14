@@ -38,6 +38,8 @@ import com.example.lastmiledelivery.data.models.customer.PaymentStatusResponse
 import com.example.lastmiledelivery.data.models.customer.RatingData
 import com.example.lastmiledelivery.data.models.customer.RatingOrderResponse
 import com.example.lastmiledelivery.data.models.customer.RouteInfoResponse
+import com.example.lastmiledelivery.data.models.customer.StockItemRequest
+import com.example.lastmiledelivery.data.models.customer.StockItemResponse
 import com.example.lastmiledelivery.data.repository.customer.CustomerRepository
 import com.example.lastmiledelivery.ui.common.uriToFile
 import com.google.android.gms.maps.model.LatLng
@@ -716,6 +718,32 @@ class CustomerViewModel @Inject constructor(
                 onSuccess = { DeliveryBoyRatingUiState.Success },
                 onFailure = { DeliveryBoyRatingUiState.Error(it.message ?: "Error rating delivery boy") }
             )
+        }
+    }
+
+
+
+//    private val _stockState = mutableStateOf<List<StockItemResponse>>(emptyList())
+//    val stockState: State<List<StockItemResponse>> = _stockState
+//
+//    fun fetchStockForItems(itemRequests: List<StockItemRequest>) {
+//        viewModelScope.launch {
+//            val stockList = repository.getStockForItems(itemRequests)
+//            stockList?.let {
+//                _stockState.value = it
+//            }
+//        }
+//    }
+
+    private val _stockState = mutableStateOf<List<StockItemResponse>>(emptyList())
+    val stockState: State<List<StockItemResponse>> = _stockState
+
+    fun fetchStockForItems(itemRequests: List<StockItemRequest>) {
+        viewModelScope.launch {
+            val stockList = repository.getStockForItems(itemRequests)
+            stockList?.let {
+                _stockState.value = it
+            }
         }
     }
 

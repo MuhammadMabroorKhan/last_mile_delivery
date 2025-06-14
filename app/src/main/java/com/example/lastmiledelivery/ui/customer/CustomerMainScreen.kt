@@ -109,6 +109,11 @@ fun CustomerMainScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val user = remember { authViewModel.getUserDetails() }
+    val isTestUser = remember {
+        user.name.replace("_", "", ignoreCase = true)
+            .replace(" ", "", ignoreCase = true)
+            .contains("testcustomer", ignoreCase = true)
+    }
     val categories by categoryViewModel.categories.collectAsState()
 
     val customerData by customerViewModel.customerData.collectAsState()
@@ -298,14 +303,28 @@ fun CustomerMainScreen(
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             // Combined filtering for both category and search query
-                            val filteredShops = customerData?.filter { shop ->
-                                val matchesCategory =
-                                    selectedCategoryId?.let { it == shop.shopCategoryId } ?: true
-                                val matchesSearchQuery =
-                                    shop.shopName.contains(searchQuery, ignoreCase = true)
+//                            val filteredShops = customerData?.filter { shop ->
+//                                val matchesCategory =
+//                                    selectedCategoryId?.let { it == shop.shopCategoryId } ?: true
+//                                val matchesSearchQuery =
+//                                    shop.shopName.contains(searchQuery, ignoreCase = true)
+//
+//                                matchesCategory && matchesSearchQuery // Both must be true
+//                            }
 
-                                matchesCategory && matchesSearchQuery // Both must be true
+                            val filteredShops = customerData?.filter { shop ->
+                                val matchesCategory = selectedCategoryId?.let { it == shop.shopCategoryId } ?: true
+                                val matchesSearchQuery = shop.shopName.contains(searchQuery, ignoreCase = true)
+
+                                val isApiVendorOnly = if (isTestUser) {
+                                    shop.vendorType.equals("API Vendor", ignoreCase = true)
+                                } else {
+                                    true // Non-test users see all
+                                }
+
+                                matchesCategory && matchesSearchQuery && isApiVendorOnly
                             }
+
 
 // Display filtered shops
                             filteredShops?.forEach { shop ->

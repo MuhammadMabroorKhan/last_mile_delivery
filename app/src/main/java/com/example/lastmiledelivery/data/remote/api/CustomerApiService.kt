@@ -35,6 +35,10 @@ import com.example.lastmiledelivery.data.models.customer.RatingsResponse
 import com.example.lastmiledelivery.data.models.customer.RemoveCartItemRequest
 import com.example.lastmiledelivery.data.models.customer.RemoveCartItemResponse
 import com.example.lastmiledelivery.data.models.customer.RouteInfoResponse
+import com.example.lastmiledelivery.data.models.customer.StockItemRequest
+import com.example.lastmiledelivery.data.models.customer.StockItemRequestWrapper
+import com.example.lastmiledelivery.data.models.customer.StockItemResponse
+import com.example.lastmiledelivery.data.models.customer.StockResponseWrapper
 import com.google.gson.JsonElement
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -211,6 +215,11 @@ interface CustomerApiService {
     suspend fun rateDeliveryBoy(
         @Body request: DeliveryBoyRatingRequest
     ): Response<DeliveryBoyRatingResponse>
+
+    @POST("api/customer/get-stock-for-items")
+    suspend fun getStockForItems(
+        @Body request: StockItemRequestWrapper
+    ): Response<StockResponseWrapper>
 
 }
 

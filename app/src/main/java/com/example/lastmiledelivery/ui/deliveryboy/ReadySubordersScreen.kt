@@ -1,8 +1,7 @@
 package com.example.lastmiledelivery.ui.deliveryboy
 
+import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,15 +17,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -53,26 +46,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.example.lastmiledelivery.R
 import com.example.lastmiledelivery.data.models.deliveryboy.ReadySuborder
 import com.example.lastmiledelivery.ui.vendor.StatusChip
 import com.example.lastmiledelivery.viewmodels.AuthViewModel
-import com.example.lastmiledelivery.viewmodels.customer.CustomerViewModel
 import com.example.lastmiledelivery.viewmodels.deliveryboy.DeliveryBoyViewModel
 import com.example.lastmiledelivery.viewmodels.vendor.VendorViewModel
 import kotlin.math.atan2
@@ -89,8 +78,10 @@ fun ReadySubordersScreen(
     lmdUserID: Int,
     navController: NavHostController,
     viewModel: DeliveryBoyViewModel = hiltViewModel(),
-    vendorViewModel: VendorViewModel = hiltViewModel()
+    vendorViewModel: VendorViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
+    val user = remember { authViewModel.getUserDetails() }
     val suborders = viewModel.readySuborders
     val isLoading = viewModel.isLoadingReadySuborders
     val error = viewModel.errorMessageReadySuborders
@@ -134,9 +125,11 @@ fun ReadySubordersScreen(
                 Lifecycle.Event.ON_START -> {
                     viewModel.startAutoRefreshReadyOrders(lmdUserID)
                 }
+
                 Lifecycle.Event.ON_STOP -> {
                     viewModel.stopAutoRefreshReadyOrders()
                 }
+
                 else -> {}
             }
         }
@@ -149,6 +142,16 @@ fun ReadySubordersScreen(
         }
     }
 
+//    val isTestUser = remember {
+//        user.name.replace("_", "", ignoreCase = true).replace(" ", "", ignoreCase = true)
+//            .contains("testdeliveryboy", ignoreCase = true)
+//    }
+    val isTestUser = remember {
+        val normalizedName = user.name.replace("_", "", ignoreCase = true)
+            .replace(" ", "", ignoreCase = true)
+            .lowercase()
+        normalizedName.startsWith("testdeliveryboy")
+    }
 
     Scaffold(
         topBar = {
@@ -183,92 +186,112 @@ fun ReadySubordersScreen(
                 LazyColumn {
 //                    items(suborders) { suborder ->
                     items(suborders, key = { it.suborder_id }) { suborder ->
-                        val pickupLat =
-                            suborder.shop.branch.pickup_location.latitude.toDoubleOrNull() ?: 0.0
-                        val pickupLng =
-                            suborder.shop.branch.pickup_location.longitude.toDoubleOrNull() ?: 0.0
-                        val deliveryLat = suborder.customer.delivery_address.latitude
-                        val deliveryLng = suborder.customer.delivery_address.longitude
 
-                        val distanceKm =
-                            calculateDistanceKm(pickupLat, pickupLng, deliveryLat, deliveryLng)
+                        val customerNameNormalized = suborder.customer.name
+                            .replace("_", "", ignoreCase = true)
+                            .replace(" ", "", ignoreCase = true)
+                            .lowercase()
 
-                        val pickupAddress =
-                            "${suborder.shop.branch.pickup_location.area}, ${suborder.shop.branch.pickup_location.city}"
-                        val deliveryAddress =
-                            "${suborder.customer.delivery_address.street}, ${suborder.customer.delivery_address.city}"
+                        val isTestCustomer = customerNameNormalized.contains("testcustomer")
+                        Log.d("TEST_CHECK", "${suborder.orders_ID},${suborder.suborder_id} user.name=${user.name}, isTestUser=$isTestUser")
+                        Log.d("TEST_CHECK", "${suborder.orders_ID},${suborder.suborder_id} customer.name=${suborder.customer.name}, isTestCustomer=$isTestCustomer")
 
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp)
-                                .clickable {
-                                    selectedSuborder = suborder
-                                    showDialog =
-                                        true // Show dialog immediately or after data load depending on need
-                                },
-                            elevation = CardDefaults.cardElevation(4.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                // Line 1: Order Info
-                                Text(
-                                    "Order ID: ${suborder.orders_ID}, Suborder ID: ${suborder.suborder_id}",
-                                    fontWeight = FontWeight.Bold
-                                )
+                        // ✅ Only show matching orders based on user and customer test status
+                        if ((isTestUser && isTestCustomer) || (!isTestUser && !isTestCustomer)) {
+
+
+                            val pickupLat =
+                                suborder.shop.branch.pickup_location.latitude.toDoubleOrNull()
+                                    ?: 0.0
+                            val pickupLng =
+                                suborder.shop.branch.pickup_location.longitude.toDoubleOrNull()
+                                    ?: 0.0
+                            val deliveryLat = suborder.customer.delivery_address.latitude
+                            val deliveryLng = suborder.customer.delivery_address.longitude
+
+                            val distanceKm =
+                                calculateDistanceKm(pickupLat, pickupLng, deliveryLat, deliveryLng)
+
+                            val pickupAddress =
+                                "${suborder.shop.branch.pickup_location.area}, ${suborder.shop.branch.pickup_location.city}"
+                            val deliveryAddress =
+                                "${suborder.customer.delivery_address.street}, ${suborder.customer.delivery_address.city}"
+
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp)
+                                    .clickable {
+                                        selectedSuborder = suborder
+                                        showDialog =
+                                            true // Show dialog immediately or after data load depending on need
+                                    },
+                                elevation = CardDefaults.cardElevation(4.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    // Line 1: Order Info
+                                    Text(
+                                        "Order ID: ${suborder.orders_ID}, Suborder ID: ${suborder.suborder_id}",
+                                        fontWeight = FontWeight.Bold
+                                    )
 
 // Line 2: Pickup
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        Icons.Filled.LocationOn,
-                                        contentDescription = "Pickup",
-                                        tint = Color(0xFF4CAF50)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = "Pickup from: $pickupAddress",
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Filled.LocationOn,
+                                            contentDescription = "Pickup",
+                                            tint = Color(0xFF4CAF50)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "Pickup from: $pickupAddress",
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
 
 // Line 3: Delivery
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        Icons.Filled.LocationOn,
-                                        contentDescription = "Delivery",
-                                        tint = Color(0xFFF44336)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = "Deliver to: $deliveryAddress",
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Filled.LocationOn,
+                                            contentDescription = "Delivery",
+                                            tint = Color(0xFFF44336)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "Deliver to: $deliveryAddress",
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
 
 // Line 4: Distance and Total Amount
-                                Text(
-                                    text = "Distance: $distanceKm km",
-                                    color = Color.Gray,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    "Total Amount: Rs. ${suborder.total_amount}",
-                                    color = Color.Green,
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                                    Text(
+                                        text = "Distance: $distanceKm km",
+                                        color = Color.Gray,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        "Total Amount: Rs. ${suborder.total_amount}",
+                                        color = Color.Green,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
 
-                                // Accept Order button
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 8.dp),
-                                    horizontalArrangement = Arrangement.End
-                                ) {
-                                    Button(
-                                        onClick = {
-                                            viewModel.acceptOrder(deliveryBoyID, suborder.suborder_id)
-                                        }
+                                    // Accept Order button
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 8.dp),
+                                        horizontalArrangement = Arrangement.End
                                     ) {
-                                        Text("Accept Order")
+                                        Button(
+                                            onClick = {
+                                            viewModel.acceptOrder(
+                                                    deliveryBoyID,
+                                                    suborder.suborder_id
+                                                )
+                                            }
+                                        ) {
+                                            Text("Accept Order")
+                                        }
                                     }
                                 }
                             }
@@ -415,8 +438,14 @@ fun ReadySubordersScreen(
                     },
                     confirmButton = {
                         Button(onClick = {
-                            selectedSuborder?.let { viewModel.acceptOrder(deliveryBoyID, it.suborder_id) }
-                            showDialog = false }) {
+                            selectedSuborder?.let {
+                                viewModel.acceptOrder(
+                                    deliveryBoyID,
+                                    it.suborder_id
+                                )
+                            }
+                            showDialog = false
+                        }) {
                             Text("Accept")
                         }
                     },

@@ -16,25 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import com.example.lastmiledelivery.viewmodels.customer.CartState
-import com.example.lastmiledelivery.viewmodels.customer.CustomerViewModel
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -42,37 +25,52 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import com.example.lastmiledelivery.R
 import com.example.lastmiledelivery.data.models.customer.CartResponse
 import com.example.lastmiledelivery.data.models.customer.CustomerData
 import com.example.lastmiledelivery.data.models.customer.OrderDetail
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
+import com.example.lastmiledelivery.data.models.customer.StockItemRequest
 import com.example.lastmiledelivery.viewmodels.AuthViewModel
+import com.example.lastmiledelivery.viewmodels.customer.CartState
+import com.example.lastmiledelivery.viewmodels.customer.CustomerViewModel
 import com.google.gson.Gson
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -86,6 +84,12 @@ fun CartScreen(
 ) {
     val cartState by viewModel.cartState.collectAsState()
     val user = remember { authViewModel.getUserDetails() }
+//    val isTestUser = remember { user.name.contains("Test User", ignoreCase = true) }
+    val isTestUser = remember {
+        user.name.replace("_", "", ignoreCase = true).replace(" ", "", ignoreCase = true)
+            .contains("testcustomer", ignoreCase = true)
+    }
+
     val customerData by viewModel.customerData.collectAsState()
     val errorMessage by viewModel.errorMessages.collectAsState()
 
@@ -115,25 +119,99 @@ fun CartScreen(
 
     Log.d("CartScreen", "User: ${user?.id}, CustomerData: $customerData")
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Cart", color = Color.White) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
+
+    val stockData by viewModel.stockState
+
+    LaunchedEffect(cartState) {
+        if (cartState is CartState.Success) {
+            val cartData = (cartState as CartState.Success).cart
+
+            // Ensure cart is not null
+            if (cartData.cart != null && cartData.suborders.isNotEmpty()) {
+                val stockCheckItems = cartData.suborders.flatMap { suborder ->
+                    suborder.items.map { item ->
+                        StockItemRequest(
+                            vendor_ID = suborder.vendor_ID,
+                            shop_ID = suborder.shop_ID,
+                            branch_ID = suborder.branch_ID,
+                            item_detail_ID = item.item_detail_id
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorResource(id = R.color.pink)
-                )
-            )
+                }
+
+                if (stockCheckItems.isNotEmpty()) {
+                    viewModel.fetchStockForItems(stockCheckItems)
+                }
+            }
         }
-    ) { paddingValues ->
+    }
+
+    var showDialogOutStock by remember { mutableStateOf(false) }
+    var alertMessageOutStock by remember { mutableStateOf("") } // empty string by default
+
+    if (showDialogOutStock) {
+        AlertDialog(onDismissRequest = {
+            showDialogOutStock = false
+            // Re-fetch stock
+            val cartData = (cartState as? CartState.Success)?.cart
+            if (cartData != null && cartData.cart != null && cartData.suborders.isNotEmpty()) {
+                val stockCheckItems = cartData.suborders.flatMap { suborder ->
+                    suborder.items.map { item ->
+                        StockItemRequest(
+                            vendor_ID = suborder.vendor_ID,
+                            shop_ID = suborder.shop_ID,
+                            branch_ID = suborder.branch_ID,
+                            item_detail_ID = item.item_detail_id
+                        )
+                    }
+                }
+                if (stockCheckItems.isNotEmpty()) {
+                    viewModel.fetchStockForItems(stockCheckItems)
+                }
+            }
+        },
+            title = { Text("Stock Issue") },
+            text = { Text(alertMessageOutStock) },
+            confirmButton = {
+                Button(onClick = {
+                    showDialogOutStock = false
+                    // Re-fetch stock
+                    val cartData = (cartState as? CartState.Success)?.cart
+                    if (cartData != null && cartData.cart != null && cartData.suborders.isNotEmpty()) {
+                        val stockCheckItems = cartData.suborders.flatMap { suborder ->
+                            suborder.items.map { item ->
+                                StockItemRequest(
+                                    vendor_ID = suborder.vendor_ID,
+                                    shop_ID = suborder.shop_ID,
+                                    branch_ID = suborder.branch_ID,
+                                    item_detail_ID = item.item_detail_id
+                                )
+                            }
+                        }
+                        if (stockCheckItems.isNotEmpty()) {
+                            viewModel.fetchStockForItems(stockCheckItems)
+                        }
+                    }
+                }) {
+                    Text("OK")
+                }
+            })
+    }
+
+    Scaffold(topBar = {
+        TopAppBar(title = { Text("Cart", color = Color.White) }, navigationIcon = {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White
+                )
+            }
+        }, colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = colorResource(id = R.color.pink)
+        )
+        )
+    }) { paddingValues ->
         when (cartState) {
             is CartState.Loading -> {
                 Log.d("CartDebug", "Cart is in loading state...")
@@ -181,8 +259,7 @@ fun CartScreen(
                                 .padding(end = 12.dp), // Add some padding from the right side
                             horizontalArrangement = Arrangement.End // Align to the right
                         ) {
-                            Text(
-                                text = "Clear Cart",
+                            Text(text = "Clear Cart",
                                 color = Color.Blue,
                                 fontSize = 16.sp,
                                 modifier = Modifier
@@ -191,8 +268,7 @@ fun CartScreen(
                                         if (customer != null) {
                                             viewModel.clearCart(customer.customerId)
                                         }
-                                    }
-                            )
+                                    })
                         }
 
                         // Scrollable Suborders List
@@ -301,15 +377,26 @@ fun CartScreen(
                                             .padding(vertical = 8.dp)
                                     ) {
                                         Column(modifier = Modifier.padding(16.dp)) {
-                                            val shopName = customerData?.find { it.shopId == suborder.shop_ID }?.shopName ?: "Unknown Shop"
+                                            val shopName =
+                                                customerData?.find { it.shopId == suborder.shop_ID }?.shopName
+                                                    ?: "Unknown Shop"
 
-                                            Text("Shop Name: $shopName", fontWeight = FontWeight.Bold)
-                                            Text("Vendor Type: ${suborder.vendor_type}", fontWeight = FontWeight.Bold)
+                                            Text(
+                                                "Shop Name: $shopName", fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                "Vendor Type: ${suborder.vendor_type}",
+                                                fontWeight = FontWeight.Bold
+                                            )
                                             Text("Total Amount: ${suborder.total_amount}")
                                             Divider()
 
                                             if (suborder.items.isNotEmpty()) {
                                                 suborder.items.forEach { item ->
+                                                    val matchingStock = stockData.find {
+                                                        it.item_detail_ID == item.item_detail_id && it.vendor_ID == suborder.vendor_ID && it.shop_ID == suborder.shop_ID && it.branch_ID == suborder.branch_ID
+                                                    }
+
                                                     Row(
                                                         modifier = Modifier
                                                             .fillMaxWidth()
@@ -331,44 +418,98 @@ fun CartScreen(
                                                                 .weight(1f)
                                                                 .padding(start = 8.dp)
                                                         ) {
-                                                            Text(text = item.item_name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                                            Text(text = item.item_description, fontSize = 14.sp, color = Color.Gray)
-                                                            Text(text = "RS.${item.price}", fontSize = 14.sp, color = Color.Green)
+                                                            Text(
+                                                                text = item.item_name,
+                                                                fontWeight = FontWeight.Bold,
+                                                                fontSize = 16.sp
+                                                            )
+                                                            Text(
+                                                                text = item.item_description,
+                                                                fontSize = 14.sp,
+                                                                color = Color.Gray
+                                                            )
+                                                            Text(
+                                                                text = "RS.${item.price}",
+                                                                fontSize = 14.sp,
+                                                                color = Color.Green
+                                                            )
 //                                                            Text(text = "Qty: ${item.quantity}", fontSize = 14.sp, fontWeight = FontWeight.Bold)
 
                                                             Row(
                                                                 verticalAlignment = Alignment.CenterVertically
                                                             ) {
-                                                                IconButton(
-                                                                    onClick = {
-                                                                        val storedCustomerId = viewModel.getCustomerId()
-                                                                        if (storedCustomerId != null) {
-                                                                            viewModel.decreaseItemQuantity(item.id, item.quantity, storedCustomerId)
-                                                                        }
+                                                                IconButton(onClick = {
+                                                                    val storedCustomerId =
+                                                                        viewModel.getCustomerId()
+                                                                    if (storedCustomerId != null) {
+                                                                        viewModel.decreaseItemQuantity(
+                                                                            item.id,
+                                                                            item.quantity,
+                                                                            storedCustomerId
+                                                                        )
                                                                     }
-                                                                ) {
-                                                                    Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                                                                }) {
+                                                                    Icon(
+                                                                        Icons.Default.Remove,
+                                                                        contentDescription = "Decrease"
+                                                                    )
                                                                 }
 
-                                                                Text("${item.quantity}", fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp))
+                                                                Text(
+                                                                    "${item.quantity}",
+                                                                    fontWeight = FontWeight.Bold,
+                                                                    modifier = Modifier.padding(
+                                                                        horizontal = 8.dp
+                                                                    )
+                                                                )
 
                                                                 IconButton(
 
                                                                     onClick = {
-                                                                        val storedCustomerId = viewModel.getCustomerId()
+                                                                        val storedCustomerId =
+                                                                            viewModel.getCustomerId()
                                                                         if (storedCustomerId != null) {
-                                                                            viewModel.increaseItemQuantity(item.id, storedCustomerId)
+                                                                            viewModel.increaseItemQuantity(
+                                                                                item.id,
+                                                                                storedCustomerId
+                                                                            )
                                                                         }
-                                                                    }
-                                                                ) {
-                                                                    Icon(Icons.Default.Add, contentDescription = "Increase")
+                                                                    }) {
+                                                                    Icon(
+                                                                        Icons.Default.Add,
+                                                                        contentDescription = "Increase"
+                                                                    )
                                                                 }
                                                             }
 
 
+                                                            Row(
+                                                                verticalAlignment = Alignment.CenterVertically,
+                                                                modifier = Modifier.padding(top = 4.dp)
+                                                            ) {
+                                                                if (isTestUser) {
+                                                                    // Show only test stock for test users
+                                                                    Text(
+                                                                        text = "Test Stock: ${matchingStock?.test_stock_qty ?: "Unavailable"}",
+                                                                        fontSize = 12.sp,
+                                                                        color = Color.Blue
+                                                                    )
+                                                                } else {
+                                                                    // Show only real stock for real users
+                                                                    Text(
+                                                                        text = "Stock: ${matchingStock?.stock_qty ?: "Unavailable"}",
+                                                                        fontSize = 12.sp,
+                                                                        color = Color.Green
+                                                                    )
+                                                                }
+                                                            }
                                                         }
 
-                                                        IconButton(onClick = { viewModel.removeItem(item.id) }) {
+                                                        IconButton(onClick = {
+                                                            viewModel.removeItem(
+                                                                item.id
+                                                            )
+                                                        }) {
                                                             Icon(
                                                                 imageVector = Icons.Default.Close,
                                                                 contentDescription = "Remove Item",
@@ -439,13 +580,48 @@ fun CartScreen(
                             )
                             Button(
                                 onClick = {
+                                    val outOfStockItems = mutableListOf<String>()
+
+                                    cartData.suborders.forEach { suborder ->
+                                        suborder.items.forEach { item ->
+                                            val matchingStock = stockData.find {
+                                                it.item_detail_ID == item.item_detail_id && it.vendor_ID == suborder.vendor_ID && it.shop_ID == suborder.shop_ID && it.branch_ID == suborder.branch_ID
+                                            }
+
+                                            val availableQty = if (isTestUser) {
+                                                matchingStock?.test_stock_qty ?: 0
+                                            } else {
+                                                matchingStock?.stock_qty ?: 0
+                                            }
+
+                                            if (item.quantity > availableQty) {
+                                                outOfStockItems.add(item.item_name)
+                                            }
+                                        }
+                                    }
+
+//                                    if (outOfStockItems.isNotEmpty()) {
+//                                        val message = "Out of stock:\n" + outOfStockItems.joinToString("\n") { "- $it" }
+//                                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+//                                        return@Button
+//                                    }
+
+                                    if (outOfStockItems.isNotEmpty()) {
+                                        val message =
+                                            "The following items exceed stock:\n" + outOfStockItems.joinToString(
+                                                "\n"
+                                            ) { "- $it" }
+                                        showDialogOutStock = true
+                                        alertMessageOutStock = message
+                                        return@Button
+                                    }
+
+
                                     val jsonCartData = URLEncoder.encode(
-                                        Gson().toJson(cartData),
-                                        "UTF-8"
+                                        Gson().toJson(cartData), "UTF-8"
                                     ) // Convert cartData to JSON string
                                     val jsonCustomerData = URLEncoder.encode(
-                                        Gson().toJson(customerData),
-                                        "UTF-8"
+                                        Gson().toJson(customerData), "UTF-8"
                                     ) // Convert customerData to JSON
 
                                     navController.navigate("orderConfirmationScreen/${user.id}/${customer?.customerId}/$jsonCartData/$jsonCustomerData")
@@ -525,25 +701,20 @@ fun OrderConfirmationScreen(
     var selectedText by remember { mutableStateOf(selectedAddress?.street ?: "Select Address") }
 
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Checkout", color = Color.White) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorResource(id = R.color.pink)
+    Scaffold(topBar = {
+        TopAppBar(title = { Text("Checkout", color = Color.White) }, navigationIcon = {
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White
                 )
-            )
-        }
-    ) { paddingValues ->
+            }
+        }, colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = colorResource(id = R.color.pink)
+        )
+        )
+    }) { paddingValues ->
 
         Column(
             modifier = Modifier
@@ -618,7 +789,6 @@ fun OrderConfirmationScreen(
 //                }
 
 
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -626,8 +796,7 @@ fun OrderConfirmationScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(modifier = Modifier.weight(1f)) {
-                        OutlinedTextField(
-                            value = selectedText,
+                        OutlinedTextField(value = selectedText,
                             onValueChange = {},
                             readOnly = true,
                             modifier = Modifier
@@ -635,29 +804,22 @@ fun OrderConfirmationScreen(
                                 .clickable { expanded = true },
                             label = { Text("Delivery Address") },
                             trailingIcon = {
-                                Icon(
-                                    imageVector = if (expanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+                                Icon(imageVector = if (expanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
                                     contentDescription = "Dropdown Icon",
-                                    modifier = Modifier.clickable { expanded = !expanded }
-                                )
-                            }
-                        )
+                                    modifier = Modifier.clickable { expanded = !expanded })
+                            })
 
                         DropdownMenu(
                             expanded = expanded,
                             onDismissRequest = { expanded = false },
-                            modifier = Modifier
-                                .fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             addressList.forEach { address ->
-                                DropdownMenuItem(
-                                    text = { Text(address.street) },
-                                    onClick = {
-                                        selectedText = address.street
-                                        customerViewModel.selectAddress(address)
-                                        expanded = false
-                                    }
-                                )
+                                DropdownMenuItem(text = { Text(address.street) }, onClick = {
+                                    selectedText = address.street
+                                    customerViewModel.selectAddress(address)
+                                    expanded = false
+                                })
                             }
                         }
                     }
@@ -670,8 +832,7 @@ fun OrderConfirmationScreen(
                         },
                         colors = ButtonDefaults.buttonColors(Color.Gray),
                         shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier
-                            .height(56.dp)
+                        modifier = Modifier.height(56.dp)
                     ) {
                         Text(text = "+ Add", color = Color.White)
                     }
@@ -718,9 +879,7 @@ fun OrderConfirmationScreen(
                 onClick = {
                     if (selectedAddress == null) {
                         Toast.makeText(
-                            context,
-                            "Please select a delivery address",
-                            Toast.LENGTH_LONG
+                            context, "Please select a delivery address", Toast.LENGTH_LONG
                         ).show()
                         return@Button
                     }
@@ -741,14 +900,11 @@ fun OrderConfirmationScreen(
                         delivery_address_id = selectedAddress?.id ?: 0,
                         order_details = orderDetails
                     )
-                    customerViewModel.placeOrder(orderRequest,
-                        onSuccess = { message ->
-                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                        },
-                        onError = { error ->
-                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
-                        }
-                    )
+                    customerViewModel.placeOrder(orderRequest, onSuccess = { message ->
+                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                    }, onError = { error ->
+                        Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                    })
                 },
                 modifier = Modifier
                     .fillMaxWidth()

@@ -36,6 +36,9 @@ import com.example.lastmiledelivery.data.models.customer.RatingOrderResponse
 import com.example.lastmiledelivery.data.models.customer.RatingsResponse
 import com.example.lastmiledelivery.data.models.customer.RemoveCartItemRequest
 import com.example.lastmiledelivery.data.models.customer.RouteInfoResponse
+import com.example.lastmiledelivery.data.models.customer.StockItemRequest
+import com.example.lastmiledelivery.data.models.customer.StockItemRequestWrapper
+import com.example.lastmiledelivery.data.models.customer.StockItemResponse
 import com.example.lastmiledelivery.data.remote.api.CustomerApiService
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -519,6 +522,11 @@ class CustomerRepository @Inject constructor(private val api: CustomerApiService
         }
     }
 
+    suspend fun getStockForItems(items: List<StockItemRequest>): List<StockItemResponse>? {
+        val requestWrapper = StockItemRequestWrapper(items)
+        val response = api.getStockForItems(requestWrapper)
+        return if (response.isSuccessful) response.body()?.data else null
+    }
 
 
 
