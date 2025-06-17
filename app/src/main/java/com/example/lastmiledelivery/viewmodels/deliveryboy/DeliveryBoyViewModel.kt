@@ -19,6 +19,9 @@ import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyToggleRes
 import com.example.lastmiledelivery.data.models.deliveryboy.LatestLocationResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.ReachDestinationResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.ReadySuborder
+import com.example.lastmiledelivery.data.models.deliveryboy.Vehicle
+import com.example.lastmiledelivery.data.models.deliveryboy.VehicleCategory
+import com.example.lastmiledelivery.data.models.deliveryboy.VehicleRequest
 import com.example.lastmiledelivery.data.repository.deliveryboy.DeliveryBoyRepository
 import com.example.lastmiledelivery.ui.deliveryboy.interpolateLatLng
 import com.google.android.gms.maps.model.LatLng
@@ -348,6 +351,64 @@ fun fetchSingleAssignedSuborder(deliveryBoyId: Int, suborderId: Int) {
             isLoadingPaymentConfirm = false
         }
     }
+
+
+
+    var vehiclesState by mutableStateOf<List<Vehicle>?>(null)
+//    var vehicleCategories by mutableStateOf<List<VehicleCategory>>(emptyList())
+var vehicleCategories by mutableStateOf<List<VehicleCategory>>(emptyList())
+    private set
+    var errorMessageVehicle by mutableStateOf<String?>(null)
+
+    fun loadVehicles(deliveryBoyId: Int) {
+        viewModelScope.launch {
+            try {
+                val response = repository.getVehicles(deliveryBoyId)
+                if (response.isSuccessful && response.body()?.status == true) {
+                    vehiclesState = response.body()?.data?.vehicles
+                } else {
+                    vehiclesState = emptyList()
+                    loadVehicleCategories()
+                }
+            } catch (e: Exception) {
+                errorMessageVehicle = e.localizedMessage
+            }
+        }
+    }
+
+//    fun loadVehicleCategories() {
+//        viewModelScope.launch {
+//            val res = repository.getVehicleCategories()
+//            if (res.isSuccessful && res.body()?.status == true) {
+//                vehicleCategories = res.body()?.data ?: emptyList()
+//            }
+//        }
+//    }
+fun loadVehicleCategories() {
+    viewModelScope.launch {
+        val res = repository.getVehicleCategories()
+        if (res.isSuccessful && res.body()?.status == true) {
+            val list = res.body()?.data ?: emptyList()
+            Log.d("DEBUG_VM", "Categories fetched: ${list.size}")
+            vehicleCategories = list
+        } else {
+            Log.e("DEBUG_VM", "Failed to load categories")
+        }
+    }
+}
+
+
+    fun addVehicle(deliveryBoyId: Int, vehicle: VehicleRequest, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            val res = repository.addVehicle(deliveryBoyId, vehicle)
+            if (res.isSuccessful) {
+                onSuccess()
+                loadVehicles(deliveryBoyId)
+            }
+        }
+    }
+
+
 
 }
 

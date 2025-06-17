@@ -12,6 +12,7 @@ import com.example.lastmiledelivery.data.models.deliveryboy.PickupRequest
 import com.example.lastmiledelivery.data.models.deliveryboy.ReachDestinationRequest
 import com.example.lastmiledelivery.data.models.deliveryboy.ReachDestinationResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.ReadySuborder
+import com.example.lastmiledelivery.data.models.deliveryboy.VehicleRequest
 import com.example.lastmiledelivery.data.remote.api.DeliveryBoysApiService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.json.JSONObject
@@ -156,5 +157,10 @@ class DeliveryBoyRepository @Inject constructor(private val api: DeliveryBoysApi
             Result.failure(e)
         }
     }
+
+
+    suspend fun getVehicles(deliveryBoyId: Int) = api.getVehicles(deliveryBoyId)
+    suspend fun getVehicleCategories() = api.getVehicleCategories()
+    suspend fun addVehicle(deliveryBoyId: Int, vehicle: VehicleRequest) = api.addVehicle(deliveryBoyId, vehicle)
 
 }

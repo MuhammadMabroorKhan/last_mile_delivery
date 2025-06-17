@@ -34,6 +34,8 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -68,12 +70,16 @@ import com.example.lastmiledelivery.data.models.customer.CustomerData
 import com.example.lastmiledelivery.data.models.customer.OrderDetail
 import com.example.lastmiledelivery.data.models.customer.OrderRequest
 import com.example.lastmiledelivery.data.models.customer.StockItemRequest
+import com.example.lastmiledelivery.data.models.deliveryboy.VehicleCategory
 import com.example.lastmiledelivery.viewmodels.AuthViewModel
 import com.example.lastmiledelivery.viewmodels.customer.CartState
 import com.example.lastmiledelivery.viewmodels.customer.CustomerViewModel
+import com.example.lastmiledelivery.viewmodels.deliveryboy.DeliveryBoyViewModel
 import com.google.gson.Gson
 import java.net.URLDecoder
 import java.net.URLEncoder
+
+import kotlin.math.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -679,7 +685,8 @@ fun OrderConfirmationScreen(
     customerId: String,
     cartJson: String,
     customerJson: String,
-    customerViewModel: CustomerViewModel = hiltViewModel()
+    customerViewModel: CustomerViewModel = hiltViewModel(),
+    viewModel: DeliveryBoyViewModel = hiltViewModel()
 ) {
     val cartData: CartResponse =
         Gson().fromJson(URLDecoder.decode(cartJson, "UTF-8"), CartResponse::class.java)
@@ -699,6 +706,20 @@ fun OrderConfirmationScreen(
 
     var expanded by remember { mutableStateOf(false) }
     var selectedText by remember { mutableStateOf(selectedAddress?.street ?: "Select Address") }
+
+
+    val customerData by customerViewModel.customerData.collectAsState()
+    // Observe customer data and error messages
+    LaunchedEffect(customerId) {
+            customerViewModel.fetchCustomerMainScreen(customerId.toInt())
+    }
+
+    val categories = viewModel.vehicleCategories
+
+    LaunchedEffect(Unit) {
+        viewModel.loadVehicleCategories() // ✅ Make sure you load them
+    }
+    var estDeliveryCharges by remember { mutableStateOf<String?>(null) }
 
 
     Scaffold(topBar = {
@@ -724,70 +745,6 @@ fun OrderConfirmationScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Box(modifier = Modifier.fillMaxWidth()) {
-
-//                Row(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(horizontal = 8.dp),
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//
-//                    OutlinedTextField(
-//                        value = selectedText,
-//                        onValueChange = {},
-//                        readOnly = true,
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .clickable { expanded = true }, // ✅ Ensures full field is clickable
-//                        label = { Text("Delivery Address") },
-//                        trailingIcon = {
-//                            Icon(
-//                                imageVector = if (expanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
-//                                contentDescription = "Dropdown Icon",
-//                                modifier = Modifier.clickable {
-//                                    expanded = !expanded
-//                                } // ✅ Ensures arrow is clickable
-//                            )
-//                        }
-//                    )
-//
-//
-//
-//
-//
-//                    Spacer(modifier = Modifier.width(8.dp))
-//
-//                    Button(
-//                        onClick = {
-//                            navController.navigate("add_address/${customerId.toInt()}")
-//                        },
-//                        colors = ButtonDefaults.buttonColors(Color.Gray),
-//                        shape = RoundedCornerShape(8.dp),
-//                        modifier = Modifier.height(56.dp)
-//                    ) {
-//                        Text(text = "+ Add", color = Color.White)
-//                    }
-//
-//
-//
-//                    DropdownMenu(
-//                        expanded = expanded,
-//                        onDismissRequest = { expanded = false },
-//                        modifier = Modifier.fillMaxWidth()
-//                    ) {
-//                        addressList.forEach { address ->
-//                            DropdownMenuItem(
-//                                text = { Text(address.street) },
-//                                onClick = {
-//                                    selectedText = address.street
-//                                    customerViewModel.selectAddress(address)
-//                                    expanded = false
-//                                }
-//                            )
-//                        }
-//                    }
-//                }
-
 
                 Row(
                     modifier = Modifier
@@ -843,6 +800,9 @@ fun OrderConfirmationScreen(
 
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(cartData.suborders) { suborder ->
+                    val pickupLatLng = customerData?.find { it.branchId == suborder.branch_ID }?.let {
+                        Pair(it.latitude, it.longitude)
+                    }
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -850,7 +810,7 @@ fun OrderConfirmationScreen(
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "Shop: ${suborder.shop_ID}",
+                                text = "Shop: ${suborder.shop_ID} - ${suborder.vendor_type}",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp
                             )
@@ -870,6 +830,63 @@ fun OrderConfirmationScreen(
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(text = "Total: ${suborder.total_amount}")
+
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            val pickupLat = pickupLatLng?.first?.toDoubleOrNull()
+                            val pickupLng = pickupLatLng?.second?.toDoubleOrNull()
+                            val dropLat = selectedAddress?.latitude
+                            val dropLng = selectedAddress?.longitude
+
+                            val distanceInKm = if (
+                                pickupLat != null && pickupLng != null &&
+                                dropLat != null && dropLng != null
+                            ) {
+                                calculateDistanceInKm(pickupLat, pickupLng, dropLat, dropLng)
+                            } else null
+
+                            // 🔽 Pickup & Drop Location Section
+                            Text(
+                                text = "Pickup Location (Branch ID: ${suborder.branch_ID}):",
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF37474F)
+                            )
+                            if (pickupLatLng != null) {
+                                Text("Lat: ${pickupLatLng.first}  Lng: ${pickupLatLng.second}")
+                            } else {
+                                Text("Lat: N/A Lng: N/A")
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            Text(
+                                text = "Drop Location (Customer Address):",
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF37474F)
+                            )
+                            if (selectedAddress != null) {
+                                Text("Lat: ${selectedAddress?.latitude}  Lng: ${selectedAddress?.longitude}")
+                            } else {
+                                Text("Lat: N/A Lng: N/A")
+                            }
+
+                            Text(
+                                text = "Distance (Pickup → Drop):",
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF37474F)
+                            )
+                            Text(
+                                text = if (distanceInKm != null) "%.2f km".format(distanceInKm) else "N/A",
+                                fontSize = 14.sp,
+                                color = Color.DarkGray
+                            )
+
+                            EstimatedCharges(
+                                categories = categories,
+                                distanceInKm = distanceInKm
+                            ) { estimatedRange ->
+                                estDeliveryCharges = estimatedRange
+                            }
                         }
                     }
                 }
@@ -920,11 +937,62 @@ fun OrderConfirmationScreen(
 
 
 
+private fun calculateDistanceInKm(
+    lat1: Double,
+    lon1: Double,
+    lat2: Double,
+    lon2: Double
+): Double {
+    val R = 6371.0 // Radius of Earth in KM
+
+    val dLat = Math.toRadians(lat2 - lat1)
+    val dLon = Math.toRadians(lon2 - lon1)
+
+    val a = sin(dLat / 2).pow(2.0) +
+            cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+            sin(dLon / 2).pow(2.0)
+
+    val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    return R * c // in kilometers
+}
 
 
+@Composable
+private fun EstimatedCharges(
+    categories: List<VehicleCategory>,
+    distanceInKm: Double?,
+    onSelect: (String) -> Unit
+) {
+    val minCharge = categories.minOfOrNull { it.per_km_charge.toDoubleOrNull() ?: 0.0 } ?: 0.0
+    val maxCharge = categories.maxOfOrNull { it.per_km_charge.toDoubleOrNull() ?: 0.0 } ?: 0.0
 
+    val estimatedMin = if (distanceInKm != null) (minCharge * distanceInKm).toInt() else 0
+    val estimatedMax = if (distanceInKm != null) (maxCharge * distanceInKm).toInt() else 0
 
+    val estimatedText = if (distanceInKm != null) {
+        "Estimated Charges: $estimatedMin - $estimatedMax"
+    } else {
+        "N/A"
+    }
 
+    // Immediately invoke onSelect so the parent receives updated charges
+    LaunchedEffect(estimatedText) {
+        if (distanceInKm != null) {
+            onSelect(estimatedText)
+        }
+    }
+    // Show only the estimated charge in a readonly text field
+    OutlinedTextField(
+        value = estimatedText,
+        onValueChange = {},
+        readOnly = true,
+        label = { Text("Est Delivery Charges") },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    )
+}
 
 
 

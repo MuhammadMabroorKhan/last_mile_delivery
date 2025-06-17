@@ -73,12 +73,13 @@ class IN_APPVENDORItemRepository @Inject constructor(
         price: RequestBody,
         additionalInfo: RequestBody?,
         picture: MultipartBody.Part?,
-        attributes: Map<String, RequestBody>?
+        attributes: Map<String, RequestBody>?,
+        stock_qty:RequestBody
     ): Result<MessageResponse> {
         return try {
             val response = apiService.createItem(
                 vendorId, shopId, branchId, name,timesensitive,preparationTime, description, categoryId, branchesId,
-                variationName, price, additionalInfo, picture, attributes
+                variationName, price, additionalInfo, picture = picture, attributes =  attributes, stock_qty = stock_qty
             )
             if (response.isSuccessful) {
                 response.body()?.let {

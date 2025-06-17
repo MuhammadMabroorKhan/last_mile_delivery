@@ -47,8 +47,9 @@ data class CreateItemRequest(
     val price: Double,
     val additional_info: String?,
     val picture: MultipartBody.Part?, // Optional image
-    val attributes: List<ItemAttribute>? // Nullable list of attributes
-)
+    val attributes: List<ItemAttribute>?, // Nullable list of attributes
+    val stock_qty:Int
+    )
 
 data class ItemAttribute(
     val key: String,

@@ -122,7 +122,8 @@ class IN_APPVENDORItemViewModel @Inject constructor(
         price: RequestBody,
         additionalInfo: RequestBody?,
         picture: MultipartBody.Part?,
-        attributesList: List<ItemAttribute>
+        attributesList: List<ItemAttribute>,
+        stock_qty:RequestBody
     ) {
         viewModelScope.launch {
             val attributesMap = mutableMapOf<String, RequestBody>()
@@ -134,7 +135,7 @@ class IN_APPVENDORItemViewModel @Inject constructor(
             _createItemState.value = Result.failure(Exception("Loading...")) // Indicate loading state
             val result = repository.createItem(
                 vendorId, shopId, branchId, name, timesensitive,preparationTime,description, categoryId, branchesId,
-                variationName, price, additionalInfo, picture, attributesMap
+                variationName, price, additionalInfo, picture, attributesMap,stock_qty
             )
             _createItemState.value = result
         }

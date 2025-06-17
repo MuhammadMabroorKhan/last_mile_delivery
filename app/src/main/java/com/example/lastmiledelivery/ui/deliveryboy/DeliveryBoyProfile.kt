@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
@@ -125,7 +126,9 @@ fun DeliveryBoyProfileScreen(navController: NavHostController, authViewModel: Au
 
                 // Profile Options
                 DeliveryBoyProfileOption(icon = Icons.Default.Person, title = "Personal Info") {}
-                DeliveryBoyProfileOption(icon = Icons.Default.Favorite, title = "Favourite") {}
+                DeliveryBoyProfileOption(icon = Icons.Default.DirectionsCar, title = "Vehicle") {
+                    navController.navigate("vehicle_screen/${it.delivery_boy_id}")
+                }
                 DeliveryBoyProfileOption(icon = Icons.Default.History, title = "Past Order") {}
 //                ProfileOption(icon = Icons.Default.Help, title = "Help & Support") {}
 //                ProfileOption(icon = Icons.Default.Star, title = "Rating & Review") {}

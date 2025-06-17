@@ -375,6 +375,7 @@ fun CreateItemDialog(
     var additionalInfo by remember { mutableStateOf("") }
     var itemDescription by remember { mutableStateOf("") }
     var itemPrice by remember { mutableStateOf("") }
+    var itemStock by remember { mutableStateOf("") }
     var manualVariation by remember { mutableStateOf("") }
     val selectedAttributes = remember { mutableStateMapOf<String, String>() }
 
@@ -467,6 +468,14 @@ fun CreateItemDialog(
                     value = itemPrice,
                     onValueChange = { itemPrice = it },
                     label = { Text("Price") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = itemStock,
+                    onValueChange = { itemStock = it },
+                    label = { Text("Stock") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -736,6 +745,8 @@ fun CreateItemDialog(
                                 finalVariation.toRequestBody("text/plain".toMediaTypeOrNull())
                             val priceBody =
                                 itemPrice.toRequestBody("text/plain".toMediaTypeOrNull())
+                            val stockBody =
+                                itemStock.toRequestBody("text/plain".toMediaTypeOrNull())
                             val additionalInfoBody =
                                 additionalInfo.toRequestBody("text/plain".toMediaTypeOrNull())
 
@@ -758,7 +769,8 @@ fun CreateItemDialog(
                                 price = priceBody,
                                 additionalInfo = additionalInfoBody,
                                 picture = itemPicture,
-                                attributesList = attributesList
+                                attributesList = attributesList,
+                                stock_qty=stockBody
                             )
 
                         },

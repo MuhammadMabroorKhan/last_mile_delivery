@@ -2,6 +2,7 @@ package com.example.lastmiledelivery.data.remote.api
 
 import com.example.lastmiledelivery.data.models.deliveryboy.AcceptOrderResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.AssignedSuborderResponse
+import com.example.lastmiledelivery.data.models.deliveryboy.BasicResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyDataResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyPaymentConfirmResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyToggleResponse
@@ -13,6 +14,9 @@ import com.example.lastmiledelivery.data.models.deliveryboy.PickupSuccessRespons
 import com.example.lastmiledelivery.data.models.deliveryboy.ReachDestinationRequest
 import com.example.lastmiledelivery.data.models.deliveryboy.ReachDestinationResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.ReadySubordersResponse
+import com.example.lastmiledelivery.data.models.deliveryboy.VehicleCategoryResponse
+import com.example.lastmiledelivery.data.models.deliveryboy.VehicleRequest
+import com.example.lastmiledelivery.data.models.deliveryboy.VehicleResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -76,4 +80,16 @@ interface DeliveryBoysApiService {
     suspend fun confirmPaymentByDeliveryBoy(
         @Path("suborderId") suborderId: Int
     ): Response<DeliveryBoyPaymentConfirmResponse>
+
+    @GET("api/deliveryboy/{id}/vehicles")
+    suspend fun getVehicles(@Path("id") deliveryBoyId: Int): Response<VehicleResponse>
+
+    @GET("api/vehicle-categories")
+    suspend fun getVehicleCategories(): Response<VehicleCategoryResponse>
+
+    @POST("api/deliveryboys/{id}/vehicle")
+    suspend fun addVehicle(
+        @Path("id") deliveryBoyId: Int,
+        @Body vehicleRequest: VehicleRequest
+    ): Response<BasicResponse>
 }

@@ -47,6 +47,7 @@ import com.example.lastmiledelivery.ui.deliveryboy.DeliveryBoyProfileScreen
 import com.example.lastmiledelivery.ui.deliveryboy.ReadySubordersScreen
 import com.example.lastmiledelivery.ui.deliveryboy.ReadySubordersScreenFromMarker
 import com.example.lastmiledelivery.ui.deliveryboy.SuborderTrackingDeliveryBoyScreen
+import com.example.lastmiledelivery.ui.deliveryboy.VehicleScreen
 import com.example.lastmiledelivery.ui.organization.DeliveryBoyListScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationDeliveryBoySignupScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationMainScreen
@@ -531,6 +532,14 @@ fun AppNavigation() {
 
 //DeliveryBoy  Functionality ROUTES
         composable("deliveryBoy_Profile") { DeliveryBoyProfileScreen(navController) }
+
+        composable(
+            route = "vehicle_screen/{deliveryBoyId}",
+            arguments = listOf(navArgument("deliveryBoyId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val deliveryBoyId = backStackEntry.arguments?.getInt("deliveryBoyId") ?: 0
+            VehicleScreen(deliveryBoyId = deliveryBoyId, navController = navController)
+        }
 
         composable(
             route = "ready_suborders_deliveryBoyScreen/{deliveryBoyID}/{lmdUserID}",

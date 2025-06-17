@@ -136,6 +136,7 @@ interface VendorApiService {
         @Part("variation_name") variationName: RequestBody?,
         @Part("price") price: RequestBody,
         @Part("additional_info") additionalInfo: RequestBody?,
+        @Part("stock_qty") stock_qty:RequestBody,
         @Part picture: MultipartBody.Part?,
         @PartMap attributes: Map<String, @JvmSuppressWildcards RequestBody>?
     ): Response<MessageResponse>

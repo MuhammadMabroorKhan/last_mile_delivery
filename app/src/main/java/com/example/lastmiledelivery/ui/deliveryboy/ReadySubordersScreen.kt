@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -85,6 +86,12 @@ fun ReadySubordersScreen(
     val suborders = viewModel.readySuborders
     val isLoading = viewModel.isLoadingReadySuborders
     val error = viewModel.errorMessageReadySuborders
+
+    val vehicles = viewModel.vehiclesState
+
+    LaunchedEffect(Unit) {
+        viewModel.loadVehicles(deliveryBoyID)
+    }
 
     val response = viewModel.acceptOrderResponse.value
     val loading = viewModel.loading.value
@@ -274,6 +281,44 @@ fun ReadySubordersScreen(
                                         color = Color.Green,
                                         fontWeight = FontWeight.SemiBold
                                     )
+
+
+//if(vehicles != null && vehicles.isNotEmpty()) {
+//    LazyColumn(
+//        contentPadding = PaddingValues(16.dp),
+//        verticalArrangement = Arrangement.spacedBy(12.dp)
+//    ) {
+//        items(vehicles) { vehicle ->
+//            val perKm = vehicle.per_km_charge.toDoubleOrNull() ?: 0.0
+//            val totalCharge = perKm * distanceKm
+//
+//            Text(
+//                text = "Delivery Charges: ${vehicle.per_km_charge} × ${"%.2f".format(distanceKm)} = ${"%.0f".format(totalCharge)} Rs",
+//                fontWeight = FontWeight.Medium,
+//                color = Color.DarkGray
+//            )
+//
+//        }
+//    }
+//}
+                                    if (vehicles != null && vehicles.isNotEmpty()) {
+                                        Column(
+                                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                                            modifier = Modifier.padding(top = 8.dp)
+                                        ) {
+                                            vehicles.forEach { vehicle ->
+                                                val perKm = vehicle.per_km_charge.toDoubleOrNull() ?: 0.0
+                                                val totalCharge = perKm * distanceKm
+
+                                                Text(
+                                                    text = "Delivery Charges: ${vehicle.per_km_charge} × ${"%.2f".format(distanceKm)} = ${"%.0f".format(totalCharge)} Rs",
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = Color.DarkGray
+                                                )
+                                            }
+                                        }
+                                    }
+
 
                                     // Accept Order button
                                     Row(
