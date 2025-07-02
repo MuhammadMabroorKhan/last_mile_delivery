@@ -178,13 +178,13 @@ fun CustomerMainScreen(
                     },
                     actions = {
                         // Favorite Icon
-                        IconButton(onClick = { }) {
-                            Icon(
-                                Icons.Filled.Favorite,
-                                contentDescription = "Favorite",
-                                tint = Color.White // ✅ Set icon color to white
-                            )
-                        }
+//                        IconButton(onClick = { }) {
+//                            Icon(
+//                                Icons.Filled.Favorite,
+//                                contentDescription = "Favorite",
+//                                tint = Color.White // ✅ Set icon color to white
+//                            )
+//                        }
 
                         // Cart Icon
                         IconButton(onClick = {
@@ -399,15 +399,15 @@ fun ShopCard(
                 )
 
                 // Favorite Icon (Wishlist)
-                Icon(
-                    imageVector = Icons.Outlined.FavoriteBorder,
-                    contentDescription = "Favorite",
-                    tint = Color.Black,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp)
-                        .size(24.dp)
-                )
+//                Icon(
+//                    imageVector = Icons.Outlined.FavoriteBorder,
+//                    contentDescription = "Favorite",
+//                    tint = Color.Black,
+//                    modifier = Modifier
+//                        .align(Alignment.TopEnd)
+//                        .padding(8.dp)
+//                        .size(24.dp)
+//                )
             }
 
 

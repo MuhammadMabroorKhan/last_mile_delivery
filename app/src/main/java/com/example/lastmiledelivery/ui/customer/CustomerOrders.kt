@@ -3,7 +3,6 @@ package com.example.lastmiledelivery.ui.customer
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.util.Log
 import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
@@ -34,7 +33,6 @@ import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -50,13 +48,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,50 +67,33 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
 import coil.compose.AsyncImage
 import com.example.lastmiledelivery.R
 import com.example.lastmiledelivery.data.models.customer.Item
 import com.example.lastmiledelivery.data.models.customer.Order
 import com.example.lastmiledelivery.data.models.customer.SubOrders
 import com.example.lastmiledelivery.viewmodels.AuthViewModel
+import com.example.lastmiledelivery.viewmodels.common.StatusViewModel
 import com.example.lastmiledelivery.viewmodels.customer.CustomerViewModel
 import com.example.lastmiledelivery.viewmodels.customer.OrderUiState
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.maps.android.compose.Polyline
-
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.core.content.ContextCompat
-import com.example.lastmiledelivery.viewmodels.common.StatusViewModel
 import com.example.lastmiledelivery.viewmodels.deliveryboy.DeliveryBoyViewModel
 import com.example.lastmiledelivery.viewmodels.vendor.VendorViewModel
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.Dash
-import com.google.android.gms.maps.model.Dot
 import com.google.android.gms.maps.model.Gap
+import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.Polyline
+import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.GET
-import retrofit2.http.Path
-import retrofit2.http.Query
 
 
 //@OptIn(ExperimentalMaterial3Api::class)
@@ -756,36 +737,40 @@ fun SubOrderCard(
                 }
             }
 
-            // Track Order Button
-            Spacer(modifier = Modifier.height(16.dp)) // Add space before the button
-            Button(
-                onClick = {
-                    // Navigate to the track order screen and pass necessary parameters
-//                    navController.navigate("track_order/${suborder.suborder_id}/$customerId/$addressId")
-                    navController.navigate("track_order/${suborder.suborder_id}/$customerId/$addressId/${suborder.vendor_ID}/${suborder.shop_ID}/${suborder.branch_ID}")
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(colorResource(id = R.color.pink))
-            ) {
-                Text(text = "Track Order", color = Color.White)
-            }
-
-
-            if (suborder.suborder_status.equals("delivered", true)
-                || suborder.suborder_payment_status.equals("confirmed_by_customer",true)
+            if (!suborder.suborder_status.equals("cancelled", true)
                 ) {
+                // Track Order Button
                 Spacer(modifier = Modifier.height(16.dp)) // Add space before the button
                 Button(
                     onClick = {
-                        navController.navigate("order_rating/${suborder.suborder_id}")
+                        // Navigate to the track order screen and pass necessary parameters
+//                    navController.navigate("track_order/${suborder.suborder_id}/$customerId/$addressId")
+                        navController.navigate("track_order/${suborder.suborder_id}/$customerId/$addressId/${suborder.vendor_ID}/${suborder.shop_ID}/${suborder.branch_ID}")
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(colorResource(id = R.color.pink))
                 ) {
-                    Text(text = "Rating Order", color = Color.White)
+                    Text(text = "Track Order", color = Color.White)
+                }
+
+
+                if (suborder.suborder_status.equals("delivered", true)
+                    || suborder.suborder_payment_status.equals("confirmed_by_customer", true)
+                    || suborder.suborder_payment_status.equals("confirmed_by_vendor", true)
+                    || suborder.suborder_payment_status.equals("confirmed_by_deliveryboy", true)
+                ) {
+                    Spacer(modifier = Modifier.height(16.dp)) // Add space before the button
+                    Button(
+                        onClick = {
+                            navController.navigate("order_rating/${suborder.suborder_id}")
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(colorResource(id = R.color.pink))
+                    ) {
+                        Text(text = "Rating Order", color = Color.White)
+                    }
                 }
             }
-
         }
     }
 }
