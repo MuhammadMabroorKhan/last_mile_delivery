@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -149,10 +148,6 @@ fun ReadySubordersScreen(
         }
     }
 
-//    val isTestUser = remember {
-//        user.name.replace("_", "", ignoreCase = true).replace(" ", "", ignoreCase = true)
-//            .contains("testdeliveryboy", ignoreCase = true)
-//    }
     val isTestUser = remember {
         val normalizedName = user.name.replace("_", "", ignoreCase = true)
             .replace(" ", "", ignoreCase = true)
@@ -200,8 +195,14 @@ fun ReadySubordersScreen(
                             .lowercase()
 
                         val isTestCustomer = customerNameNormalized.contains("testcustomer")
-                        Log.d("TEST_CHECK", "${suborder.orders_ID},${suborder.suborder_id} user.name=${user.name}, isTestUser=$isTestUser")
-                        Log.d("TEST_CHECK", "${suborder.orders_ID},${suborder.suborder_id} customer.name=${suborder.customer.name}, isTestCustomer=$isTestCustomer")
+                        Log.d(
+                            "TEST_CHECK",
+                            "${suborder.orders_ID},${suborder.suborder_id} user.name=${user.name}, isTestUser=$isTestUser"
+                        )
+                        Log.d(
+                            "TEST_CHECK",
+                            "${suborder.orders_ID},${suborder.suborder_id} customer.name=${suborder.customer.name}, isTestCustomer=$isTestCustomer"
+                        )
 
                         // ✅ Only show matching orders based on user and customer test status
                         if ((isTestUser && isTestCustomer) || (!isTestUser && !isTestCustomer)) {
@@ -307,11 +308,16 @@ fun ReadySubordersScreen(
                                             modifier = Modifier.padding(top = 8.dp)
                                         ) {
                                             vehicles.forEach { vehicle ->
-                                                val perKm = vehicle.per_km_charge.toDoubleOrNull() ?: 0.0
+                                                val perKm =
+                                                    vehicle.per_km_charge.toDoubleOrNull() ?: 0.0
                                                 val totalCharge = perKm * distanceKm
 
                                                 Text(
-                                                    text = "Delivery Charges: ${vehicle.per_km_charge} × ${"%.2f".format(distanceKm)} = ${"%.0f".format(totalCharge)} Rs",
+                                                    text = "Delivery Charges: ${vehicle.per_km_charge} × ${
+                                                        "%.2f".format(
+                                                            distanceKm
+                                                        )
+                                                    } = ${"%.0f".format(totalCharge)} Rs",
                                                     fontWeight = FontWeight.Medium,
                                                     color = Color.DarkGray
                                                 )
@@ -329,7 +335,7 @@ fun ReadySubordersScreen(
                                     ) {
                                         Button(
                                             onClick = {
-                                            viewModel.acceptOrder(
+                                                viewModel.acceptOrder(
                                                     deliveryBoyID,
                                                     suborder.suborder_id
                                                 )

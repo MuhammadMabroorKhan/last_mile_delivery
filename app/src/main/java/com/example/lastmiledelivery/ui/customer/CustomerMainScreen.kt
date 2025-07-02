@@ -2,9 +2,7 @@ package com.example.lastmiledelivery.ui.customer
 
 import android.annotation.SuppressLint
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,21 +25,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,7 +43,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -61,7 +54,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -78,20 +70,15 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
-import coil.compose.rememberImagePainter
 import com.example.lastmiledelivery.R
 import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenResponse
-import com.example.lastmiledelivery.data.models.vendor.Shop
 import com.example.lastmiledelivery.viewmodels.AuthViewModel
 import com.example.lastmiledelivery.viewmodels.common.ShopCategoryViewModel
 import com.example.lastmiledelivery.viewmodels.customer.CustomerViewModel
-import com.example.lastmiledelivery.viewmodels.vendor.VendorViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -313,8 +300,10 @@ fun CustomerMainScreen(
 //                            }
 
                             val filteredShops = customerData?.filter { shop ->
-                                val matchesCategory = selectedCategoryId?.let { it == shop.shopCategoryId } ?: true
-                                val matchesSearchQuery = shop.shopName.contains(searchQuery, ignoreCase = true)
+                                val matchesCategory =
+                                    selectedCategoryId?.let { it == shop.shopCategoryId } ?: true
+                                val matchesSearchQuery =
+                                    shop.shopName.contains(searchQuery, ignoreCase = true)
 
                                 val isApiVendorOnly = if (isTestUser) {
                                     shop.vendorType.equals("API Vendor", ignoreCase = true)
@@ -557,92 +546,5 @@ fun DrawerItem(
         )
     }
 }
-
-//@Composable
-//fun DrawerContent(navController: NavHostController, drawerState: DrawerState, scope: CoroutineScope,authViewModel: AuthViewModel = hiltViewModel()) {
-//    Column(
-//        modifier = Modifier
-//            .fillMaxHeight()
-//            .width(250.dp)
-//            .background(Color.White)
-//            .padding(16.dp)
-//    ) {
-//        // Header
-//        Text(
-//            text = "Menu",
-//            style = MaterialTheme.typography.headlineMedium,
-//            modifier = Modifier.padding(bottom = 16.dp)
-//        )
-//
-//        // Navigation Items
-//        DrawerItem(
-//            text = "Dashboard",
-//            icon = Icons.Filled.Home,
-//            navController = navController,
-//            route = "customer",
-//            drawerState = drawerState,
-//            scope = scope
-//        )
-//
-//        DrawerItem(
-//            text = "Orders",
-//            icon = Icons.Filled.ShoppingCart,
-//            navController = navController,
-//            route = "orders",
-//            drawerState = drawerState,
-//            scope = scope
-//        )
-//
-//        DrawerItem(
-//            text = "Profile",
-//            icon = Icons.Filled.Person,
-//            navController = navController,
-//            route = "profile",
-//            drawerState = drawerState,
-//            scope = scope
-//        )
-//
-//        Spacer(modifier = Modifier.height(16.dp))
-//
-//        // ✅ Separate Logout Button
-//        Button(
-//            onClick = {
-//                authViewModel.logout() // Clear session
-//                navController.navigate("login") {
-//                    popUpTo("customer") { inclusive = true }
-//                }
-//                scope.launch { drawerState.close() }
-//            },
-//            modifier = Modifier.fillMaxWidth()
-//        ) {
-//            Text("Logout")
-//        }
-//    }
-//}
-//
-//@Composable
-//fun DrawerItem(
-//    text: String,
-//    icon: ImageVector,
-//    navController: NavHostController,
-//    route: String,
-//    drawerState: DrawerState,
-//    scope: CoroutineScope
-//) {
-//    Row(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .clickable {
-//                navController.navigate(route)
-//                scope.launch { drawerState.close() }
-//            }
-//            .padding(12.dp),
-//        verticalAlignment = Alignment.CenterVertically
-//    ) {
-//        Icon(imageVector = icon, contentDescription = text, modifier = Modifier.size(24.dp))
-//        Spacer(modifier = Modifier.width(12.dp))
-//        Text(text = text, style = MaterialTheme.typography.bodyLarge)
-//    }
-//}
 
 
