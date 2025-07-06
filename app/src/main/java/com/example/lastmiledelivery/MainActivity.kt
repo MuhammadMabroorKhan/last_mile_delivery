@@ -21,6 +21,8 @@ import com.example.lastmiledelivery.ui.admin.ApiVendorWebsiteMappingInfo
 import com.example.lastmiledelivery.ui.admin.ApiVendorsConnectionScreen
 import com.example.lastmiledelivery.ui.admin.BranchDetailScreen
 import com.example.lastmiledelivery.ui.admin.IntegrationDetailScreen
+import com.example.lastmiledelivery.ui.admin.LmdEarningsScreen
+import com.example.lastmiledelivery.ui.admin.LmdSettingsScreen
 import com.example.lastmiledelivery.ui.admin.MappingScreen
 import com.example.lastmiledelivery.ui.admin.PendingBranchesScreen
 import com.example.lastmiledelivery.ui.admin.VendorApprovalScreen
@@ -247,9 +249,17 @@ fun AppNavigation() {
         }
 
 
+// Admin Functionality ROUTES
+        composable("lmdSettings") {
+            LmdSettingsScreen(navController = navController) // 👈 split settings part here
+        }
+
+        composable("lmdEarnings") {
+            LmdEarningsScreen(navController = navController) // 👈 split earnings part here
+        }
 
 
-
+// Vendor
         composable("vendorDetail") { backStackEntry ->
             val parentEntry = remember(backStackEntry) {
                 navController.getBackStackEntry("vendorApproval")

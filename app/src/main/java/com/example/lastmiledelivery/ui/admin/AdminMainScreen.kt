@@ -34,8 +34,10 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Money
 import androidx.compose.material.icons.filled.Pending
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.Storefront
@@ -389,6 +391,25 @@ private fun DrawerContent(
             scope = scope
         )
 
+
+        DrawerItem(
+            text = "LMD Settings",
+            icon = Icons.Default.Settings,
+            navController = navController,
+            route = "lmdSettings",
+            drawerState = drawerState,
+            scope = scope
+        )
+
+        DrawerItem(
+            text = "LMD Earnings",
+            icon = Icons.Default.Money, // or use any relevant icon
+            navController = navController,
+            route = "lmdEarnings",
+            drawerState = drawerState,
+            scope = scope
+        )
+
         // 🔹 **Logout (Same Design as Other Items)**
         DrawerItem(
             text = "Logout",
@@ -400,6 +421,9 @@ private fun DrawerContent(
             isLogout = true, // Special handling
             authViewModel = authViewModel
         )
+
+
+
     }
 }
 

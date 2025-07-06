@@ -16,6 +16,9 @@ import com.example.lastmiledelivery.data.models.admin.CorrectRejectionRequest
 import com.example.lastmiledelivery.data.models.admin.GenericResponse
 import com.example.lastmiledelivery.data.models.admin.GetApiVendorResponse
 import com.example.lastmiledelivery.data.models.admin.IntegrationResponse
+import com.example.lastmiledelivery.data.models.admin.LmdEarningsResponse
+import com.example.lastmiledelivery.data.models.admin.LmdSetting
+import com.example.lastmiledelivery.data.models.admin.LmdSettingResponse
 import com.example.lastmiledelivery.data.models.admin.MessageResponse
 import com.example.lastmiledelivery.data.models.admin.MethodsTemplateResponse
 import com.example.lastmiledelivery.data.models.admin.PendingBranchesResponse
@@ -165,6 +168,23 @@ interface AdminApiService {
     //Admin Stats and summary
     @GET("api/admin/admin-stats")
     suspend fun getAdminStats(): Response<AdminStatsResponse>
+
+
+    //Lmd Setting and Response
+    @GET("api/admin/lmd-settings")
+    suspend fun getLmdSettings(): Response<LmdSettingResponse>
+
+    @POST("api/admin/lmd-settings/order-charge")
+    suspend fun updateOrderCharge(@Body value: Map<String, Double>): Response<LmdSetting>
+
+    @POST("api/admin/lmd-settings/tax-percentage")
+    suspend fun updateTaxPercentage(@Body value: Map<String, Double>): Response<LmdSetting>
+
+    @POST("api/admin/lmd-settings/pickup-radius")
+    suspend fun updatePickupRadius(@Body value: Map<String, Double>): Response<LmdSetting>
+
+    @GET("api/admin/lmd-earnings")
+    suspend fun getLmdEarnings(): Response<LmdEarningsResponse>
 }
 
 

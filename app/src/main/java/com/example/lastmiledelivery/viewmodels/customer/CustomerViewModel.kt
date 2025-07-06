@@ -30,6 +30,7 @@ import com.example.lastmiledelivery.data.models.customer.DeliveryBoyRatingReques
 import com.example.lastmiledelivery.data.models.customer.GenericResponse
 import com.example.lastmiledelivery.data.models.customer.ItemRatingRequest
 import com.example.lastmiledelivery.data.models.customer.LiveLocationData
+import com.example.lastmiledelivery.data.models.customer.MenuItem
 import com.example.lastmiledelivery.data.models.customer.MenuResponse
 import com.example.lastmiledelivery.data.models.customer.Order
 import com.example.lastmiledelivery.data.models.customer.OrderDetailsResponse
@@ -49,6 +50,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -723,18 +725,6 @@ class CustomerViewModel @Inject constructor(
 
 
 
-//    private val _stockState = mutableStateOf<List<StockItemResponse>>(emptyList())
-//    val stockState: State<List<StockItemResponse>> = _stockState
-//
-//    fun fetchStockForItems(itemRequests: List<StockItemRequest>) {
-//        viewModelScope.launch {
-//            val stockList = repository.getStockForItems(itemRequests)
-//            stockList?.let {
-//                _stockState.value = it
-//            }
-//        }
-//    }
-
     private val _stockState = mutableStateOf<List<StockItemResponse>>(emptyList())
     val stockState: State<List<StockItemResponse>> = _stockState
 
@@ -746,6 +736,38 @@ class CustomerViewModel @Inject constructor(
             }
         }
     }
+
+
+
+
+    //For main screen items
+    private val _multiMenuState = MutableStateFlow<Map<String, List<EnrichedMenuItem>>>(emptyMap())
+    val multiMenuState: StateFlow<Map<String, List<EnrichedMenuItem>>> = _multiMenuState
+
+    fun fetchMultiVendorMenu(vendorId: Int, shopId: Int, branchId: Int) {
+        viewModelScope.launch {
+            val result = repository.getVendorMenu(vendorId, shopId, branchId)
+            result.onSuccess { response ->
+                val key = "$vendorId-$shopId-$branchId"
+
+                val enrichedItems = response.items.orEmpty().map { menuItem ->
+                    EnrichedMenuItem(
+                        item = menuItem,
+                        vendorId = vendorId,
+                        shopId = shopId,
+                        branchId = branchId
+                    )
+                }
+
+                _multiMenuState.update { currentMap ->
+                    currentMap + (key to enrichedItems)
+                }
+            }.onFailure { error ->
+                Log.e("VendorMenu", "Failed to fetch menu: ${error.localizedMessage}")
+            }
+        }
+    }
+
 
 }
 
@@ -790,6 +812,14 @@ sealed class CartState {
     data class Empty(val message: String) : CartState()
 }
 
+
+//For main screen
+data class EnrichedMenuItem(
+    val item: MenuItem,
+    val vendorId: Int,
+    val shopId: Int,
+    val branchId: Int
+)
 
 
 

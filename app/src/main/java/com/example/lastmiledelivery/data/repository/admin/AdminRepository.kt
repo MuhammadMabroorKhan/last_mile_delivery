@@ -16,6 +16,7 @@ import com.example.lastmiledelivery.data.models.admin.CorrectRejectionRequest
 import com.example.lastmiledelivery.data.models.admin.GenericResponse
 import com.example.lastmiledelivery.data.models.admin.GetApiVendorResponse
 import com.example.lastmiledelivery.data.models.admin.IntegrationResponse
+import com.example.lastmiledelivery.data.models.admin.LmdSettingResponse
 import com.example.lastmiledelivery.data.models.admin.MethodsTemplateResponse
 import com.example.lastmiledelivery.data.models.admin.PendingBranch
 import com.example.lastmiledelivery.data.models.admin.RejectBranchRequest
@@ -293,6 +294,18 @@ class VendorApprovalRepository @Inject constructor(
             null
         }
     }
+
+
+    // Lmd Setting and Earning
+//    suspend fun getLmdSettings() = apiService.getLmdSettings()
+    suspend fun getLmdSettings(): Response<LmdSettingResponse> {
+        return apiService.getLmdSettings()
+    }
+
+    suspend fun updateOrderCharge(value: Double) = apiService.updateOrderCharge(mapOf("value" to value))
+    suspend fun updateTaxPercentage(value: Double) = apiService.updateTaxPercentage(mapOf("value" to value))
+    suspend fun updatePickupRadius(value: Double) = apiService.updatePickupRadius(mapOf("value" to value))
+    suspend fun getLmdEarnings() = apiService.getLmdEarnings()
 
 }
 

@@ -29,28 +29,36 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -77,6 +85,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -84,7 +93,9 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.lastmiledelivery.R
+import com.example.lastmiledelivery.data.models.customer.CartMenuItem
 import com.example.lastmiledelivery.data.models.customer.CustomerMainScreenResponse
+import com.example.lastmiledelivery.data.models.customer.MenuItem
 import com.example.lastmiledelivery.viewmodels.AuthViewModel
 import com.example.lastmiledelivery.viewmodels.common.ShopCategoryViewModel
 import com.example.lastmiledelivery.viewmodels.customer.CustomerViewModel
@@ -127,6 +138,11 @@ fun CustomerMainScreen(
     val errorMessage by customerViewModel.errorMessages.collectAsState()
 
     var selectedCategoryId by remember { mutableStateOf<Int?>(null) }
+
+    val searchOptions = listOf("Shops", "Items")
+    var selectedSearchType by remember { mutableStateOf(searchOptions[0]) }
+    var expanded by remember { mutableStateOf(false) }
+
 
     // Redirect to login if not logged in
     LaunchedEffect(Unit) {
@@ -214,6 +230,20 @@ fun CustomerMainScreen(
         }
     }
 
+
+    val enrichedMenuMap by customerViewModel.multiMenuState.collectAsState()
+    val allEnrichedItems = enrichedMenuMap.values.flatten() // limit for "Popular Items"
+
+    LaunchedEffect(customerData) {
+        customerData?.forEach { shop ->
+            customerViewModel.fetchMultiVendorMenu(
+                vendorId = shop.vendorId,
+                shopId = shop.shopId,
+                branchId = shop.branchId
+            )
+        }
+    }
+
     ModalNavigationDrawer(drawerState = drawerState, drawerContent = {
         DrawerContent(navController, drawerState, scope)
     }) {
@@ -252,132 +282,265 @@ fun CustomerMainScreen(
             )
             )
         }) { paddingValues ->
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                // Pink Background with Curved Bottom
+                // 🔴 1. PINK HEADER BACKGROUND
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(220.dp) // Adjust height for the curve effect
+                        .height(145.dp)
                         .background(
-                            color = colorResource(id = R.color.pink), // Pink Shade
-                            shape = RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp)
+                            color = colorResource(id = R.color.pink),
+                            shape = RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp)
                         )
                 )
 
-                // Content Section (Scrollable)
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = 8.dp) // Adjust padding to prevent overlap with header
-                        .verticalScroll(rememberScrollState()),
-                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "Hi! ${user.name}",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = Color.White, // Ensure text is visible on pink background
+
+                    // 🔵 2. FIXED TOP HEADER CONTENT (name + search + categories + items)
+                    Column(
                         modifier = Modifier
-                            .align(Alignment.Start)
-                            .padding(start = 16.dp)
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    TextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = {
-                            Text(
-                                "Search Here", color = Color.Gray
-                            )
-                        }, // Gray placeholder text
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search Icon",
-                                tint = Color.Gray // Gray icon
-                            )
-                        },
-                        textStyle = TextStyle(color = Color.Black), // Input text color black
-                        colors = TextFieldDefaults.textFieldColors(
-                            cursorColor = Color.Black, // Cursor color black
-                            focusedIndicatorColor = Color.Transparent, // Remove bottom border
-                            unfocusedIndicatorColor = Color.Transparent, // Remove bottom border
-                            containerColor = Color.White // White background for the field
-                        ),
-                        shape = RoundedCornerShape(20.dp), // Fully rounded field
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 10.dp)
-                            .height(50.dp) // Match height to image
-                    )
-                    // Category Selection Row
-                    LazyRow(
-                        modifier = Modifier.padding(8.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp)
+                            .padding(top = 2.dp)
+                            .background(Color.Transparent)
                     ) {
-                        items(categories) { category ->
-                            CategoryButton(name = category.name,
-                                id = category.id,
-                                isSelected = selectedCategoryId == category.id,
-                                onClick = {
-                                    selectedCategoryId =
-                                        if (selectedCategoryId == category.id) null else category.id
-                                })
+                        // 👤 Greeting
+                        Text(
+                            text = "Hi! ${user.name}",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White,
+                            modifier = Modifier
+                                .padding(start = 16.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // 🔍 Search Box
+                            TextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                placeholder = {
+                                    Text(
+                                        "Search ${selectedSearchType}",
+                                        color = Color.Gray
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Search,
+                                        contentDescription = "Search",
+                                        tint = Color.Gray
+                                    )
+                                },
+                                textStyle = TextStyle(color = Color.Black),
+                                colors = TextFieldDefaults.textFieldColors(
+                                    cursorColor = Color.Black,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    containerColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier
+                                    .weight(1f) // 🔻 Make it fill remaining space
+                                    .height(50.dp)
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            // 🔄 Dropdown Selector
+                            Box {
+                                OutlinedButton(
+                                    onClick = { expanded = true },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.height(50.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = Color.White // ✅ White text
+                                    ),
+                                    border = BorderStroke(1.dp, Color.White) // ✅ White border
+                                ) {
+                                    Text(
+                                        text = selectedSearchType,
+                                        color = Color.White
+                                    ) // ✅ Ensure text is white)
+                                }
+
+                                DropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false }
+                                ) {
+                                    searchOptions.forEach { option ->
+                                        DropdownMenuItem(
+                                            text = { Text(option) },
+                                            onClick = {
+                                                selectedSearchType = option
+                                                expanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // 📂 Category Buttons
+                        LazyRow(contentPadding = PaddingValues(horizontal = 8.dp)) {
+                            items(categories) { category ->
+                                CategoryButton(
+                                    name = category.name,
+                                    id = category.id,
+                                    isSelected = selectedCategoryId == category.id,
+                                    onClick = {
+                                        selectedCategoryId =
+                                            if (selectedCategoryId == category.id) null else category.id
+                                    }
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // ⭐ Popular Items
+                        Text(
+                            text = "Popular Items",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(start = 16.dp, top = 5.dp)
+                        )
+
+                        // item in only one row...
+//                        LazyRow(
+//                            contentPadding = PaddingValues(horizontal = 12.dp),
+//                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+//                        ) {
+//                            items(allEnrichedItems) { enriched ->
+//                                MenuItemCard(
+//                                    item = enriched.item,
+//                                    vendor_id = enriched.vendorId,
+//                                    shop_id = enriched.shopId,
+//                                    branch_id = enriched.branchId,
+//                                    viewModel = customerViewModel
+//                                )
+//                            }
+//                        }
+
+                        val filteredItems =
+                            remember(searchQuery, selectedSearchType, allEnrichedItems) {
+                                when (selectedSearchType) {
+                                    "Items" -> allEnrichedItems.filter {
+                                        it.item.item_name.contains(searchQuery, ignoreCase = true)
+                                    }
+
+                                    else -> allEnrichedItems
+                                }
+                            }
+
+                        val totalItems = filteredItems.size
+                        val half = totalItems / 2
+
+                        val firstRowItems = if (totalItems % 2 == 0) {
+                            filteredItems.subList(0, half)
+                        } else {
+                            filteredItems.subList(0, half + 1)
+                        }
+                        val secondRowItems = filteredItems.subList(
+                            half + (if (totalItems % 2 == 0) 0 else 1),
+                            totalItems
+                        )
+
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(firstRowItems) { enriched ->
+                                    MenuItemCard(
+                                        item = enriched.item,
+                                        vendor_id = enriched.vendorId,
+                                        shop_id = enriched.shopId,
+                                        branch_id = enriched.branchId,
+                                        viewModel = customerViewModel
+                                    )
+                                }
+                            }
+
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(secondRowItems) { enriched ->
+                                    MenuItemCard(
+                                        item = enriched.item,
+                                        vendor_id = enriched.vendorId,
+                                        shop_id = enriched.shopId,
+                                        branch_id = enriched.branchId,
+                                        viewModel = customerViewModel
+                                    )
+                                }
+                            }
                         }
                     }
 
-                    // White Section Starts Here
+                    // ⚪️ 3. SCROLLABLE SHOP SECTION
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .clip(
-                                RoundedCornerShape(
-                                    topStart = 40.dp, topEnd = 40.dp
-                                )
-                            ) // Top curve for transition
+                            .clip(RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp))
                             .background(Color.White)
-                            .padding(16.dp),
-                        contentAlignment = Alignment.TopCenter
+                            .padding(16.dp)
+                            .verticalScroll(rememberScrollState()) // ✅ Only this scrolls
                     ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             val filteredShops = customerData?.filter { shop ->
                                 val matchesCategory =
                                     selectedCategoryId?.let { it == shop.shopCategoryId } ?: true
-                                val matchesSearchQuery =
-                                    shop.shopName.contains(searchQuery, ignoreCase = true)
 
+                                val matchesSearchQuery = when (selectedSearchType) {
+                                    "Shops" -> shop.shopName.contains(
+                                        searchQuery,
+                                        ignoreCase = true
+                                    )
+
+                                    else -> true // Don't include "Items" filter here
+                                }
                                 val isApiVendorOnly = if (isTestUser) {
                                     shop.vendorType.equals("API Vendor", ignoreCase = true)
-                                } else {
-                                    true // Non-test users see all
-                                }
+                                } else true
+
                                 matchesCategory && matchesSearchQuery && isApiVendorOnly
                             }
 
-// Display filtered shops
+
                             filteredShops?.forEach { shop ->
                                 ShopCard(shop, customerViewModel, navController, currentLocation)
                             }
 
-// If no shops match the filter
                             if (filteredShops != null && filteredShops.isEmpty()) {
                                 Text(
                                     text = "No shops match your criteria.",
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
-
-
                         }
                     }
                 }
             }
+
         }
     }
 }
@@ -513,14 +676,6 @@ fun ShopCard(
                         )
                     }
 
-//                    distanceKm?.let {
-//                        Text(
-//                            text = distanceKm?.let { "$it km" } ?: "-- km",
-//                            style = MaterialTheme.typography.bodySmall,
-//                            color = Color.Gray
-//                        )
-//
-//                    }
                     Text(
                         text = distanceKm?.let { "$it km" } ?: "-- km",
                         style = MaterialTheme.typography.bodySmall,
@@ -623,6 +778,223 @@ fun getCurrentLocation(context: Context, onLocationResult: (Location?) -> Unit) 
     }
 }
 
+
+@Composable
+private fun MenuItemCard(
+    item: MenuItem,
+    vendor_id: Int,
+    shop_id: Int,
+    branch_id: Int,
+    viewModel: CustomerViewModel,
+    authViewModel: AuthViewModel = hiltViewModel()
+) {
+    val user = remember { authViewModel.getUserDetails() }
+    val customerData by viewModel.customerData.collectAsState()
+    val errorMessage by viewModel.errorMessages.collectAsState()
+
+    var showDialog by remember { mutableStateOf(false) }
+    var quantity by remember { mutableStateOf(1) }
+
+    LaunchedEffect(key1 = user.id) {
+        viewModel.fetchCustomerData(user.id)
+    }
+
+    val customer = viewModel.customerState
+
+    // ✅ Show dialog when triggered
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = item.item_name, style = MaterialTheme.typography.titleLarge)
+                    IconButton(onClick = { showDialog = false }) {
+                        Icon(Icons.Default.Close, contentDescription = "Close")
+                    }
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    AsyncImage(
+                        model = item.itemPicture,
+                        contentDescription = "Item Image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    item.item_description?.let {
+                        Text("Description: $it")
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+
+                    Text("Variation: ${item.variation_name}")
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text("Category: ${item.item_category_name}")
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text("Preparation Time: ${item.preparation_time} mins")
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text("Time Sensitive: ${item.timesensitive}")
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    item.additional_info?.let {
+                        Text("Additional Info: $it")
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+
+                    Text("Price: Rs. ${item.price}")
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // ✅ Attributes
+                    item.attributes?.takeIf { it.isNotEmpty() }?.let { attributes ->
+                        Text("Attributes:")
+                        Spacer(modifier = Modifier.height(4.dp))
+                        attributes.forEach { attr ->
+                            Text("- ${attr.key}: ${attr.value}")
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
+                    // ✅ Quantity row
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        IconButton(onClick = { if (quantity > 1) quantity-- }) {
+                            Icon(Icons.Default.Remove, contentDescription = "Decrease Quantity")
+                        }
+                        Text(
+                            text = quantity.toString(),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                        IconButton(onClick = { quantity++ }) {
+                            Icon(Icons.Default.Add, contentDescription = "Increase Quantity")
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val cartItem = CartMenuItem(
+                        id = item.item_id,
+                        item_name = item.item_name,
+                        item_description = item.item_description,
+                        price = item.price.toDoubleOrNull() ?: 0.0,
+                        itemPicture = item.itemPicture ?: "",
+                        vendor_id = vendor_id,
+                        shop_id = shop_id,
+                        branch_id = branch_id,
+                        itemdetails_id = item.itemdetail_id
+                    )
+
+                    customer?.customerId?.let {
+                        viewModel.addItemToCart(
+                            customerId = it,
+                            item = cartItem,
+                            quantity = quantity
+                        )
+                    }
+
+                    showDialog = false
+                    quantity = 1
+                }) {
+                    Text("Add to Cart")
+                }
+            }
+        )
+    }
+
+//Main Card UI
+    if (
+        item.item_name != null &&
+        item.price != null &&
+        item.itemPicture != null &&
+        item.variation_name != null
+    ) {
+        Card(
+            modifier = Modifier
+                .width(150.dp)
+                .padding(4.dp),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(4.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                AsyncImage(
+                    model = item.itemPicture,
+                    contentDescription = "Item Image",
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = item.item_name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Rs. ${(item.price.toDoubleOrNull()?.toInt() ?: 0)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.Black
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp) // Small, but enough space
+                            .clip(CircleShape)
+                            .background(Color.Red)
+                            .clickable { showDialog = true },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add",
+                            tint = Color.White,
+                            modifier = Modifier.size(14.dp) // Icon size
+                        )
+                    }
+
+                }
+            }
+        }
+
+
+    }
+
+}
 
 @Composable
 private fun DrawerContent(

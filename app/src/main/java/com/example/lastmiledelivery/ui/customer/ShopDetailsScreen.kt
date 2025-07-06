@@ -364,7 +364,7 @@ fun CategoryItem(categoryName: String, isSelected: Boolean, onClick: () -> Unit)
 }
 
 @Composable
-fun MenuItemCard(
+private fun MenuItemCard(
     item: MenuItem,
     vendor_id: Int,
     shop_id: Int,
