@@ -258,7 +258,7 @@ fun FilterSection(
 
 
 @Composable
-fun DatePickerField(
+private fun DatePickerField(
     label: String,
     value: LocalDate?,
     onClick: () -> Unit,

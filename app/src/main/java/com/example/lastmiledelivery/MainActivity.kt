@@ -34,6 +34,7 @@ import com.example.lastmiledelivery.ui.common.SplashScreen
 import com.example.lastmiledelivery.ui.customer.AddAddressScreen
 import com.example.lastmiledelivery.ui.customer.CartScreen
 import com.example.lastmiledelivery.ui.customer.CustomerMainScreen
+import com.example.lastmiledelivery.ui.customer.CustomerOrderHistory
 import com.example.lastmiledelivery.ui.customer.CustomerOrders
 import com.example.lastmiledelivery.ui.customer.CustomerProfileScreen
 import com.example.lastmiledelivery.ui.customer.CustomerSignupScreen
@@ -448,6 +449,7 @@ fun AppNavigation() {
 
         composable("customerProfile") { CustomerProfileScreen(navController) }
         composable("personal_info") { EditPersonalInfoScreen(navController) }
+        composable("customer_order_history") { CustomerOrderHistory(navController) }
 
         composable("cart") {
             CartScreen(navController)

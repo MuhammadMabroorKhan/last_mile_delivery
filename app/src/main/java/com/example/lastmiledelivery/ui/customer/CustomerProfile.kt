@@ -1,46 +1,19 @@
 package com.example.lastmiledelivery.ui.customer
 
 
-
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.colorResource
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
-import com.example.lastmiledelivery.R
-import com.example.lastmiledelivery.viewmodels.AuthViewModel
-import com.example.lastmiledelivery.viewmodels.customer.CustomerViewModel
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -61,23 +34,40 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
-import com.example.lastmiledelivery.ui.common.ProfilePicturePicker
+import com.example.lastmiledelivery.R
+import com.example.lastmiledelivery.viewmodels.AuthViewModel
+import com.example.lastmiledelivery.viewmodels.customer.CustomerViewModel
 
 
-
-
-//@OptIn(ExperimentalMaterial3Api::class)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomerProfileScreen(navController: NavHostController,authViewModel: AuthViewModel= hiltViewModel(), customerViewModel: CustomerViewModel = hiltViewModel()) {
+fun CustomerProfileScreen(
+    navController: NavHostController,
+    authViewModel: AuthViewModel = hiltViewModel(),
+    customerViewModel: CustomerViewModel = hiltViewModel()
+) {
     val user = remember { authViewModel.getUserDetails() }
 
     // Trigger data fetch when the composable enters composition
@@ -86,15 +76,15 @@ fun CustomerProfileScreen(navController: NavHostController,authViewModel: AuthVi
     }
     // Observe customer data and error messages
     val customer = customerViewModel.customerState
-    LaunchedEffect(Unit) {
-        val customerId = customerViewModel.getCustomerId()
-        if (customerId != -1) {
-            if (customerId != null) {
-                customerViewModel.fetchCustomerData(customerId)
-            }
-        }
-    }
-        Scaffold(
+//    LaunchedEffect(Unit) {
+//        val customerId = customerViewModel.getCustomerId()
+//        if (customerId != -1) {
+//            if (customerId != null) {
+//                customerViewModel.fetchCustomerData(customerId)
+//            }
+//        }
+//    }
+    Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Profile", color = Color.White) },
@@ -153,7 +143,9 @@ fun CustomerProfileScreen(navController: NavHostController,authViewModel: AuthVi
                     navController.navigate("personal_info")
                 }
                 ProfileOption(icon = Icons.Default.Favorite, title = "Favourite") {}
-                ProfileOption(icon = Icons.Default.History, title = "Past Order") {}
+                ProfileOption(icon = Icons.Default.History, title = "Order History") {
+                    navController.navigate("customer_order_history")
+                }
 //                ProfileOption(icon = Icons.Default.Help, title = "Help & Support") {}
 //                ProfileOption(icon = Icons.Default.Star, title = "Rating & Review") {}
 //                ProfileOption(icon = Icons.Default.Menu, title = "Create Menu") {}
@@ -178,11 +170,20 @@ fun ProfileOption(icon: ImageVector, title: String, onClick: () -> Unit) {
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = title, tint = Color.Black, modifier = Modifier.size(24.dp))
+            Icon(
+                icon,
+                contentDescription = title,
+                tint = Color.Black,
+                modifier = Modifier.size(24.dp)
+            )
             Spacer(modifier = Modifier.width(16.dp))
             Text(text = title, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.weight(1f))
-            Icon(imageVector = Icons.Default.ArrowForward, contentDescription = "Go", tint = Color.Gray)
+            Icon(
+                imageVector = Icons.Default.ArrowForward,
+                contentDescription = "Go",
+                tint = Color.Gray
+            )
         }
     }
 }
@@ -211,9 +212,10 @@ fun EditPersonalInfoScreen(
     var password by remember { mutableStateOf("") }
     var profilePicUri by remember { mutableStateOf<Uri?>(null) }
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let { profilePicUri = it }
-    }
+    val imagePickerLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            uri?.let { profilePicUri = it }
+        }
 
     LaunchedEffect(customer) {
         customer?.let {
@@ -222,7 +224,8 @@ fun EditPersonalInfoScreen(
             phone = it.phoneNo
             cnic = it.cnic
             password = it.password
-            profilePicUri = it.profilePicture?.let { Uri.parse(it) } // Convert string to URI if available
+            profilePicUri =
+                it.profilePicture?.let { Uri.parse(it) } // Convert string to URI if available
         }
     }
 
@@ -232,7 +235,11 @@ fun EditPersonalInfoScreen(
                 title = { Text("Edit Profile", color = Color.Black) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.Black
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -262,29 +269,38 @@ fun EditPersonalInfoScreen(
 
             OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
             Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") })
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") })
             Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Phone") })
+            OutlinedTextField(
+                value = phone,
+                onValueChange = { phone = it },
+                label = { Text("Phone") })
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(value = cnic, onValueChange = { cnic = it }, label = { Text("CNIC") })
             Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") })
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") })
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
                 onClick = {
 
-                        customerViewModel.updateCustomer(
-                            customerId = user.id,
-                            name = name,
-                            email = email,
-                            phoneNo = phone,
-                            password = password,
-                            cnic = cnic,
-                            profilePictureUri = profilePicUri,
-                            context = context // Pass context to handle file conversion
-                        )
+                    customerViewModel.updateCustomer(
+                        customerId = user.id,
+                        name = name,
+                        email = email,
+                        phoneNo = phone,
+                        password = password,
+                        cnic = cnic,
+                        profilePictureUri = profilePicUri,
+                        context = context // Pass context to handle file conversion
+                    )
 
 
                     //navController.popBackStack()
@@ -300,7 +316,8 @@ fun EditPersonalInfoScreen(
         LaunchedEffect(customerViewModel.updateState) {
             customerViewModel.updateState?.let { result ->
                 result.onSuccess {
-                    Toast.makeText(context, "Customer updated successfully!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Customer updated successfully!", Toast.LENGTH_LONG)
+                        .show()
                 }.onFailure { error ->
                     Toast.makeText(context, "Error: ${error.message}", Toast.LENGTH_LONG).show()
                 }
