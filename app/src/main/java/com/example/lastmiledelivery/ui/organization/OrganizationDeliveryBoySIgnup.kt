@@ -91,6 +91,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Money
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.DatePickerDialog
@@ -470,9 +471,17 @@ fun DeliveryBoyListScreen(
                     ) {
                         items(deliveryBoys) { boy ->
 //                            DeliveryBoyItem(deliveryBoy = boy)
-                            DeliveryBoyItem(deliveryBoy = boy, onClick = {
-                                selectedBoy = boy
-                            })
+//                            DeliveryBoyItem(deliveryBoy = boy, onClick = {
+//                                selectedBoy = boy
+//                            })
+                            DeliveryBoyItem(
+                                deliveryBoy = boy,
+                                onClick = { selectedBoy = boy },
+                                onViewEarnings = {
+                                    navController.navigate("organization_deliveryboy_earnings/${orgId}/${boy.id}")
+                                }
+                            )
+
                             Spacer(modifier = Modifier.height(12.dp))
                         }
                     }
@@ -487,9 +496,40 @@ fun DeliveryBoyListScreen(
         }
     }
 }
-
+//
+//@Composable
+//fun DeliveryBoyItem(deliveryBoy: DeliveryBoy, onClick: () -> Unit) {
+//    Card(
+//        shape = RoundedCornerShape(12.dp),
+//        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .clickable { onClick() }
+//    ) {
+//        Row(
+//            verticalAlignment = Alignment.CenterVertically,
+//            modifier = Modifier.padding(16.dp)
+//        ) {
+//            AsyncImage(
+//                model = deliveryBoy.profile_picture,
+//                contentDescription = null,
+//                modifier = Modifier
+//                    .size(64.dp)
+//                    .clip(CircleShape)
+//            )
+//
+//            Spacer(modifier = Modifier.width(16.dp))
+//
+//            Column {
+//                Text(text = deliveryBoy.name, fontWeight = FontWeight.Bold)
+//                Text(text = deliveryBoy.email, style = MaterialTheme.typography.bodySmall)
+//                Text(text = "Status: ${deliveryBoy.status}")
+//            }
+//        }
+//    }
+//}
 @Composable
-fun DeliveryBoyItem(deliveryBoy: DeliveryBoy, onClick: () -> Unit) {
+fun DeliveryBoyItem(deliveryBoy: DeliveryBoy, onClick: () -> Unit, onViewEarnings: () -> Unit) {
     Card(
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -497,24 +537,35 @@ fun DeliveryBoyItem(deliveryBoy: DeliveryBoy, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable { onClick() }
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(16.dp)
-        ) {
-            AsyncImage(
-                model = deliveryBoy.profile_picture,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape)
-            )
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AsyncImage(
+                    model = deliveryBoy.profile_picture,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                )
 
-            Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(16.dp))
 
-            Column {
-                Text(text = deliveryBoy.name, fontWeight = FontWeight.Bold)
-                Text(text = deliveryBoy.email, style = MaterialTheme.typography.bodySmall)
-                Text(text = "Status: ${deliveryBoy.status}")
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = deliveryBoy.name, fontWeight = FontWeight.Bold)
+                    Text(text = deliveryBoy.email, style = MaterialTheme.typography.bodySmall)
+                    Text(text = "Status: ${deliveryBoy.status}")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = onViewEarnings,
+                modifier = Modifier.align(Alignment.End),
+                colors = ButtonDefaults.buttonColors(containerColor = colorResource(id = R.color.pink))
+            ) {
+                Icon(Icons.Default.Money, contentDescription = "View Earnings", tint = Color.White)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("View Earnings", color = Color.White)
             }
         }
     }

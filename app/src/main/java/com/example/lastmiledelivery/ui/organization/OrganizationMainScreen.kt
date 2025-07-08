@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Money
 import androidx.compose.material.icons.filled.Pending
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -410,6 +411,17 @@ private fun DrawerContent(
                 navController = navController,
     //                route = "organization_deliveryBoys/${organization.organizationId}",
                 route = "vendorConnectionScreenForOrganization/${organization.organizationId}",
+                drawerState = drawerState,
+                scope = scope
+            )
+        }
+
+        if (organization != null) {
+            DrawerItem(
+                text = "Organization Earning",
+                icon = Icons.Filled.Money,
+                navController = navController,
+                route = "earningScreenForOrganization/${organization.organizationId}",
                 drawerState = drawerState,
                 scope = scope
             )

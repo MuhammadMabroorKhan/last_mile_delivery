@@ -4,7 +4,9 @@ import android.util.Log
 import com.example.lastmiledelivery.data.models.customer.ApiException
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
 import com.example.lastmiledelivery.data.models.organization.DeliveryBoy
+import com.example.lastmiledelivery.data.models.organization.DeliveryBoyEarningsResponse
 import com.example.lastmiledelivery.data.models.organization.DeliveryBoySignupResponse
+import com.example.lastmiledelivery.data.models.organization.OrgEarningsResponse
 import com.example.lastmiledelivery.data.models.organization.OrganizationData
 import com.example.lastmiledelivery.data.models.organization.OrganizationSignupResponse
 import com.example.lastmiledelivery.data.models.organization.OrganizationStats
@@ -265,5 +267,26 @@ class OrganizationRepository @Inject constructor(private val api: OrganizationAp
         }
     }
 
+
+
+    suspend fun getOrganizationEarnings(orgId: Int): Result<OrgEarningsResponse> = try {
+        val response = api.getOrganizationEarnings(mapOf("organization_id" to orgId))
+        if (response.isSuccessful && response.body() != null) {
+            Result.success(response.body()!!)
+        } else Result.failure(Exception("${response.code()} ${response.message()}"))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun getDeliveryBoyEarnings(orgId: Int, deliveryBoyId: Int): Result<DeliveryBoyEarningsResponse> = try {
+        val response = api.getDeliveryBoyEarnings(
+            mapOf("organization_id" to orgId, "deliveryboy_id" to deliveryBoyId)
+        )
+        if (response.isSuccessful && response.body() != null) {
+            Result.success(response.body()!!)
+        } else Result.failure(Exception("${response.code()} ${response.message()}"))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 
 }

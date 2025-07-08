@@ -6,6 +6,7 @@ import com.example.lastmiledelivery.data.models.deliveryboy.BasicResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyDataResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyPaymentConfirmResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyToggleResponse
+import com.example.lastmiledelivery.data.models.deliveryboy.GenericResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.LatestLocationResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.LocationRequest
 import com.example.lastmiledelivery.data.models.deliveryboy.LocationResponse
@@ -92,4 +93,11 @@ interface DeliveryBoysApiService {
         @Path("id") deliveryBoyId: Int,
         @Body vehicleRequest: VehicleRequest
     ): Response<BasicResponse>
+
+
+    @POST("api/delivery-earnings")
+    suspend fun insertDeliveryEarning(
+        @Body payload: Map<String, @JvmSuppressWildcards Any>
+    ): Response<GenericResponse>
+
 }

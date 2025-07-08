@@ -52,7 +52,9 @@ import com.example.lastmiledelivery.ui.deliveryboy.ReadySubordersScreenFromMarke
 import com.example.lastmiledelivery.ui.deliveryboy.SuborderTrackingDeliveryBoyScreen
 import com.example.lastmiledelivery.ui.deliveryboy.VehicleScreen
 import com.example.lastmiledelivery.ui.organization.DeliveryBoyListScreen
+import com.example.lastmiledelivery.ui.organization.OrganizationDeliveryBoyEarningsScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationDeliveryBoySignupScreen
+import com.example.lastmiledelivery.ui.organization.OrganizationEarningsScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationMainScreen
 import com.example.lastmiledelivery.ui.organization.OrganizationSignup
 import com.example.lastmiledelivery.ui.organization.VendorConnectionRequest
@@ -128,6 +130,8 @@ fun AppNavigation() {
             VendorConnectionRequest(organizationId = orgId, navController = navController)
         }
 
+
+
         composable(
             route = "vendor_request_detail/{vendorName}/{vendorEmail}/{vendorPhone}/{orgUserName}/{approvalStatus}/{vendorProfilePicture}/{organizationID}/{requestID}/{vendorID}",
             arguments = listOf(
@@ -172,6 +176,17 @@ fun AppNavigation() {
             )
         }
 
+
+        composable("earningScreenForOrganization/{orgId}") { backStackEntry ->
+            val orgId = backStackEntry.arguments?.getString("orgId")?.toIntOrNull() ?: 0
+            OrganizationEarningsScreen(orgId = orgId, navController = navController)
+        }
+
+        composable("organization_deliveryboy_earnings/{orgId}/{deliveryBoyId}") { backStackEntry ->
+            val orgId = backStackEntry.arguments?.getString("orgId")?.toIntOrNull() ?: return@composable
+            val deliveryBoyId = backStackEntry.arguments?.getString("deliveryBoyId")?.toIntOrNull() ?: return@composable
+            OrganizationDeliveryBoyEarningsScreen(orgId = orgId, deliveryBoyId = deliveryBoyId, navController = navController)
+        }
 
 
 

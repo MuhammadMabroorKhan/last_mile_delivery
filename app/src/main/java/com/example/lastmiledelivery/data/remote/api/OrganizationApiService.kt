@@ -1,9 +1,11 @@
 package com.example.lastmiledelivery.data.remote.api
 
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
+import com.example.lastmiledelivery.data.models.organization.DeliveryBoyEarningsResponse
 import com.example.lastmiledelivery.data.models.organization.DeliveryBoyResponse
 import com.example.lastmiledelivery.data.models.organization.DeliveryBoySignupResponse
 import com.example.lastmiledelivery.data.models.organization.MessageResponse
+import com.example.lastmiledelivery.data.models.organization.OrgEarningsResponse
 import com.example.lastmiledelivery.data.models.organization.OrganizationData
 import com.example.lastmiledelivery.data.models.organization.OrganizationSignupResponse
 import com.example.lastmiledelivery.data.models.organization.OrganizationStats
@@ -105,6 +107,17 @@ suspend fun rejectVendorRequest(
         @Path("id") organizationId: Int
     ): Response<OrganizationStats>
 
+
+
+    @POST("api/organization/org-delivery-earnings")
+    suspend fun getOrganizationEarnings(
+        @Body body: Map<String, Int>
+    ): Response<OrgEarningsResponse>
+
+    @POST("api/organization/org-deliveryboy-earnings")
+    suspend fun getDeliveryBoyEarnings(
+        @Body body: Map<String, Int>
+    ): Response<DeliveryBoyEarningsResponse>
 
 }
 

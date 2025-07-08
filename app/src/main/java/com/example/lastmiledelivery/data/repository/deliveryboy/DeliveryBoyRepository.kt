@@ -5,6 +5,7 @@ import com.example.lastmiledelivery.data.models.deliveryboy.AcceptOrderResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.AssignedSuborderResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyDataResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.DeliveryBoyToggleResponse
+import com.example.lastmiledelivery.data.models.deliveryboy.GenericResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.LatestLocationResponse
 import com.example.lastmiledelivery.data.models.deliveryboy.LocationRequest
 import com.example.lastmiledelivery.data.models.deliveryboy.LocationResponse
@@ -162,5 +163,10 @@ class DeliveryBoyRepository @Inject constructor(private val api: DeliveryBoysApi
     suspend fun getVehicles(deliveryBoyId: Int) = api.getVehicles(deliveryBoyId)
     suspend fun getVehicleCategories() = api.getVehicleCategories()
     suspend fun addVehicle(deliveryBoyId: Int, vehicle: VehicleRequest) = api.addVehicle(deliveryBoyId, vehicle)
+
+
+    suspend fun insertDeliveryEarning(payload: Map<String, Any>): Response<GenericResponse> {
+        return api.insertDeliveryEarning(payload)
+    }
 
 }

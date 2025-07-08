@@ -292,7 +292,7 @@ fun CustomerMainScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(145.dp)
+                        .height(140.dp)
                         .background(
                             color = colorResource(id = R.color.pink),
                             shape = RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp)
@@ -319,7 +319,7 @@ fun CustomerMainScreen(
                                 .padding(start = 16.dp)
                         )
 
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(2.dp))
 
                         Row(
                             modifier = Modifier
@@ -357,7 +357,7 @@ fun CustomerMainScreen(
                                     .height(50.dp)
                             )
 
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
 
                             // 🔄 Dropdown Selector
                             Box {
@@ -411,14 +411,14 @@ fun CustomerMainScreen(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
 
                         // ⭐ Popular Items
                         Text(
                             text = "Popular Items",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(start = 16.dp, top = 5.dp)
+                            modifier = Modifier.padding(start = 16.dp, top = 2.dp)
                         )
 
                         // item in only one row...
@@ -462,7 +462,7 @@ fun CustomerMainScreen(
                         )
 
                         Column(
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
                             LazyRow(
                                 contentPadding = PaddingValues(horizontal = 12.dp),
@@ -500,9 +500,9 @@ fun CustomerMainScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .clip(RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp))
+                            .clip(RoundedCornerShape(topStart = 15.dp, topEnd = 15.dp))
                             .background(Color.White)
-                            .padding(16.dp)
+                            .padding(16.dp,top=2.dp)
                             .verticalScroll(rememberScrollState()) // ✅ Only this scrolls
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -607,7 +607,7 @@ fun ShopCard(
                     contentDescription = shop.shopName,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(150.dp)
+                        .height(140.dp)
                         .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
                     contentScale = ContentScale.Crop
                 )
@@ -930,25 +930,26 @@ private fun MenuItemCard(
         Card(
             modifier = Modifier
                 .width(150.dp)
-                .padding(4.dp),
+                .height(110.dp)
+                .padding(2.dp),
             shape = RoundedCornerShape(12.dp),
-            elevation = CardDefaults.cardElevation(4.dp)
+            elevation = CardDefaults.cardElevation(2.dp)
         ) {
             Column(
                 modifier = Modifier
-                    .padding(8.dp),
+                    .padding(6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 AsyncImage(
                     model = item.itemPicture,
                     contentDescription = "Item Image",
                     modifier = Modifier
-                        .size(60.dp)
+                        .size(50.dp)
                         .clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 Text(
                     text = item.item_name,

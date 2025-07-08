@@ -35,6 +35,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.roundToInt
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 @HiltViewModel
 class DeliveryBoyViewModel @Inject constructor(
@@ -113,6 +119,7 @@ class DeliveryBoyViewModel @Inject constructor(
 
             result.onSuccess {
                 readySuborders = it
+                errorMessageReadySuborders = null
             }.onFailure {
                 errorMessageReadySuborders = it.localizedMessage
             }
@@ -170,6 +177,120 @@ class DeliveryBoyViewModel @Inject constructor(
     fun stopAutoRefreshReadyOrders() {
         autoRefreshJob?.cancel()
     }
+
+
+
+
+
+
+
+
+
+
+    data class GroupedSuborders(
+        val customerId: Int,
+        val customerName: String,
+        val suborders: List<ReadySuborder>
+    )
+    fun groupSubordersByCustomerWithinRadius(
+        suborders: List<ReadySuborder>,
+        pickupRadiusKm: Double
+    ): List<GroupedSuborders> {
+        val grouped = mutableListOf<GroupedSuborders>()
+
+        // Step 1: Group by customer ID
+        val byCustomer = suborders.groupBy { it.customer.customer_ID }
+
+        byCustomer.forEach { (_, customerOrders) ->
+            val groups = mutableListOf<MutableList<ReadySuborder>>()
+
+            customerOrders.forEach { order ->
+                val pickupLat1 = order.shop.branch.pickup_location.latitude.toDoubleOrNull() ?: 0.0
+                val pickupLng1 = order.shop.branch.pickup_location.longitude.toDoubleOrNull() ?: 0.0
+
+                var added = false
+                for (group in groups) {
+                    val refOrder = group.first()
+                    val refLat = refOrder.shop.branch.pickup_location.latitude.toDoubleOrNull() ?: 0.0
+                    val refLng = refOrder.shop.branch.pickup_location.longitude.toDoubleOrNull() ?: 0.0
+                    val distance = calculateDistanceKm(pickupLat1, pickupLng1, refLat, refLng)
+
+                    if (distance <= pickupRadiusKm) {
+                        group.add(order)
+                        added = true
+                        break
+                    }
+                }
+
+                if (!added) {
+                    groups.add(mutableListOf(order))
+                }
+            }
+
+            groups.forEach { group ->
+                grouped.add(
+                    GroupedSuborders(
+                        customerId = group.first().customer.customer_ID,
+                        customerName = group.first().customer.name,
+                        suborders = group
+                    )
+                )
+            }
+        }
+
+        return grouped
+    }
+
+
+    fun acceptGroupedOrders(group: GroupedSuborders, deliveryBoyId: Int, vehicles: List<Vehicle>) {
+        viewModelScope.launch {
+            val vehicle = vehicles.firstOrNull() ?: return@launch
+            val perKmRate = vehicle.per_km_charge.toDoubleOrNull() ?: return@launch
+
+            val first = group.suborders.first()
+            val pickup = first.shop.branch.pickup_location
+            val delivery = first.customer.delivery_address
+
+            val pickupLat = pickup.latitude.toDoubleOrNull() ?: 0.0
+            val pickupLng = pickup.longitude.toDoubleOrNull() ?: 0.0
+            val deliveryLat = delivery.latitude
+            val deliveryLng = delivery.longitude
+            val distanceKm = calculateDistanceKm(pickupLat, pickupLng, deliveryLat, deliveryLng)
+            val totalEarning = (distanceKm * perKmRate).roundTo(2)
+
+            group.suborders.forEachIndexed { index, suborder ->
+                val payload = mapOf(
+                    "deliveryboy_id" to deliveryBoyId,
+                    "suborder_id" to suborder.suborder_id,
+                    "distance_km" to if (index == 0) distanceKm else 0.0,
+                    "rate_per_km" to perKmRate,
+                    "total_earning" to if (index == 0) totalEarning else 0.0
+                )
+
+                try {
+                    val response = repository.insertDeliveryEarning(payload)
+                    if (response.isSuccessful) {
+                        acceptOrder(deliveryBoyId, suborder.suborder_id)
+                    } else {
+                        Log.e("EARNING_API", "Backend error for suborder ${suborder.suborder_id}")
+                    }
+                } catch (e: Exception) {
+                    Log.e("EARNING_API", "Network error for suborder ${suborder.suborder_id}")
+                }
+            }
+
+            // Refresh suborders
+            fetchReadySuborders(deliveryBoyId)
+        }
+    }
+
+
+
+
+
+
+
+
 
 
     var assignedOrders by mutableStateOf<List<AssignedSuborder>>(emptyList())
@@ -412,3 +533,21 @@ fun loadVehicleCategories() {
 
 }
 
+private fun calculateDistanceKm(
+    startLat: Double, startLng: Double,
+    endLat: Double, endLng: Double
+): Double {
+    val earthRadius = 6371.0 // KM
+    val dLat = Math.toRadians(endLat - startLat)
+    val dLng = Math.toRadians(endLng - startLng)
+    val a = sin(dLat / 2).pow(2.0) +
+            cos(Math.toRadians(startLat)) *
+            cos(Math.toRadians(endLat)) *
+            sin(dLng / 2).pow(2.0)
+    val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    return (earthRadius * c * 100.0).roundToInt() / 100.0
+}
+
+private fun Double.roundTo(decimals: Int): Double {
+    return "%.${decimals}f".format(this).toDouble()
+}

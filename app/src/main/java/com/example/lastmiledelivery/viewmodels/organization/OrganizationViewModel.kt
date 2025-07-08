@@ -12,7 +12,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.lastmiledelivery.data.models.customer.CustomerSignupResponse
 import com.example.lastmiledelivery.data.models.organization.DeliveryBoy
+import com.example.lastmiledelivery.data.models.organization.DeliveryBoyEarningsResponse
 import com.example.lastmiledelivery.data.models.organization.DeliveryBoySignupResponse
+import com.example.lastmiledelivery.data.models.organization.OrgEarningsResponse
 import com.example.lastmiledelivery.data.models.organization.OrganizationData
 import com.example.lastmiledelivery.data.models.organization.OrganizationSignupResponse
 import com.example.lastmiledelivery.data.models.organization.OrganizationStats
@@ -324,6 +326,45 @@ class OrganizationViewModel @Inject constructor(
 
 
 
+    var orgEarningsState by mutableStateOf<OrgEarningsUiState>(OrgEarningsUiState.Loading)
+        private set
+
+    var deliveryBoyEarningsState by mutableStateOf<DeliveryBoyEarningsUiState>(DeliveryBoyEarningsUiState.Loading)
+        private set
+
+    fun loadOrganizationEarnings(orgId: Int) {
+        viewModelScope.launch {
+            orgEarningsState = OrgEarningsUiState.Loading
+            repository.getOrganizationEarnings(orgId).onSuccess {
+                orgEarningsState = OrgEarningsUiState.Success(it)
+            }.onFailure {
+                orgEarningsState = OrgEarningsUiState.Error(it.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun loadDeliveryBoyEarnings(orgId: Int, deliveryBoyId: Int) {
+        viewModelScope.launch {
+            deliveryBoyEarningsState = DeliveryBoyEarningsUiState.Loading
+            repository.getDeliveryBoyEarnings(orgId, deliveryBoyId).onSuccess {
+                deliveryBoyEarningsState = DeliveryBoyEarningsUiState.Success(it)
+            }.onFailure {
+                deliveryBoyEarningsState = DeliveryBoyEarningsUiState.Error(it.message ?: "Unknown error")
+            }
+        }
+    }
+
+}
 
 
+sealed class OrgEarningsUiState {
+    object Loading : OrgEarningsUiState()
+    data class Success(val data: OrgEarningsResponse) : OrgEarningsUiState()
+    data class Error(val message: String) : OrgEarningsUiState()
+}
+
+sealed class DeliveryBoyEarningsUiState {
+    object Loading : DeliveryBoyEarningsUiState()
+    data class Success(val data: DeliveryBoyEarningsResponse) : DeliveryBoyEarningsUiState()
+    data class Error(val message: String) : DeliveryBoyEarningsUiState()
 }

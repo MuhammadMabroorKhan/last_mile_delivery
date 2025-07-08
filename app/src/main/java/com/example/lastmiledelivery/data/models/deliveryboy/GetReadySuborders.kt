@@ -43,6 +43,7 @@ data class PickupLocation(
 )
 
 data class Customer(
+    val customer_ID:Int,
     val name: String,
     val phone: String,
     val customer_picture: String?,
@@ -57,3 +58,12 @@ data class DeliveryAddress(
     val longitude: Double
 )
 
+
+
+
+///
+data class GenericResponse(
+    val message: String? = null,
+    val error: String? = null,
+    val success: Boolean? = null
+)
